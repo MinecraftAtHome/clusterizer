@@ -1,0 +1,12 @@
+[package]
+name = "clusterizer-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.7.5"
+clusterizer-common = { version = "0.1.0", path = "../common" }
+tokio = { version = "1.37.0", features = ["full"] }
+tokio-postgres = "0.7.10"

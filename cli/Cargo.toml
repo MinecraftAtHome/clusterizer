@@ -1,0 +1,13 @@
+[package]
+name = "clusterizer-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.5.4", features = ["derive"] }
+clusterizer-client = { version = "0.1.0", path = "../client" }
+clusterizer-common = { version = "0.1.0", path = "../common" }
+tokio = { version = "1.37.0", features = ["full"] }
+url = "2.5.0"
