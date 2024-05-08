@@ -19,6 +19,7 @@ async fn main() {
 
     let state = Arc::new(App::new(client));
     let app = routes::router().with_state(state);
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let address = env::var("CLUSTERIZER_ADDRESS").unwrap();
+    let listener = TcpListener::bind(&address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
