@@ -18,6 +18,16 @@ async fn create(
     if create_user.name.len() > 32 {
         return Err(error(ClusterizerError::UsernameTooLong));
     }
+    if create_user.name.is_empty() {
+        return Err(error(ClusterizerError::UsernameTooShort));
+    }
+    if !create_user
+        .name
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        return Err(error(ClusterizerError::UsernameInvalidChar));
+    }
 
     let id = app
         .query_one(

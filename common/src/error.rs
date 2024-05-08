@@ -5,5 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum Error {
     Unknown,
     UsernameTooLong,
+    UsernameTooShort,
+    UsernameInvalidChar,
     UsernameTaken,
 }
