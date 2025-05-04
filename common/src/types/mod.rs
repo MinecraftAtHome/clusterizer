@@ -1,15 +1,15 @@
-pub mod user;
-pub mod project;
-pub mod platform;
-pub mod project_version;
-pub mod task;
 pub mod assignment;
+pub mod platform;
+pub mod project;
+pub mod project_version;
 pub mod result;
+pub mod task;
+pub mod user;
 
-pub use user::User;
-pub use project::Project;
-pub use platform::Platform;
-pub use project_version::ProjectVersion;
-pub use task::Task;
 pub use assignment::Assignment;
+pub use platform::Platform;
+pub use project::Project;
+pub use project_version::ProjectVersion;
 pub use result::Result;
+pub use task::Task;
+pub use user::User;
