@@ -30,6 +30,21 @@ async fn main() {
         .route("/users/{id}", get(routes::users::get_one))
         .route("/users/profile", get(routes::users::profile))
         .route("/users/register", post(routes::users::register))
+        .route("/projects", get(routes::projects::get_all))
+        .route("/projects/{id}", get(routes::projects::get_one))
+        .route("/platforms", get(routes::platforms::get_all))
+        .route("/platforms/{id}", get(routes::platforms::get_one))
+        .route("/project_versions", get(routes::project_versions::get_all))
+        .route(
+            "/project_versions/{id}",
+            get(routes::project_versions::get_one),
+        )
+        .route("/tasks", get(routes::tasks::get_all))
+        .route("/tasks/{id}", get(routes::tasks::get_one))
+        .route("/assignments", get(routes::assignments::get_all))
+        .route("/assignments/{id}", get(routes::assignments::get_one))
+        .route("/results", get(routes::results::get_all))
+        .route("/results/{id}", get(routes::results::get_one))
         .with_state(state);
 
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
