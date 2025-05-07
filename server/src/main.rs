@@ -36,6 +36,7 @@ async fn main() {
         .route("/projects", get(projects::get_all))
         .route("/projects/{id}", get(projects::get_one))
         .route("/projects/{id}/results", get(projects::results))
+        .route("/projects/{id}/project_versions", get(projects::versions))
         .route("/platforms", get(platforms::get_all))
         .route("/platforms/{id}", get(platforms::get_one))
         .route("/project_versions", get(project_versions::get_all))

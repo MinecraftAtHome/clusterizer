@@ -2,7 +2,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use clusterizer_common::types::{Project, Result};
+use clusterizer_common::types::{Project, ProjectVersion, Result};
 
 use crate::{result::ApiResult, state::AppState};
 
@@ -44,6 +44,21 @@ pub async fn results(
             WHERE
                 t.project_id = $1
             ",
+            project_id
+        )
+        .fetch_all(&state.pool)
+        .await?,
+    ))
+}
+
+pub async fn versions(
+    State(state): State<AppState>,
+    Path(project_id): Path<i64>,
+) -> ApiResult<Vec<ProjectVersion>> {
+    Ok(Json(
+        sqlx::query_as!(
+            ProjectVersion,
+            "SELECT * FROM project_versions WHERE project_id = $1",
             project_id
         )
         .fetch_all(&state.pool)
