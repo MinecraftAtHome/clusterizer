@@ -28,13 +28,15 @@ pub async fn fetch(
 ) -> ApiResult<Vec<Assignment>> {
     let _guard = state.fetch_mutex.lock().await;
 
-    // TODO: don't fetch tasks for inactive projects
     let record = sqlx::query!(
         "
         SELECT
             t.id
         FROM
             tasks t
+            JOIN projects p
+                ON t.project_id = p.id
+                AND p.active
             LEFT JOIN assignments a
                 ON a.task_id = t.id
                 AND NOT a.canceled
@@ -46,7 +48,6 @@ pub async fn fetch(
     .await?;
 
     if let Some(record) = record {
-        // TODO: we could have a constraint to make sure a user doesn't get the same task twice
         let assignment = sqlx::query_as!(
             Assignment,
             "

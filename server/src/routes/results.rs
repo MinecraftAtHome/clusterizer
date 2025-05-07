@@ -38,7 +38,8 @@ pub async fn submit(
             assignments
         WHERE
             task_id = $1 AND
-            user_id = $2
+            user_id = $2 AND
+            NOT canceled
         ",
         request.task_id,
         user_id
@@ -46,7 +47,6 @@ pub async fn submit(
     .fetch_one(&state.pool)
     .await?;
 
-    // TODO: add constraint in db so that an assignment can only have one result
     sqlx::query!(
         "
         INSERT INTO results (

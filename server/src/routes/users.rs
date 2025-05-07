@@ -1,6 +1,7 @@
 use axum::{
     Json,
     extract::{Path, State},
+    http::StatusCode,
 };
 use clusterizer_common::{
     messages::{RegisterRequest, RegisterResponse},
@@ -41,7 +42,22 @@ pub async fn register(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
 ) -> ApiResult<RegisterResponse> {
-    // TODO: sanitize name
+    if request.name.len() < 3 {
+        Err(StatusCode::BAD_REQUEST)?;
+    }
+
+    if request.name.len() > 32 {
+        Err(StatusCode::BAD_REQUEST)?;
+    }
+
+    if !request
+        .name
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        Err(StatusCode::BAD_REQUEST)?;
+    }
+
     let record = sqlx::query!(
         "
         INSERT INTO users (
