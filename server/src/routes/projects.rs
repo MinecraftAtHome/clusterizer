@@ -51,12 +51,17 @@ pub async fn results(
     ))
 }
 
-pub async fn versions(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<Vec<ProjectVersion>> {
+pub async fn versions(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> ApiResult<Vec<ProjectVersion>> {
     Ok(Json(
-        sqlx::query_as!(ProjectVersion, 
-            
-            "SELECT * FROM project_versions WHERE project_id = $1", id)
-            .fetch_all(&state.pool)
-            .await?,
+        sqlx::query_as!(
+            ProjectVersion,
+            "SELECT * FROM project_versions WHERE project_id = $1",
+            id
+        )
+        .fetch_all(&state.pool)
+        .await?,
     ))
 }
