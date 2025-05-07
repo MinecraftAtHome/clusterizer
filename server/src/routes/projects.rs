@@ -2,7 +2,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use clusterizer_common::types::Project;
+use clusterizer_common::types::{Project, Result};
 
 use crate::{result::ApiResult, state::AppState};
 
@@ -19,5 +19,28 @@ pub async fn get_one(State(state): State<AppState>, Path(id): Path<i64>) -> ApiR
         sqlx::query_as!(Project, "SELECT * FROM projects WHERE id = $1", id)
             .fetch_one(&state.pool)
             .await?,
+    ))
+}
+
+pub async fn results(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<Vec<Result>> {
+    Ok(Json(
+        sqlx::query_as!(
+            Result,
+            "
+            SELECT
+                r.*
+            FROM
+                tasks t
+                JOIN assignments a
+                    ON a.task_id = t.id
+                JOIN results r
+                    ON r.assignment_id = a.id
+            WHERE
+                t.project_id = $1
+            ",
+            id
+        )
+        .fetch_all(&state.pool)
+        .await?,
     ))
 }

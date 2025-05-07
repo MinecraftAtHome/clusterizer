@@ -3,7 +3,7 @@ mod result;
 mod routes;
 mod state;
 
-use std::env;
+use std::{env, sync::Arc};
 
 use axum::{
     Router,
@@ -11,7 +11,7 @@ use axum::{
 };
 use sqlx::PgPool;
 use state::AppState;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, sync::Mutex};
 
 #[tokio::main]
 async fn main() {
@@ -23,6 +23,7 @@ async fn main() {
     let state = AppState {
         pool: PgPool::connect(&database_url).await.unwrap(),
         secret: secret.into_bytes(),
+        fetch_mutex: Arc::new(Mutex::new(())),
     };
 
     let app = Router::new()
@@ -32,6 +33,7 @@ async fn main() {
         .route("/users/register", post(routes::users::register))
         .route("/projects", get(routes::projects::get_all))
         .route("/projects/{id}", get(routes::projects::get_one))
+        .route("/projects/{id}/results", get(routes::projects::results))
         .route("/platforms", get(routes::platforms::get_all))
         .route("/platforms/{id}", get(routes::platforms::get_one))
         .route("/project_versions", get(routes::project_versions::get_all))
@@ -43,8 +45,10 @@ async fn main() {
         .route("/tasks/{id}", get(routes::tasks::get_one))
         .route("/assignments", get(routes::assignments::get_all))
         .route("/assignments/{id}", get(routes::assignments::get_one))
+        .route("/assignments/fetch", post(routes::assignments::fetch))
         .route("/results", get(routes::results::get_all))
         .route("/results/{id}", get(routes::results::get_one))
+        .route("/results/submit", post(routes::results::submit))
         .with_state(state);
 
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();

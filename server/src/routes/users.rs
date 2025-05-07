@@ -29,6 +29,14 @@ pub async fn get_one(State(state): State<AppState>, Path(id): Path<i64>) -> ApiR
     ))
 }
 
+pub async fn profile(State(state): State<AppState>, Auth(id): Auth) -> ApiResult<User> {
+    Ok(Json(
+        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", id)
+            .fetch_one(&state.pool)
+            .await?,
+    ))
+}
+
 pub async fn register(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
@@ -51,12 +59,4 @@ pub async fn register(
     Ok(Json(RegisterResponse {
         api_key: auth::api_key(&state, record.id),
     }))
-}
-
-pub async fn profile(State(state): State<AppState>, Auth(id): Auth) -> ApiResult<User> {
-    Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", id)
-            .fetch_one(&state.pool)
-            .await?,
-    ))
 }
