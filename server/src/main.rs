@@ -36,14 +36,11 @@ async fn main() {
         .route("/projects", get(projects::get_all))
         .route("/projects/{id}", get(projects::get_one))
         .route("/projects/{id}/results", get(projects::results))
+        .route("/projects/{id}/project_versions", get(projects::versions))
         .route("/platforms", get(platforms::get_all))
         .route("/platforms/{id}", get(platforms::get_one))
         .route("/project_versions", get(project_versions::get_all))
         .route("/project_versions/{id}", get(project_versions::get_one))
-        .route(
-            "/projects/{id}/project_versions",
-            get(routes::projects::versions),
-        )
         .route("/tasks", get(tasks::get_all))
         .route("/tasks/{id}", get(tasks::get_one))
         .route("/tasks/fetch", post(tasks::fetch))
