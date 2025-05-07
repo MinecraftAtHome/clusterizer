@@ -2,7 +2,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use clusterizer_common::types::{Project, Result};
+use clusterizer_common::types::{Project, ProjectVersion, Result};
 
 use crate::{result::ApiResult, state::AppState};
 
