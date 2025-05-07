@@ -10,20 +10,15 @@ struct Client {
     api_key: Option<String>,
 }
 
-impl Client{
-
+impl Client {
     pub async fn get<T: DeserializeOwned>(&self, uri: &str) -> Result<T, Error> {
         let full = format!("{}{}", self.url, uri);
         let client = reqwest::Client::new();
-        let mut req = client
-            .get(full);
-        if let Some(ref x) = self.api_key{
+        let mut req = client.get(full);
+        if let Some(ref x) = self.api_key {
             req = req.header("Authorization", format!("Bearer {}", x));
         }
-        let res = req.send()
-        .await?
-        .json::<T>()
-        .await?;
+        let res = req.send().await?.json::<T>().await?;
         Ok(res)
     }
 
@@ -38,13 +33,10 @@ impl Client{
             .post(full)
             .json(data)
             .header("Content-Type", "application/json");
-        if let Some(ref x) = self.api_key{
+        if let Some(ref x) = self.api_key {
             req = req.header("Authorization", format!("Bearer {}", x));
         }
-        let res = req.send()
-            .await?
-            .json::<R>()
-            .await?;
+        let res = req.send().await?.json::<R>().await?;
         Ok(res)
     }
 
@@ -59,15 +51,12 @@ impl Client{
         Ok(self.get(&uri).await?)
     }
 
-    pub async fn get_project_version(&self, project_id: i64,) -> Result<Vec<ProjectVersion>, Error> {
-        let uri = format!(
-            "/projects/{}/project_versions",
-            project_id
-        );
+    pub async fn get_project_version(&self, project_id: i64) -> Result<Vec<ProjectVersion>, Error> {
+        let uri = format!("/projects/{}/project_versions", project_id);
         Ok(self.get(&uri).await?)
     }
 
-    pub async fn fetch_assignments(&self,) -> Result<Vec<Assignment>, Error> {
+    pub async fn fetch_assignments(&self) -> Result<Vec<Assignment>, Error> {
         let uri = "/assignments/fetch";
         Ok(self.get(&uri).await?)
     }
