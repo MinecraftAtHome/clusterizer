@@ -10,7 +10,7 @@ use clusterizer_common::{
 
 use crate::{
     auth::{self, Auth},
-    result::{ApiError, ApiResult},
+    result::ApiResult,
     state::AppState,
 };
 
@@ -70,14 +70,7 @@ pub async fn register(
         request.name
     )
     .fetch_one(&state.pool)
-    .await
-    .map_err(|err| -> ApiError {
-        if err.as_database_error().and_then(|err| err.constraint()) == Some("users_name_key") {
-            StatusCode::BAD_REQUEST.into()
-        } else {
-            err.into()
-        }
-    })?;
+    .await?;
 
     Ok(Json(RegisterResponse {
         api_key: auth::api_key(&state, record.id),

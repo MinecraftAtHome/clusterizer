@@ -12,6 +12,9 @@ impl From<sqlx::Error> for ApiError {
     fn from(error: sqlx::Error) -> Self {
         Self(match error {
             sqlx::Error::RowNotFound => StatusCode::NOT_FOUND,
+            sqlx::Error::Database(ref err) if err.constraint() == Some("users_name_key") => {
+                StatusCode::BAD_REQUEST
+            }
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         })
     }
