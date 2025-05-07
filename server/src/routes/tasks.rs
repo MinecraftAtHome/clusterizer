@@ -14,9 +14,9 @@ pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<Task>> {
     ))
 }
 
-pub async fn get_one(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<Task> {
+pub async fn get_one(State(state): State<AppState>, Path(task_id): Path<i64>) -> ApiResult<Task> {
     Ok(Json(
-        sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = $1", id)
+        sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = $1", task_id)
             .fetch_one(&state.pool)
             .await?,
     ))
@@ -70,11 +70,11 @@ pub async fn fetch(State(state): State<AppState>, Auth(user_id): Auth) -> ApiRes
 
 pub async fn submit(
     State(state): State<AppState>,
-    Path(id): Path<i64>,
+    Path(task_id): Path<i64>,
     Auth(user_id): Auth,
     Json(request): Json<SubmitRequest>,
 ) -> ApiResult<()> {
-    let record = sqlx::query!(
+    let assignment = sqlx::query!(
         "
         SELECT
             id
@@ -85,7 +85,7 @@ pub async fn submit(
             user_id = $2 AND
             NOT canceled
         ",
-        id,
+        task_id,
         user_id
     )
     .fetch_one(&state.pool)
@@ -105,7 +105,7 @@ pub async fn submit(
             $4
         )
         ",
-        record.id,
+        assignment.id,
         request.stdout,
         request.stderr,
         request.exit_code

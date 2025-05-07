@@ -16,13 +16,13 @@ pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<ProjectVers
 
 pub async fn get_one(
     State(state): State<AppState>,
-    Path(id): Path<i64>,
+    Path(project_version_id): Path<i64>,
 ) -> ApiResult<ProjectVersion> {
     Ok(Json(
         sqlx::query_as!(
             ProjectVersion,
             "SELECT * FROM project_versions WHERE id = $1",
-            id
+            project_version_id
         )
         .fetch_one(&state.pool)
         .await?,

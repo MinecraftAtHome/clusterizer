@@ -14,10 +14,17 @@ pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<Platform>> 
     ))
 }
 
-pub async fn get_one(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<Platform> {
+pub async fn get_one(
+    State(state): State<AppState>,
+    Path(platform_id): Path<i64>,
+) -> ApiResult<Platform> {
     Ok(Json(
-        sqlx::query_as!(Platform, "SELECT * FROM platforms WHERE id = $1", id)
-            .fetch_one(&state.pool)
-            .await?,
+        sqlx::query_as!(
+            Platform,
+            "SELECT * FROM platforms WHERE id = $1",
+            platform_id
+        )
+        .fetch_one(&state.pool)
+        .await?,
     ))
 }

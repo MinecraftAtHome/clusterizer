@@ -14,9 +14,12 @@ pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<Result>> {
     ))
 }
 
-pub async fn get_one(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<Result> {
+pub async fn get_one(
+    State(state): State<AppState>,
+    Path(result_id): Path<i64>,
+) -> ApiResult<Result> {
     Ok(Json(
-        sqlx::query_as!(Result, "SELECT * FROM results WHERE id = $1", id)
+        sqlx::query_as!(Result, "SELECT * FROM results WHERE id = $1", result_id)
             .fetch_one(&state.pool)
             .await?,
     ))

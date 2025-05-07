@@ -22,17 +22,17 @@ pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<User>> {
     ))
 }
 
-pub async fn get_one(State(state): State<AppState>, Path(id): Path<i64>) -> ApiResult<User> {
+pub async fn get_one(State(state): State<AppState>, Path(user_id): Path<i64>) -> ApiResult<User> {
     Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", id)
+        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
             .fetch_one(&state.pool)
             .await?,
     ))
 }
 
-pub async fn profile(State(state): State<AppState>, Auth(id): Auth) -> ApiResult<User> {
+pub async fn profile(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<User> {
     Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", id)
+        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
             .fetch_one(&state.pool)
             .await?,
     ))
@@ -58,7 +58,7 @@ pub async fn register(
         Err(StatusCode::BAD_REQUEST)?;
     }
 
-    let record = sqlx::query!(
+    let user = sqlx::query!(
         "
         INSERT INTO users (
             name
@@ -73,6 +73,6 @@ pub async fn register(
     .await?;
 
     Ok(Json(RegisterResponse {
-        api_key: auth::api_key(&state, record.id),
+        api_key: auth::api_key(&state, user.id),
     }))
 }
