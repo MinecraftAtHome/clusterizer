@@ -19,6 +19,7 @@ async fn main() {
 
     let database_url = env::var("DATABASE_URL").unwrap();
     let secret = env::var("CLUSTERIZER_SECRET").unwrap();
+    let address = env::var("CLUSTERIZER_ADDRESS").unwrap();
 
     let state = AppState {
         pool: PgPool::connect(&database_url).await.unwrap(),
@@ -51,7 +52,7 @@ async fn main() {
         .route("/results/submit", post(routes::results::submit))
         .with_state(state);
 
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = TcpListener::bind(address).await.unwrap();
 
     axum::serve(listener, app).await.unwrap();
 }
