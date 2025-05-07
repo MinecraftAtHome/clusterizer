@@ -53,13 +53,13 @@ pub async fn results(
 
 pub async fn versions(
     State(state): State<AppState>,
-    Path(id): Path<i64>,
+    Path(project_id): Path<i64>,
 ) -> ApiResult<Vec<ProjectVersion>> {
     Ok(Json(
         sqlx::query_as!(
             ProjectVersion,
             "SELECT * FROM project_versions WHERE project_id = $1",
-            id
+            project_id
         )
         .fetch_all(&state.pool)
         .await?,
