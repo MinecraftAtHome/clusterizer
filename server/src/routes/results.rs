@@ -2,10 +2,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use clusterizer_common::{
-    messages::{SubmitRequest, SubmitResponse},
-    types::Result,
-};
+use clusterizer_common::{messages::SubmitRequest, types::Result};
 
 use crate::{auth::Auth, result::ApiResult, state::AppState};
 
@@ -29,7 +26,7 @@ pub async fn submit(
     State(state): State<AppState>,
     Auth(user_id): Auth,
     Json(request): Json<SubmitRequest>,
-) -> ApiResult<SubmitResponse> {
+) -> ApiResult<()> {
     let record = sqlx::query!(
         "
         SELECT
@@ -69,5 +66,5 @@ pub async fn submit(
     .execute(&state.pool)
     .await?;
 
-    Ok(Json(SubmitResponse))
+    Ok(Json(()))
 }

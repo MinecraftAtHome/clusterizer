@@ -7,6 +7,3 @@ pub struct SubmitRequest {
     pub stderr: String,
     pub exit_code: i32,
 }
-
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct SubmitResponse;
