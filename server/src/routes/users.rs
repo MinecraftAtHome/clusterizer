@@ -1,6 +1,7 @@
 use axum::{
     Json,
     extract::{Path, State},
+    http::StatusCode,
 };
 use clusterizer_common::{
     messages::{RegisterRequest, RegisterResponse},
@@ -9,7 +10,7 @@ use clusterizer_common::{
 
 use crate::{
     auth::{self, Auth},
-    result::ApiResult,
+    result::{ApiError, ApiResult},
     state::AppState,
 };
 
@@ -41,7 +42,22 @@ pub async fn register(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
 ) -> ApiResult<RegisterResponse> {
-    // TODO: sanitize name
+    if request.name.len() < 3 {
+        Err(StatusCode::BAD_REQUEST)?;
+    }
+
+    if request.name.len() > 32 {
+        Err(StatusCode::BAD_REQUEST)?;
+    }
+
+    if !request
+        .name
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        Err(StatusCode::BAD_REQUEST)?;
+    }
+
     let record = sqlx::query!(
         "
         INSERT INTO users (
@@ -54,7 +70,14 @@ pub async fn register(
         request.name
     )
     .fetch_one(&state.pool)
-    .await?;
+    .await
+    .map_err(|err| -> ApiError {
+        if err.as_database_error().and_then(|err| err.constraint()) == Some("users_name_key") {
+            StatusCode::BAD_REQUEST.into()
+        } else {
+            err.into()
+        }
+    })?;
 
     Ok(Json(RegisterResponse {
         api_key: auth::api_key(&state, record.id),

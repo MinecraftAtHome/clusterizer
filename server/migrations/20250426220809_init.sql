@@ -4,6 +4,9 @@ CREATE TABLE users (
     name TEXT NOT NULL
 );
 
+CREATE UNIQUE INDEX users_name_key
+    ON users (LOWER(name));
+
 CREATE TABLE projects (
     id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -48,10 +51,14 @@ CREATE TABLE assignments (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
+CREATE UNIQUE INDEX assignments_task_id_user_id_key
+    ON assignments (task_id, user_id)
+    WHERE NOT canceled;
+
 CREATE TABLE results (
     id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    assignment_id INT8 NOT NULL,
+    assignment_id INT8 NOT NULL UNIQUE,
     stdout TEXT NOT NULL,
     stderr TEXT NOT NULL,
     exit_code INT4 NOT NULL,
