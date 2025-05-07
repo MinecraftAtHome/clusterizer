@@ -45,11 +45,11 @@ async fn main() {
         .route("/tasks", get(routes::tasks::get_all))
         .route("/tasks/{id}", get(routes::tasks::get_one))
         .route("/tasks/fetch", post(routes::tasks::fetch))
+        .route("/tasks/{id}/submit", post(routes::tasks::submit))
         .route("/assignments", get(routes::assignments::get_all))
         .route("/assignments/{id}", get(routes::assignments::get_one))
         .route("/results", get(routes::results::get_all))
         .route("/results/{id}", get(routes::results::get_one))
-        .route("/results/submit", post(routes::results::submit))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();

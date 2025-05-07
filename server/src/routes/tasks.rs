@@ -2,7 +2,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use clusterizer_common::types::Task;
+use clusterizer_common::{messages::SubmitRequest, types::Task};
 
 use crate::{auth::Auth, result::ApiResult, state::AppState};
 
@@ -66,4 +66,52 @@ pub async fn fetch(State(state): State<AppState>, Auth(user_id): Auth) -> ApiRes
     } else {
         Ok(Json(vec![]))
     }
+}
+
+pub async fn submit(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Auth(user_id): Auth,
+    Json(request): Json<SubmitRequest>,
+) -> ApiResult<()> {
+    let record = sqlx::query!(
+        "
+        SELECT
+            id
+        FROM
+            assignments
+        WHERE
+            task_id = $1 AND
+            user_id = $2 AND
+            NOT canceled
+        ",
+        id,
+        user_id
+    )
+    .fetch_one(&state.pool)
+    .await?;
+
+    sqlx::query!(
+        "
+        INSERT INTO results (
+            assignment_id,
+            stdout,
+            stderr,
+            exit_code
+        ) VALUES (
+            $1,
+            $2,
+            $3,
+            $4
+        )
+        ",
+        record.id,
+        request.stdout,
+        request.stderr,
+        request.exit_code
+    )
+    .execute(&state.pool)
+    .await?;
+
+    Ok(Json(()))
 }
