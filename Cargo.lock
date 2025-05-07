@@ -39,15 +39,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "api"
-version = "0.1.0"
-dependencies = [
- "clusterizer-common",
- "reqwest",
- "serde",
-]
-
-[[package]]
 name = "atoi"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -242,6 +233,15 @@ dependencies = [
  "serde",
  "wasm-bindgen",
  "windows-link",
+]
+
+[[package]]
+name = "clusterizer-api"
+version = "0.1.0"
+dependencies = [
+ "clusterizer-common",
+ "reqwest",
+ "serde",
 ]
 
 [[package]]
