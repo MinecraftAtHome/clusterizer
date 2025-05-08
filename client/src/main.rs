@@ -226,7 +226,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let archive_url: Url = Url::parse(&proj_ver.archive_url)?;
         let archive_name: &str = match archive_url
             .path_segments()
-            .ok_or(|| "cannot be base")?
+            .ok_or_else(|| "cannot be base")?
             .last()
         {
             Some(url) => url,
