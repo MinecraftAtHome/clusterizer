@@ -1,21 +1,16 @@
-use std::env;
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::{thread, time};
 
-use chrono::{DateTime, Utc};
 use clap::Parser;
 use clusterizer_api::Client as ClusterizerClient;
-use clusterizer_common::types::{Assignment, Task};
-use reqwest::Error;
 use tokio::process::Command;
 use zip::ZipArchive;
-use zip::result::ZipResult;
 
 #[derive(Parser)]
 #[command(name = "Clusterizer RS")]
@@ -75,7 +70,7 @@ impl From<std::io::Error> for MyError {
 async fn zip_extract(archive_file: &Path, target_dir: &Path) -> Result<(), MyError> {
     let file = File::open(archive_file)?;
     let mut archive = ZipArchive::new(file)?;
-    archive.extract(target_dir);
+    archive.extract(target_dir)?;
     Ok(())
 }
 
@@ -89,12 +84,11 @@ async fn get_program(
     let mut out = File::create(download_path)?;
     let mut reader = Cursor::new(body);
     io::copy(&mut reader, &mut out)?;
-    zip_extract(&download_path, &slot_path);
+    zip_extract(download_path, slot_path).await?;
     Ok(())
 }
 
 async fn run_program(
-    task_id: i64,
     slot_path: &Path,
     prog_argc: &Vec<String>,
     prog_name: &OsStr,
@@ -136,7 +130,7 @@ async fn run_program(
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
-    let mut api_key = args.apikey;
+    let api_key = args.apikey;
     let data_dir = args.datadir;
     let server_url = args.serverurl;
     let mut clusterizer_client = ClusterizerClient::new(server_url, None);
@@ -150,14 +144,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //Use data_dir...
     if !data_dir.is_empty() {
         println!("Using Data dir: {}", data_dir);
-        fs::create_dir_all(format!("{}/slots", data_dir));
+        fs::create_dir_all(format!("{}/slots", data_dir))?;
     } else {
         println!("No data dir provided. Defaulting to ./");
         fs::create_dir_all("./data/slots")?;
     }
     let sleep_duration = time::Duration::from_millis(15000);
 
-    while true {
+    loop {
         let task = match clusterizer_client.fetch_tasks().await {
             Ok(a) => a,
             Err(e) => {
@@ -166,16 +160,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
 
-        if task.len() == 0 {
+        if task.is_empty() {
             println!("No assignments available... Sleeping and trying again.");
             thread::sleep(sleep_duration);
             continue;
         }
 
-        let proj = match clusterizer_client
-            .get_project(task[0].project_id.clone())
-            .await
-        {
+        let proj = match clusterizer_client.get_project(task[0].project_id).await {
             Ok(p) => p,
             Err(e) => {
                 eprintln!("Failed to get project: {e}");
@@ -184,7 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         let proj_ver = match clusterizer_client
-            .get_project_version(task[0].project_id.clone())
+            .get_project_version(task[0].project_id)
             .await
         {
             Ok(pv) => pv,
@@ -206,7 +197,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let slot_path = Path::new(&slot_str);
 
-        let binary_name = match proj_ver.archive_url.split('/').last() {
+        let binary_name = match proj_ver.archive_url.split('/').next_back() {
             Some(name) => name.to_string(),
             None => {
                 eprintln!("Failed to extract binary name from archive_url");
@@ -218,7 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let down_path = Path::new(&down_str);
 
-        match get_program(down_path, slot_path.clone(), proj_ver.archive_url.clone()).await {
+        match get_program(down_path, slot_path, proj_ver.archive_url.clone()).await {
             Ok(bp) => bp,
             Err(e) => {
                 eprintln!("Failed to get program: {e}");
@@ -228,14 +219,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let prog_argc = Vec::<String>::new();
 
-        let result_data = match run_program(
-            task[0].id,
-            slot_path.clone(),
-            &prog_argc,
-            down_path.as_os_str(),
-        )
-        .await
-        {
+        let result_data = match run_program(slot_path, &prog_argc, down_path.as_os_str()).await {
             Ok(rd) => rd,
             Err(e) => {
                 eprintln!("Failed to run program: {e}");
@@ -243,11 +227,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
 
-        let final_result = match clusterizer_client.submit_task(
-            task[0].id,
-            &result_data,
-        )
-        .await
+        match clusterizer_client
+            .submit_task(task[0].id, &result_data)
+            .await
         {
             Ok(fr) => fr,
             Err(e) => {
@@ -256,5 +238,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
     }
-    Ok(())
 }
