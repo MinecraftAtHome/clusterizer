@@ -1,5 +1,4 @@
 use std::{
-    ffi::OsStr,
     fmt,
     fs::{self, File},
     io::{self, Cursor},
@@ -226,8 +225,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let archive_url: Url = Url::parse(&proj_ver.archive_url)?;
         let archive_name: &str = match archive_url
             .path_segments()
-            .ok_or_else(|| "cannot be base")?
-            .last()
+            .ok_or("cannot be base")?
+            .next_back()
         {
             Some(url) => url,
             None => "error",
