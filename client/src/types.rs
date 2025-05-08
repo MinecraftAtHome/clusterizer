@@ -17,15 +17,15 @@ use tokio::process::Command;
 use url::ParseError;
 use zip::{ZipArchive, result::ZipError};
 
-#[derive(Error, Debug)]
-enum GetProgramError {
-    #[error("client failed to find main executable in task archive")]
-    NoBinaryFound,
-    #[error("client failed to find task archive from given url")]
-    NoArchiveFound,
-    #[error("server did not reply, url is possibly bad")]
-    BadURL,
-}
+// #[derive(Error, Debug)]
+// enum GetProgramError {
+//     #[error("client failed to find main executable in task archive")]
+//     NoBinaryFound,
+//     #[error("client failed to find task archive from given url")]
+//     NoArchiveFound,
+//     #[error("server did not reply, url is possibly bad")]
+//     BadURL,
+// }
 
 #[derive(Error, Debug)]
 #[error(transparent)]
@@ -90,7 +90,7 @@ impl ClusterizerClient {
     pub fn new(api_key: Option<String>, url: String, data_dir: PathBuf) -> ClusterizerClient {
         ClusterizerClient {
             api_client: ApiClient::new(url, api_key),
-            data_dir: data_dir,
+            data_dir,
         }
     }
     pub async fn fetch_tasks(&self) -> Result<Vec<Task>, ClientError> {
@@ -134,7 +134,7 @@ impl ClusterizerClient {
     ) -> Result<PathBuf, ClientError> {
         let resp = reqwest::get(archive_url).await?;
         let body = resp.bytes().await?;
-        fs::write(download_path, body);
+        let _ = fs::write(download_path, body);
         Self::zip_extract(download_path, slot_path)?;
         let mut bin_name = PathBuf::new();
         match fs::read_dir(slot_path) {

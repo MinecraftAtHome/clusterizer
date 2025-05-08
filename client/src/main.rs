@@ -2,7 +2,6 @@ mod types;
 
 use clap::Parser;
 use std::{
-    error::Error,
     ffi::OsStr,
     fs::{self},
     path::{Path, PathBuf},
@@ -39,6 +38,10 @@ struct Args {
 
 async fn main_loop(client: &ClusterizerClient) -> Result<(), ClientError> {
     let task = client.fetch_tasks().await?;
+    if task.is_empty() {
+        eprintln!("No tasks found. Sleeping before attempting again.");
+        thread::sleep(time::Duration::from_millis(15000));
+    }
     let proj = client.get_project(task[0].project_id).await?;
     let proj_ver = client.get_project_version(task[0].project_id).await?;
 
@@ -50,7 +53,7 @@ async fn main_loop(client: &ClusterizerClient) -> Result<(), ClientError> {
         .join("slots")
         .join(format!("{}", task[0].id));
 
-    fs::create_dir_all(&slot_path);
+    let _ = fs::create_dir_all(slot_path);
 
     let archive_url: Url = Url::parse(&proj_ver.archive_url)?;
     let archive_name: &str = match archive_url.path_segments().and_then(Iterator::last) {
@@ -72,12 +75,7 @@ async fn main_loop(client: &ClusterizerClient) -> Result<(), ClientError> {
         .run_program(slot_path, prog_argc, &binary_name)
         .await?;
 
-    match client.submit_task(task[0].id, &result_data).await {
-        Ok(fr) => fr,
-        Err(e) => {
-            eprintln!("Failed to submit result: {e}");
-        }
-    };
+    client.submit_task(task[0].id, &result_data).await?;
     Ok(())
 }
 
@@ -89,13 +87,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let data_dir: String = args.data_dir;
     let data_path = PathBuf::from(&data_dir);
     let server_url = args.server_url;
-    let mut clusterizer_client = ClusterizerClient::new(api_key, server_url, data_path);
+    let clusterizer_client = ClusterizerClient::new(api_key, server_url, data_path);
     println!("Using Data dir: {}", data_dir);
     fs::create_dir_all(format!("{}/slots", data_dir))?;
 
-    let sleep_duration = time::Duration::from_millis(15000);
-
     loop {
-        let result = main_loop(&clusterizer_client).await;
+        if let Err(err) = main_loop(&clusterizer_client).await {
+            eprintln!("Error: {err}");
+        }
     }
 }
