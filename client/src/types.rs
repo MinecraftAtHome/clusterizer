@@ -1,7 +1,5 @@
 use std::{
-    error,
     ffi::OsStr,
-    fmt,
     fs::{self, File},
     io,
     path::{Path, PathBuf},
@@ -17,70 +15,15 @@ use tokio::process::Command;
 use url::ParseError;
 use zip::{ZipArchive, result::ZipError};
 
-// #[derive(Error, Debug)]
-// enum GetProgramError {
-//     #[error("client failed to find main executable in task archive")]
-//     NoBinaryFound,
-//     #[error("client failed to find task archive from given url")]
-//     NoArchiveFound,
-//     #[error("server did not reply, url is possibly bad")]
-//     BadURL,
-// }
-
 #[derive(Error, Debug)]
 #[error(transparent)]
-struct RunProgramError(#[from] std::io::Error);
-#[derive(Debug)]
 pub enum ClientError {
-    Reqwest(reqwest::Error),
-    Zip(ZipError),
-    Io(io::Error),
-    Url(ParseError),
-}
-impl fmt::Display for ClientError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ClientError::Reqwest(e) => write!(f, "Reqwest error: {e}"),
-            ClientError::Zip(e) => write!(f, "Zip error: {e}"),
-            ClientError::Io(e) => write!(f, "IO error: {e}"),
-            ClientError::Url(e) => write!(f, "failed to parse url: {e}"),
-        }
-    }
+    Reqwest(#[from] reqwest::Error),
+    Zip(#[from] ZipError),
+    Io(#[from] io::Error),
+    Url(#[from] ParseError),
 }
 
-impl std::error::Error for ClientError {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match self {
-            ClientError::Reqwest(e) => Some(e),
-            ClientError::Zip(e) => Some(e),
-            ClientError::Io(e) => Some(e),
-            ClientError::Url(e) => Some(e),
-        }
-    }
-}
-
-impl From<reqwest::Error> for ClientError {
-    fn from(e: reqwest::Error) -> Self {
-        ClientError::Reqwest(e)
-    }
-}
-
-impl From<ZipError> for ClientError {
-    fn from(e: ZipError) -> Self {
-        ClientError::Zip(e)
-    }
-}
-
-impl From<io::Error> for ClientError {
-    fn from(e: io::Error) -> Self {
-        ClientError::Io(e)
-    }
-}
-impl From<ParseError> for ClientError {
-    fn from(e: ParseError) -> Self {
-        ClientError::Url(e)
-    }
-}
 pub struct ClusterizerClient {
     api_client: ApiClient,
     pub data_dir: PathBuf,
