@@ -139,7 +139,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api_key = args.apikey;
     let data_dir = args.datadir;
     let server_url = args.serverurl;
-    let clusterizer_client = ClusterizerClient::new(server_url, None);
+    let mut clusterizer_client = ClusterizerClient::new(server_url, None);
     // Use api_key...
     if !api_key.is_empty() {
         println!("API Key: {}", api_key);
@@ -218,14 +218,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let down_path = Path::new(&down_str);
 
-        let binary_path =
-            match get_program(down_path, slot_path.clone(), proj_ver.archive_url.clone()).await {
-                Ok(bp) => bp,
-                Err(e) => {
-                    eprintln!("Failed to get program: {e}");
-                    continue;
-                }
-            };
+        match get_program(down_path, slot_path.clone(), proj_ver.archive_url.clone()).await {
+            Ok(bp) => bp,
+            Err(e) => {
+                eprintln!("Failed to get program: {e}");
+                continue;
+            }
+        };
 
         let prog_argc = Vec::<String>::new();
 
@@ -233,7 +232,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             task[0].id,
             slot_path.clone(),
             &prog_argc,
-            binary_path.as_os_str(),
+            down_path.as_os_str(),
         )
         .await
         {
@@ -244,11 +243,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
 
-        let final_result = match api::requests::submit_result(
-            task.id,
-            String::from("https://clusterizer.mcathome.dev"),
-            api_key.clone(),
-            result_data,
+        let final_result = match clusterizer_client.submit_task(
+            task[0].id,
+            &result_data,
         )
         .await
         {
