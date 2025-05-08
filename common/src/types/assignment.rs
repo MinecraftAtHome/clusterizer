@@ -7,5 +7,5 @@ pub struct Assignment {
     pub created_at: DateTime<Utc>,
     pub task_id: i64,
     pub user_id: i64,
-    pub canceled: bool,
+    pub canceled_at: Option<DateTime<Utc>>,
 }
