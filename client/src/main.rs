@@ -1,22 +1,21 @@
 use std::env;
-use std::ffi::{OsStr};
+use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::Cursor;
-use std::path::{Path,PathBuf};
+use std::path::{Path, PathBuf};
 use std::{thread, time};
 
 use chrono::{DateTime, Utc};
 use clap::Parser;
-use clusterizer_common::types::{Assignment, Task};
 use clusterizer_api::Client as ClusterizerClient;
+use clusterizer_common::types::{Assignment, Task};
 use reqwest::Error;
-use tokio::{process::Command};
-use zip::result::ZipResult;
+use tokio::process::Command;
 use zip::ZipArchive;
-
+use zip::result::ZipResult;
 
 #[derive(Parser)]
 #[command(name = "Clusterizer RS")]
@@ -37,7 +36,6 @@ enum MyError {
     Zip(zip::result::ZipError),
     Io(std::io::Error),
 }
-
 
 impl fmt::Display for MyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -74,7 +72,7 @@ impl From<std::io::Error> for MyError {
         MyError::Io(e)
     }
 }
-async fn zip_extract(archive_file: &Path, target_dir: &Path) -> Result<(), MyError>{
+async fn zip_extract(archive_file: &Path, target_dir: &Path) -> Result<(), MyError> {
     let file = File::open(archive_file)?;
     let mut archive = ZipArchive::new(file)?;
     archive.extract(target_dir);
@@ -84,8 +82,8 @@ async fn zip_extract(archive_file: &Path, target_dir: &Path) -> Result<(), MyErr
 async fn get_program(
     download_path: &Path,
     slot_path: &Path,
-    archive_url: String
-) -> Result<(), MyError>{
+    archive_url: String,
+) -> Result<(), MyError> {
     let resp = reqwest::get(archive_url).await?;
     let body = resp.bytes().await?;
     let mut out = File::create(download_path)?;
@@ -114,7 +112,7 @@ async fn run_program(
 
     let result_data = clusterizer_common::messages::SubmitRequest {
         stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),        
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
         exit_code,
     };
     Ok(result_data)
@@ -128,7 +126,7 @@ async fn run_program(
     4. Grab task/project info using data given by assignment x
     5. Grab project binary url, download it x
     6. Create folder named by the assignment ID, place binary inside it. x
-    7. Execute binary in working directory 
+    7. Execute binary in working directory
     8. Create result instance containing the stdout, stderr, exit code, and assignment id x
     9. Submit result to api, receive result id x
     10. Repeat from #3 x
@@ -136,7 +134,6 @@ async fn run_program(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     let args = Cli::parse();
 
     let mut api_key = args.apikey;
@@ -149,66 +146,66 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         clusterizer_client.set_api_key(api_key);
     } else {
         println!("No API key provided");
-
     }
     //Use data_dir...
     if !data_dir.is_empty() {
         println!("Using Data dir: {}", data_dir);
         fs::create_dir_all(format!("{}/slots", data_dir));
-    }else{
+    } else {
         println!("No data dir provided. Defaulting to ./");
         fs::create_dir_all("./data/slots")?;
     }
     let sleep_duration = time::Duration::from_millis(15000);
 
     while true {
-        let task = match clusterizer_client.fetch_tasks(
-        ).await {
+        let task = match clusterizer_client.fetch_tasks().await {
             Ok(a) => a,
             Err(e) => {
                 eprintln!("Failed to fetch assignments: {e}");
                 continue;
             }
         };
-        
-        if task.len() == 0{
+
+        if task.len() == 0 {
             println!("No assignments available... Sleeping and trying again.");
             thread::sleep(sleep_duration);
             continue;
         }
-        
-        let proj = match clusterizer_client.get_project(
-            task[0].project_id.clone()
-        ).await {
+
+        let proj = match clusterizer_client
+            .get_project(task[0].project_id.clone())
+            .await
+        {
             Ok(p) => p,
             Err(e) => {
                 eprintln!("Failed to get project: {e}");
                 continue;
             }
         };
-    
-        let proj_ver = match clusterizer_client.get_project_version(
-            task[0].project_id.clone(),
-        ).await {
+
+        let proj_ver = match clusterizer_client
+            .get_project_version(task[0].project_id.clone())
+            .await
+        {
             Ok(pv) => pv,
             Err(e) => {
                 eprintln!("Failed to get project version: {e}");
                 continue;
             }
         };
-    
+
         println!("Task id: {}\t Task stdin: {}", task[0].id, task[0].stdin);
         println!("Projectid: {}\t Project name: {}", proj.id, proj.name);
-    
+
         let slot_str = format!("{}/slots/{}", data_dir, task[0].id);
-    
+
         if let Err(e) = fs::create_dir_all(&slot_str) {
             eprintln!("Failed to create slot directory: {e}");
             continue;
         }
-    
+
         let slot_path = Path::new(&slot_str);
-    
+
         let binary_name = match proj_ver.archive_url.split('/').last() {
             Some(name) => name.to_string(),
             None => {
@@ -216,53 +213,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 continue;
             }
         };
-    
+
         let down_str = format!("{}/{}", slot_str, binary_name);
-    
+
         let down_path = Path::new(&down_str);
-    
-        let binary_path = match get_program(
-            down_path,
-            slot_path.clone(),
-            proj_ver.archive_url.clone(),
-        ).await {
-            Ok(bp) => bp,
-            Err(e) => {
-                eprintln!("Failed to get program: {e}");
-                continue;
-            }
-        };
-    
-    
+
+        let binary_path =
+            match get_program(down_path, slot_path.clone(), proj_ver.archive_url.clone()).await {
+                Ok(bp) => bp,
+                Err(e) => {
+                    eprintln!("Failed to get program: {e}");
+                    continue;
+                }
+            };
+
         let prog_argc = Vec::<String>::new();
-    
+
         let result_data = match run_program(
             task[0].id,
             slot_path.clone(),
             &prog_argc,
             binary_path.as_os_str(),
-        ).await {
+        )
+        .await
+        {
             Ok(rd) => rd,
             Err(e) => {
                 eprintln!("Failed to run program: {e}");
                 continue;
             }
         };
-    
+
         let final_result = match api::requests::submit_result(
             task.id,
             String::from("https://clusterizer.mcathome.dev"),
             api_key.clone(),
             result_data,
-        ).await {
+        )
+        .await
+        {
             Ok(fr) => fr,
             Err(e) => {
                 eprintln!("Failed to submit result: {e}");
                 continue;
             }
         };
-    
     }
     Ok(())
-
 }
