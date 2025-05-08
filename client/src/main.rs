@@ -1,27 +1,29 @@
-use std::ffi::OsStr;
-use std::fmt;
-use std::fs;
-use std::fs::File;
-use std::io;
-use std::io::Cursor;
-use std::path::Path;
-use std::{thread, time};
+use std::{
+    ffi::OsStr,
+    fmt,
+    fs::{self, File},
+    io::{self, Cursor},
+    path::{Path, PathBuf},
+    thread, time,
+};
 
 use clap::Parser;
 use clusterizer_api::Client as ClusterizerClient;
 use tokio::process::Command;
+
+use url::Url;
 use zip::ZipArchive;
 
 #[derive(Parser)]
 #[command(name = "Clusterizer RS")]
-#[command(version = "0.0.1")]
+#[command(version)]
 #[command(about = "Crunching tasks since 2k20", long_about = None)]
 struct Cli {
-    #[arg(long, short,default_value_t = String::from("."))]
+    #[arg(long, short, default_value_t = String::from("."))]
     datadir: String,
     #[arg(long, short)]
     apikey: String,
-    #[arg(long, short,default_value_t = String::from("https://clusterizer.mcathome.dev"))]
+    #[arg(long, short, default_value_t = String::from("https://clusterizer.mcathome.dev"))]
     serverurl: String,
 }
 
@@ -77,25 +79,50 @@ async fn zip_extract(archive_file: &Path, target_dir: &Path) -> Result<(), MyErr
 async fn get_program(
     download_path: &Path,
     slot_path: &Path,
-    archive_url: String,
-) -> Result<(), MyError> {
+    archive_url: &str,
+) -> Result<PathBuf, MyError> {
     let resp = reqwest::get(archive_url).await?;
     let body = resp.bytes().await?;
     let mut out = File::create(download_path)?;
     let mut reader = Cursor::new(body);
+    let mut bin_name = PathBuf::new();
     io::copy(&mut reader, &mut out)?;
     zip_extract(download_path, slot_path).await?;
-    Ok(())
+    match fs::read_dir(slot_path) {
+        Ok(entries) => {
+            for entry in entries {
+                match entry {
+                    Ok(entry) => {
+                        if entry
+                            .path()
+                            .to_str()
+                            .expect("Failed to convert to string")
+                            .ends_with(".bin")
+                        {
+                            bin_name = PathBuf::from(
+                                entry.path().to_str().expect("Failed to convert to string"),
+                            )
+                            .to_path_buf();
+                        }
+                    }
+                    Err(e) => eprintln!("Error: {e}"),
+                }
+            }
+        }
+        Err(e) => eprintln!("Error: {e}"),
+    }
+
+    Ok(bin_name)
 }
 
 async fn run_program(
     slot_path: &Path,
     prog_argc: &Vec<String>,
-    prog_name: &OsStr,
+    prog_name: &Path,
 ) -> Result<clusterizer_common::messages::SubmitRequest, MyError> {
     println!("{}", prog_name.to_str().unwrap());
 
-    let abs_path = fs::canonicalize(Path::new(&format!("{}/test-task.bin", slot_path.display())))?;
+    let abs_path = fs::canonicalize(prog_name)?;
     let output = Command::new(abs_path)
         .args(prog_argc)
         .current_dir(slot_path)
@@ -196,20 +223,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let slot_path = Path::new(&slot_str);
-
-        let binary_name = match proj_ver.archive_url.split('/').next_back() {
-            Some(name) => name.to_string(),
-            None => {
-                eprintln!("Failed to extract binary name from archive_url");
-                continue;
-            }
+        let archive_url: Url = Url::parse(&proj_ver.archive_url)?;
+        let archive_name: &str = match archive_url
+            .path_segments()
+            .ok_or(|| "cannot be base")?
+            .last()
+        {
+            Some(url) => url,
+            None => "error",
         };
+        if archive_name == "error" {
+            println!("Error: Could not retrieve archive name from url. {archive_url}");
+        }
+        let download_path = &slot_path.join(archive_name);
 
-        let down_str = format!("{}/{}", slot_str, binary_name);
-
-        let down_path = Path::new(&down_str);
-
-        match get_program(down_path, slot_path, proj_ver.archive_url.clone()).await {
+        let binary_name = match get_program(download_path, slot_path, &proj_ver.archive_url).await {
             Ok(bp) => bp,
             Err(e) => {
                 eprintln!("Failed to get program: {e}");
@@ -217,9 +245,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
 
-        let prog_argc = Vec::<String>::new();
+        let prog_argc: Vec<String> = Vec::new();
 
-        let result_data = match run_program(slot_path, &prog_argc, down_path.as_os_str()).await {
+        let result_data = match run_program(slot_path, &prog_argc, &binary_name).await {
             Ok(rd) => rd,
             Err(e) => {
                 eprintln!("Failed to run program: {e}");

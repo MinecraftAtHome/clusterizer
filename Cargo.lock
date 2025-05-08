@@ -377,25 +377,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
-name = "client"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "clusterizer-api",
- "clusterizer-common",
- "reqwest",
- "tokio",
- "zip",
-]
-
-[[package]]
 name = "clusterizer-api"
 version = "0.1.0"
 dependencies = [
  "clusterizer-common",
  "reqwest",
  "serde",
+]
+
+[[package]]
+name = "clusterizer-client"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "clusterizer-api",
+ "clusterizer-common",
+ "reqwest",
+ "tokio",
+ "url",
+ "zip",
 ]
 
 [[package]]
