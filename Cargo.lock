@@ -393,6 +393,7 @@ dependencies = [
  "clusterizer-api",
  "clusterizer-common",
  "reqwest",
+ "thiserror",
  "tokio",
  "url",
  "zip",
