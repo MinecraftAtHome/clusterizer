@@ -1,0 +1,13 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.41"
+clap = { version = "4.5.37", features = ["derive"] }
+clusterizer-api = { version = "0.1.0", path = "../api" }
+clusterizer-common = { version = "0.1.0", path = "../common" }
+reqwest = { version = "0.12.15", features = ["json"] }
+tokio = { version = "1.45.0", features = ["full"] }
+zip = "2.6.1"
