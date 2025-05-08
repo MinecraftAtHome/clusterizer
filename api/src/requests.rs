@@ -1,73 +1,163 @@
-use clusterizer_common::messages::{SubmitRequest, SubmitResponse};
-use clusterizer_common::types::{Assignment, Project, ProjectVersion, Task};
-use reqwest::Error;
+use clusterizer_common::messages::{RegisterRequest, RegisterResponse, SubmitRequest};
+use clusterizer_common::types::{Assignment, Platform, Project, ProjectVersion, Task, User};
+use reqwest::{Error, Method, RequestBuilder};
+use serde::Serialize;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 
-struct Client {
+pub struct Client {
     client: reqwest::Client,
     url: String,
     api_key: Option<String>,
 }
 
 impl Client {
-    pub async fn get<T: DeserializeOwned>(&self, uri: &str) -> Result<T, Error> {
-        let full = format!("{}{}", self.url, uri);
-        let client = reqwest::Client::new();
-        let mut req = client.get(full);
-        if let Some(ref x) = self.api_key {
-            req = req.header("Authorization", format!("Bearer {}", x));
+    pub fn new(url: String, api_key: Option<String>) -> Client {
+        Client {
+            client: reqwest::Client::new(),
+            url,
+            api_key,
         }
-        let res = req.send().await?.json::<T>().await?;
-        Ok(res)
+    }
+    pub fn set_api_key(&mut self, api_key: String) {
+        self.api_key = Some(api_key)
+    }
+    fn request(&self, method: Method, uri: &str) -> RequestBuilder {
+        let mut request = self.client.request(method, format!("{}/{}", self.url, uri));
+        if let Some(ref api_key) = self.api_key {
+            request = request.header("Authorization", format!("Bearer {}", api_key));
+        }
+        request
     }
 
-    pub async fn post<T: Serialize, R: DeserializeOwned>(
+    async fn get<T: DeserializeOwned>(&self, uri: &str) -> Result<T, Error> {
+        self.request(Method::GET, uri)
+            .send()
+            .await?
+            .json::<T>()
+            .await
+    }
+
+    async fn post<R: DeserializeOwned>(&self, uri: &str) -> Result<R, Error> {
+        self.request(Method::POST, uri)
+            .send()
+            .await?
+            .json::<R>()
+            .await
+    }
+    async fn post_data<T: Serialize, R: DeserializeOwned>(
         &self,
         uri: &str,
         data: &T,
     ) -> Result<R, Error> {
-        let full = format!("{}{}", self.url, uri);
-        let client = reqwest::Client::new();
-        let mut req = client
-            .post(full)
+        self.request(Method::POST, uri)
+            .header("Content-Type", "application/json")
             .json(data)
-            .header("Content-Type", "application/json");
-        if let Some(ref x) = self.api_key {
-            req = req.header("Authorization", format!("Bearer {}", x));
-        }
-        let res = req.send().await?.json::<R>().await?;
-        Ok(res)
+            .send()
+            .await?
+            .json::<R>()
+            .await
     }
 
     //GET requests
-    pub async fn get_task(&self, task_id: i64) -> Result<Task, Error> {
-        let uri = format!("/tasks/{}", task_id);
-        Ok(self.get(&uri).await?)
+    pub async fn get_users(&self) -> Result<Vec<User>, Error> {
+        let uri = "/users";
+        self.get(uri).await
+    }
+    pub async fn get_user(&self, user_id: i64) -> Result<User, Error> {
+        let uri = format!("/users/{user_id}");
+        self.get(&uri).await
     }
 
+    pub async fn get_profile(&self) -> Result<User, Error> {
+        let uri = "/users/profile".to_string();
+        self.get(&uri).await
+    }
+    pub async fn get_projects(&self) -> Result<Vec<Project>, Error> {
+        let uri = "/projects".to_string();
+        self.get(&uri).await
+    }
     pub async fn get_project(&self, project_id: i64) -> Result<Project, Error> {
-        let uri = format!("/projects/{}", project_id);
-        Ok(self.get(&uri).await?)
+        let uri = format!("/projects/{project_id}");
+        self.get(&uri).await
     }
 
-    pub async fn get_project_version(&self, project_id: i64) -> Result<Vec<ProjectVersion>, Error> {
-        let uri = format!("/projects/{}/project_versions", project_id);
-        Ok(self.get(&uri).await?)
+    pub async fn get_project_results(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<clusterizer_common::types::Result>, Error> {
+        let uri = format!("/projects/{project_id}/results");
+        self.get(&uri).await
+    }
+    pub async fn get_project_project_versions(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<ProjectVersion>, Error> {
+        let uri = format!("/projects/{project_id}/project_versions");
+        self.get(&uri).await
+    }
+    pub async fn get_platforms(&self) -> Result<Vec<Platform>, Error> {
+        let uri = "/platforms".to_string();
+        self.get(&uri).await
+    }
+    pub async fn get_platform(&self, platform_id: i64) -> Result<Platform, Error> {
+        let uri = format!("/platforms/{platform_id}");
+        self.get(&uri).await
+    }
+    pub async fn get_project_versions(&self) -> Result<Vec<ProjectVersion>, Error> {
+        let uri = "/project_versions".to_string();
+        self.get(&uri).await
+    }
+    pub async fn get_project_version(
+        &self,
+        project_version_id: i64,
+    ) -> Result<ProjectVersion, Error> {
+        let uri = format!("/project_versions/{project_version_id}");
+        self.get(&uri).await
     }
 
-    pub async fn fetch_assignments(&self) -> Result<Vec<Assignment>, Error> {
-        let uri = "/assignments/fetch";
-        Ok(self.get(&uri).await?)
+    pub async fn get_tasks(&self) -> Result<Vec<Task>, Error> {
+        let uri = "/tasks".to_string();
+        self.get(&uri).await
+    }
+    pub async fn get_task(&self, task_id: i64) -> Result<Task, Error> {
+        let uri = format!("/tasks/{task_id}");
+        self.get(&uri).await
+    }
+    pub async fn get_assignments(&self) -> Result<Vec<Assignment>, Error> {
+        let uri = "/assignments";
+        self.get(uri).await
+    }
+    pub async fn get_assignment(&self, assignment_id: i64) -> Result<Assignment, Error> {
+        let uri = format!("/assignments/{assignment_id}");
+        self.get(&uri).await
+    }
+    pub async fn get_results(&self) -> Result<Vec<clusterizer_common::types::Result>, Error> {
+        let uri = "/results".to_string();
+        self.get(&uri).await
+    }
+    pub async fn get_result(
+        &self,
+        result_id: i64,
+    ) -> Result<clusterizer_common::types::Result, Error> {
+        let uri = format!("/results/{result_id}");
+        self.get(&uri).await
     }
 
     //POST requests
-    pub async fn submit_result(
+    pub async fn submit_task(&self, task_id: i64, submit_req: &SubmitRequest) -> Result<(), Error> {
+        let uri = format!("/tasks/{task_id}/submit");
+        self.post_data(&uri, submit_req).await
+    }
+    pub async fn fetch_tasks(&self) -> Result<Vec<Task>, Error> {
+        let uri = "/tasks/fetch";
+        self.post(uri).await
+    }
+
+    pub async fn register_user(
         &self,
-        task_id: i64,
-        result_data: &SubmitRequest,
-    ) -> Result<SubmitResponse, Error> {
-        let uri = "/results/submit";
-        Ok(self.post(&uri, result_data).await?)
+        register_req: &RegisterRequest,
+    ) -> Result<RegisterResponse, Error> {
+        let uri = "/users/register/";
+        self.post_data(uri, register_req).await
     }
 }
