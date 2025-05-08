@@ -41,6 +41,7 @@ async fn main_loop(client: &ClusterizerClient) -> Result<(), ClientError> {
     if task.is_empty() {
         eprintln!("No tasks found. Sleeping before attempting again.");
         thread::sleep(time::Duration::from_millis(15000));
+        return Ok(());
     }
     let proj = client.get_project(task[0].project_id).await?;
     let proj_ver = client.get_project_project_version(proj.id).await?;
