@@ -38,13 +38,13 @@ impl Client {
     }
 
     pub async fn get_profile(&self) -> Result<User, Error> {
-        let uri = "/users/profile".to_string();
-        self.get(&uri).await
+        let uri = "/users/profile";
+        self.get(uri).await
     }
 
     pub async fn get_projects(&self) -> Result<Vec<Project>, Error> {
-        let uri = "/projects".to_string();
-        self.get(&uri).await
+        let uri = "/projects";
+        self.get(uri).await
     }
 
     pub async fn get_project(&self, project_id: i64) -> Result<Project, Error> {
@@ -69,8 +69,8 @@ impl Client {
     }
 
     pub async fn get_platforms(&self) -> Result<Vec<Platform>, Error> {
-        let uri = "/platforms".to_string();
-        self.get(&uri).await
+        let uri = "/platforms";
+        self.get(uri).await
     }
 
     pub async fn get_platform(&self, platform_id: i64) -> Result<Platform, Error> {
@@ -79,8 +79,8 @@ impl Client {
     }
 
     pub async fn get_project_versions(&self) -> Result<Vec<ProjectVersion>, Error> {
-        let uri = "/project_versions".to_string();
-        self.get(&uri).await
+        let uri = "/project_versions";
+        self.get(uri).await
     }
 
     pub async fn get_project_version(
@@ -92,8 +92,8 @@ impl Client {
     }
 
     pub async fn get_tasks(&self) -> Result<Vec<Task>, Error> {
-        let uri = "/tasks".to_string();
-        self.get(&uri).await
+        let uri = "/tasks";
+        self.get(uri).await
     }
 
     pub async fn get_task(&self, task_id: i64) -> Result<Task, Error> {
@@ -112,8 +112,8 @@ impl Client {
     }
 
     pub async fn get_results(&self) -> Result<Vec<ClusterizerResult>, Error> {
-        let uri = "/results".to_string();
-        self.get(&uri).await
+        let uri = "/results";
+        self.get(uri).await
     }
 
     pub async fn get_result(&self, result_id: i64) -> Result<ClusterizerResult, Error> {
