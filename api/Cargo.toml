@@ -1,0 +1,9 @@
+[package]
+name = "clusterizer-api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clusterizer-common = { version = "0.1.0", path = "../common" }
+reqwest = { version = "0.12.15", features = ["json"] }
+serde = "1.0.219"
