@@ -8,5 +8,5 @@ pub struct Result {
     pub assignment_id: i64,
     pub stdout: String,
     pub stderr: String,
-    pub exit_code: i32,
+    pub exit_code: Option<i32>,
 }

@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct SubmitRequest {
     pub stdout: String,
     pub stderr: String,
-    pub exit_code: i32,
+    pub exit_code: Option<i32>,
 }
