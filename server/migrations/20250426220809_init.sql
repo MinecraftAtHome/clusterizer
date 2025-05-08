@@ -45,7 +45,7 @@ CREATE TABLE assignments (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     task_id INT8 NOT NULL,
     user_id INT8 NOT NULL,
-    canceled BOOL NOT NULL DEFAULT FALSE,
+    canceled_at TIMESTAMPTZ,
 
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT
@@ -53,7 +53,7 @@ CREATE TABLE assignments (
 
 CREATE UNIQUE INDEX assignments_task_id_user_id_key
     ON assignments (task_id, user_id)
-    WHERE NOT canceled;
+    WHERE canceled_at IS NULL;
 
 CREATE TABLE results (
     id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,

@@ -37,7 +37,7 @@ pub async fn fetch(State(state): State<AppState>, Auth(user_id): Auth) -> ApiRes
                 AND p.active
             LEFT JOIN assignments a
                 ON a.task_id = t.id
-                AND NOT a.canceled
+                AND a.canceled_at IS NULL
         WHERE
             a.id IS NULL
         "
@@ -83,7 +83,7 @@ pub async fn submit(
         WHERE
             task_id = $1 AND
             user_id = $2 AND
-            NOT canceled
+            canceled_at IS NULL
         ",
         task_id,
         user_id
