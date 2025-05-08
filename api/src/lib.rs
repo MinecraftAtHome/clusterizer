@@ -145,7 +145,7 @@ impl Client {
     }
 
     fn request(&self, method: Method, uri: &str) -> RequestBuilder {
-        let mut request = self.client.request(method, format!("{}/{}", self.url, uri));
+        let mut request = self.client.request(method, format!("{}{}", self.url, uri));
 
         if let Some(ref api_key) = self.api_key {
             request = request.bearer_auth(api_key);
