@@ -43,7 +43,7 @@ async fn main_loop(client: &ClusterizerClient) -> Result<(), ClientError> {
         thread::sleep(time::Duration::from_millis(15000));
     }
     let proj = client.get_project(task[0].project_id).await?;
-    let proj_ver = client.get_project_version(task[0].project_id).await?;
+    let proj_ver = client.get_project_project_version(proj.id).await?;
 
     println!("Task id: {}\t Task stdin: {}", task[0].id, task[0].stdin);
     println!("Projectid: {}\t Project name: {}", proj.id, proj.name);
@@ -55,7 +55,7 @@ async fn main_loop(client: &ClusterizerClient) -> Result<(), ClientError> {
 
     let _ = fs::create_dir_all(slot_path);
 
-    let archive_url: Url = Url::parse(&proj_ver.archive_url)?;
+    let archive_url: Url = Url::parse(&proj_ver[0].archive_url)?;
     let archive_name: &str = match archive_url.path_segments().and_then(Iterator::last) {
         Some(url) => url,
         None => "error",
@@ -66,7 +66,7 @@ async fn main_loop(client: &ClusterizerClient) -> Result<(), ClientError> {
     let download_path = &slot_path.join(archive_name);
 
     let binary_name = client
-        .get_program(download_path, slot_path, &proj_ver.archive_url)
+        .get_program(download_path, slot_path, &proj_ver[0].archive_url)
         .await?;
 
     let prog_argc: Vec<&OsStr> = Vec::new();

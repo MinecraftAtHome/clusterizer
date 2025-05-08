@@ -109,16 +109,15 @@ impl ClusterizerClient {
         Ok(self.api_client.get_project(project_id).await?)
     }
 
-    pub async fn get_project_version(
+    pub async fn get_project_project_version(
         &self,
-        project_version_id: i64,
-    ) -> Result<ProjectVersion, ClientError> {
+        project_id: i64,
+    ) -> Result<Vec<ProjectVersion>, ClientError> {
         Ok(self
             .api_client
-            .get_project_version(project_version_id)
+            .get_project_project_versions(project_id)
             .await?)
     }
-
     fn zip_extract(archive_file: &Path, target_dir: &Path) -> Result<(), ClientError> {
         let file = File::open(archive_file)?;
         let mut archive = ZipArchive::new(file)?;
