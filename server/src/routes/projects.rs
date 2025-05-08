@@ -29,39 +29,51 @@ pub async fn get_results(
     State(state): State<AppState>,
     Path(project_id): Path<i64>,
 ) -> ApiResult<Vec<Result>> {
-    Ok(Json(
-        sqlx::query_as!(
-            Result,
-            "
-            SELECT
-                r.*
-            FROM
-                tasks t
-                JOIN assignments a
-                    ON a.task_id = t.id
-                JOIN results r
-                    ON r.assignment_id = a.id
-            WHERE
-                t.project_id = $1
-            ",
-            project_id
-        )
-        .fetch_all(&state.pool)
-        .await?,
-    ))
+    let results = sqlx::query_as!(
+        Result,
+        "
+        SELECT
+            r.*
+        FROM
+            tasks t
+            JOIN assignments a
+                ON a.task_id = t.id
+            JOIN results r
+                ON r.assignment_id = a.id
+        WHERE
+            t.project_id = $1
+        ",
+        project_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if results.is_empty() {
+        sqlx::query_scalar!("SELECT 1 FROM projects WHERE id = $1", project_id)
+            .fetch_one(&state.pool)
+            .await?;
+    }
+
+    Ok(Json(results))
 }
 
 pub async fn get_project_versions(
     State(state): State<AppState>,
     Path(project_id): Path<i64>,
 ) -> ApiResult<Vec<ProjectVersion>> {
-    Ok(Json(
-        sqlx::query_as!(
-            ProjectVersion,
-            "SELECT * FROM project_versions WHERE project_id = $1",
-            project_id
-        )
-        .fetch_all(&state.pool)
-        .await?,
-    ))
+    let project_versions = sqlx::query_as!(
+        ProjectVersion,
+        "SELECT * FROM project_versions WHERE project_id = $1",
+        project_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if project_versions.is_empty() {
+        sqlx::query_scalar!("SELECT 1 FROM projects WHERE id = $1", project_id)
+            .fetch_one(&state.pool)
+            .await?;
+    }
+
+    Ok(Json(project_versions))
 }

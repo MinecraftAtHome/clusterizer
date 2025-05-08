@@ -155,11 +155,21 @@ impl Client {
     }
 
     async fn get<Response: DeserializeOwned>(&self, uri: &str) -> Result<Response, Error> {
-        self.request(Method::GET, uri).send().await?.json().await
+        self.request(Method::GET, uri)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await
     }
 
     async fn post<Response: DeserializeOwned>(&self, uri: &str) -> Result<Response, Error> {
-        self.request(Method::POST, uri).send().await?.json().await
+        self.request(Method::POST, uri)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await
     }
 
     async fn post_data<Request: Serialize + ?Sized, Response: DeserializeOwned>(
@@ -172,6 +182,7 @@ impl Client {
             .json(data)
             .send()
             .await?
+            .error_for_status()?
             .json()
             .await
     }
