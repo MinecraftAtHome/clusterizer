@@ -25,7 +25,7 @@ pub async fn get_one(
     ))
 }
 
-pub async fn results(
+pub async fn get_results(
     State(state): State<AppState>,
     Path(project_id): Path<i64>,
 ) -> ApiResult<Vec<Result>> {
@@ -51,7 +51,7 @@ pub async fn results(
     ))
 }
 
-pub async fn versions(
+pub async fn get_project_versions(
     State(state): State<AppState>,
     Path(project_id): Path<i64>,
 ) -> ApiResult<Vec<ProjectVersion>> {

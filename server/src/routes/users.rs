@@ -30,7 +30,7 @@ pub async fn get_one(State(state): State<AppState>, Path(user_id): Path<i64>) ->
     ))
 }
 
-pub async fn profile(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<User> {
+pub async fn get_profile(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<User> {
     Ok(Json(
         sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
             .fetch_one(&state.pool)

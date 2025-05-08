@@ -31,12 +31,15 @@ async fn main() {
     let app = Router::new()
         .route("/users", get(users::get_all))
         .route("/users/{id}", get(users::get_one))
-        .route("/users/profile", get(users::profile))
+        .route("/users/profile", get(users::get_profile))
         .route("/users/register", post(users::register))
         .route("/projects", get(projects::get_all))
         .route("/projects/{id}", get(projects::get_one))
-        .route("/projects/{id}/results", get(projects::results))
-        .route("/projects/{id}/project_versions", get(projects::versions))
+        .route("/projects/{id}/results", get(projects::get_results))
+        .route(
+            "/projects/{id}/project_versions",
+            get(projects::get_project_versions),
+        )
         .route("/platforms", get(platforms::get_all))
         .route("/platforms/{id}", get(platforms::get_one))
         .route("/project_versions", get(project_versions::get_all))

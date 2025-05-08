@@ -4,7 +4,7 @@ use clusterizer_common::{
         Assignment, Platform, Project, ProjectVersion, Result as ClusterizerResult, Task, User,
     },
 };
-use reqwest::{Error, Method, RequestBuilder};
+use reqwest::{Error, Method, RequestBuilder, header};
 use serde::{Serialize, de::DeserializeOwned};
 
 pub struct Client {
@@ -37,7 +37,7 @@ impl Client {
         self.get(&uri).await
     }
 
-    pub async fn get_profile(&self) -> Result<User, Error> {
+    pub async fn get_user_profile(&self) -> Result<User, Error> {
         let uri = "/users/profile";
         self.get(uri).await
     }
@@ -122,9 +122,13 @@ impl Client {
     }
 
     // POST requests
-    pub async fn submit_task(&self, task_id: i64, submit_req: &SubmitRequest) -> Result<(), Error> {
+    pub async fn submit_task(
+        &self,
+        task_id: i64,
+        submit_request: &SubmitRequest,
+    ) -> Result<(), Error> {
         let uri = format!("/tasks/{task_id}/submit");
-        self.post_data(&uri, submit_req).await
+        self.post_data(&uri, submit_request).await
     }
 
     pub async fn fetch_tasks(&self) -> Result<Vec<Task>, Error> {
@@ -134,17 +138,19 @@ impl Client {
 
     pub async fn register_user(
         &self,
-        register_req: &RegisterRequest,
+        register_request: &RegisterRequest,
     ) -> Result<RegisterResponse, Error> {
-        let uri = "/users/register/";
-        self.post_data(uri, register_req).await
+        let uri = "/users/register";
+        self.post_data(uri, register_request).await
     }
 
     fn request(&self, method: Method, uri: &str) -> RequestBuilder {
         let mut request = self.client.request(method, format!("{}/{}", self.url, uri));
+
         if let Some(ref api_key) = self.api_key {
-            request = request.header("Authorization", format!("Bearer {}", api_key));
+            request = request.bearer_auth(api_key);
         }
+
         request
     }
 
@@ -156,13 +162,13 @@ impl Client {
         self.request(Method::POST, uri).send().await?.json().await
     }
 
-    async fn post_data<Request: Serialize, Response: DeserializeOwned>(
+    async fn post_data<Request: Serialize + ?Sized, Response: DeserializeOwned>(
         &self,
         uri: &str,
         data: &Request,
     ) -> Result<Response, Error> {
         self.request(Method::POST, uri)
-            .header("Content-Type", "application/json")
+            .header(header::CONTENT_TYPE, "application/json")
             .json(data)
             .send()
             .await?
