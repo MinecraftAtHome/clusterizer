@@ -9,11 +9,12 @@ use std::{
     time::Duration,
 };
 
-use clusterizer_common::{messages::SubmitRequest, types::Task};
+
+use clusterizer_common::{messages::{RegisterRequest, RegisterResponse, SubmitRequest}, types::Task};
 use tokio::process::Command;
 use zip::ZipArchive;
 
-use crate::{args::Args, result::ClientResult};
+use crate::{args::RunArgs, result::ClientResult};
 
 pub struct ClusterizerClient {
     api_client: clusterizer_api::Client,
@@ -21,17 +22,19 @@ pub struct ClusterizerClient {
     platform_id: i64,
 }
 
-impl From<Args> for ClusterizerClient {
-    fn from(args: Args) -> Self {
+impl ClusterizerClient {
+    pub async fn new(args: RunArgs, server_url: String) -> ClusterizerClient {
         ClusterizerClient {
-            api_client: clusterizer_api::Client::new(args.server_url, args.api_key),
+            api_client: clusterizer_api::Client::new(server_url, args.api_key),
             data_path: args.data_path,
             platform_id: args.platform_id,
         }
     }
-}
-
-impl ClusterizerClient {
+    pub async fn register(server_url: String, user_name: String) -> ClientResult<RegisterResponse> {
+        Ok(clusterizer_api::Client::new(server_url, None)
+            .register_user(&RegisterRequest { name: user_name })
+            .await?)
+    }
     pub async fn run(&self) -> ClientResult<()> {
         loop {
             let tasks = self.api_client.fetch_tasks(self.platform_id).await?;
