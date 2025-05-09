@@ -42,11 +42,10 @@ pub async fn fetch(
             JOIN project_versions pv
                 ON pv.project_id = p.id
                 AND pv.platform_id = $1
-            LEFT JOIN assignments a
-                ON a.task_id = t.id
-                AND a.canceled_at IS NULL
         WHERE
-            a.id IS NULL
+            t.tasks_to_assign > 0
+        AND
+            pv.platform_id = $1
         ",
         platform_id
     )
@@ -69,7 +68,17 @@ pub async fn fetch(
         )
         .execute(&state.pool)
         .await?;
-
+        sqlx::query!(
+            "
+            UPDATE tasks
+            SET tasks_to_assign = tasks_to_assign - 1
+            WHERE
+            id = $1;
+            ",
+            task.id,
+        )
+        .execute(&state.pool)
+        .await?;
         Ok(Json(vec![task]))
     } else {
         sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id)
