@@ -57,11 +57,12 @@ impl Client {
         self.get(&uri).await
     }
 
-    pub async fn get_project_project_versions(
+    pub async fn get_project_project_version(
         &self,
         project_id: i64,
-    ) -> Result<Vec<ProjectVersion>> {
-        let uri = format!("/projects/{project_id}/project_versions");
+        platform_id: i64,
+    ) -> Result<ProjectVersion> {
+        let uri = format!("/projects/{project_id}/project_version/{platform_id}");
         self.get(&uri).await
     }
 
@@ -121,9 +122,9 @@ impl Client {
         self.post_data(&uri, submit_request).await
     }
 
-    pub async fn fetch_tasks(&self) -> Result<Vec<Task>> {
-        let uri = "/tasks/fetch";
-        self.post(uri).await
+    pub async fn fetch_tasks(&self, platform_id: i64) -> Result<Vec<Task>> {
+        let uri = format!("/tasks/fetch/{platform_id}");
+        self.post(&uri).await
     }
 
     pub async fn register_user(

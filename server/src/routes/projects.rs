@@ -57,23 +57,18 @@ pub async fn get_results(
     Ok(Json(results))
 }
 
-pub async fn get_project_versions(
+pub async fn get_project_version(
     State(state): State<AppState>,
-    Path(project_id): Path<i64>,
-) -> ApiResult<Vec<ProjectVersion>> {
-    let project_versions = sqlx::query_as!(
-        ProjectVersion,
-        "SELECT * FROM project_versions WHERE project_id = $1",
-        project_id
-    )
-    .fetch_all(&state.pool)
-    .await?;
-
-    if project_versions.is_empty() {
-        sqlx::query_scalar!("SELECT 1 FROM projects WHERE id = $1", project_id)
-            .fetch_one(&state.pool)
-            .await?;
-    }
-
-    Ok(Json(project_versions))
+    Path((project_id, platform_id)): Path<(i64, i64)>,
+) -> ApiResult<ProjectVersion> {
+    Ok(Json(
+        sqlx::query_as!(
+            ProjectVersion,
+            "SELECT * FROM project_versions WHERE project_id = $1 AND platform_id = $2",
+            project_id,
+            platform_id,
+        )
+        .fetch_one(&state.pool)
+        .await?,
+    ))
 }

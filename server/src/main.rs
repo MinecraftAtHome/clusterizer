@@ -30,28 +30,31 @@ async fn main() {
 
     let app = Router::new()
         .route("/users", get(users::get_all))
-        .route("/users/{id}", get(users::get_one))
+        .route("/users/{user_id}", get(users::get_one))
         .route("/users/profile", get(users::get_profile))
         .route("/users/register", post(users::register))
         .route("/projects", get(projects::get_all))
-        .route("/projects/{id}", get(projects::get_one))
-        .route("/projects/{id}/results", get(projects::get_results))
+        .route("/projects/{project_id}", get(projects::get_one))
+        .route("/projects/{project_id}/results", get(projects::get_results))
         .route(
-            "/projects/{id}/project_versions",
-            get(projects::get_project_versions),
+            "/projects/{project_id}/project_version/{platform_id}",
+            get(projects::get_project_version),
         )
         .route("/platforms", get(platforms::get_all))
-        .route("/platforms/{id}", get(platforms::get_one))
+        .route("/platforms/{platform_id}", get(platforms::get_one))
         .route("/project_versions", get(project_versions::get_all))
-        .route("/project_versions/{id}", get(project_versions::get_one))
+        .route(
+            "/project_versions/{project_version_id}",
+            get(project_versions::get_one),
+        )
         .route("/tasks", get(tasks::get_all))
-        .route("/tasks/{id}", get(tasks::get_one))
-        .route("/tasks/fetch", post(tasks::fetch))
-        .route("/tasks/{id}/submit", post(tasks::submit))
+        .route("/tasks/{task_id}", get(tasks::get_one))
+        .route("/tasks/fetch/{platform_id}", post(tasks::fetch))
+        .route("/tasks/{task_id}/submit", post(tasks::submit))
         .route("/assignments", get(assignments::get_all))
-        .route("/assignments/{id}", get(assignments::get_one))
+        .route("/assignments/{assignment_id}", get(assignments::get_one))
         .route("/results", get(results::get_all))
-        .route("/results/{id}", get(results::get_one))
+        .route("/results/{result_id}", get(results::get_one))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();

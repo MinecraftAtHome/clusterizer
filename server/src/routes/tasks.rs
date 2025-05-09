@@ -22,7 +22,11 @@ pub async fn get_one(State(state): State<AppState>, Path(task_id): Path<i64>) ->
     ))
 }
 
-pub async fn fetch(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<Vec<Task>> {
+pub async fn fetch(
+    State(state): State<AppState>,
+    Path(platform_id): Path<i64>,
+    Auth(user_id): Auth,
+) -> ApiResult<Vec<Task>> {
     let _guard = state.fetch_mutex.lock().await;
 
     let task = sqlx::query_as!(
@@ -35,12 +39,16 @@ pub async fn fetch(State(state): State<AppState>, Auth(user_id): Auth) -> ApiRes
             JOIN projects p
                 ON t.project_id = p.id
                 AND p.active
+            JOIN project_versions pv
+                ON pv.project_id = p.id
+                AND pv.platform_id = $1
             LEFT JOIN assignments a
                 ON a.task_id = t.id
                 AND a.canceled_at IS NULL
         WHERE
             a.id IS NULL
-        "
+        ",
+        platform_id
     )
     .fetch_optional(&state.pool)
     .await?;
@@ -64,6 +72,10 @@ pub async fn fetch(State(state): State<AppState>, Auth(user_id): Auth) -> ApiRes
 
         Ok(Json(vec![task]))
     } else {
+        sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id)
+            .fetch_one(&state.pool)
+            .await?;
+
         Ok(Json(vec![]))
     }
 }
