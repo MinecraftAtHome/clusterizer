@@ -1,12 +1,13 @@
 use args::Args;
 use clap::Parser;
-use client::{ClientError, ClusterizerClient};
+use client::ClusterizerClient;
+use result::ClientResult;
 
 mod args;
 mod client;
-mod util;
+mod result;
 
 #[tokio::main]
-async fn main() -> Result<(), ClientError> {
+async fn main() -> ClientResult<()> {
     ClusterizerClient::from(Args::parse()).run().await
 }
