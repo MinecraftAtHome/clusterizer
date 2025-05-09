@@ -7,5 +7,5 @@ pub struct Task {
     pub created_at: DateTime<Utc>,
     pub project_id: i64,
     pub stdin: String,
-    pub tasks_to_assign: i64
+    pub tasks_to_assign: i64,
 }

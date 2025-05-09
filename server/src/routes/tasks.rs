@@ -44,8 +44,6 @@ pub async fn fetch(
                 AND pv.platform_id = $1
         WHERE
             t.tasks_to_assign > 0
-        AND
-            pv.platform_id = $1
         ",
         platform_id
     )
