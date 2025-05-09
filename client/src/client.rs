@@ -1,10 +1,11 @@
 use std::{
+    env,
     ffi::{OsStr, OsString},
     fs::{self},
     io, iter,
     path::{Path, PathBuf},
     thread,
-    time::{Duration},
+    time::Duration,
 };
 
 use clusterizer_api::Client as ApiClient;
@@ -28,8 +29,9 @@ pub enum ClientError {
 }
 
 pub struct ClusterizerClient {
-    pub api_client: ApiClient,
-    pub data_dir: PathBuf,
+    api_client: ApiClient,
+    data_dir: PathBuf,
+    platform_id: i64,
 }
 
 impl From<Args> for ClusterizerClient {
@@ -37,9 +39,11 @@ impl From<Args> for ClusterizerClient {
         ClusterizerClient {
             api_client: ApiClient::new(args.server_url, args.api_key),
             data_dir: args.data_dir,
+            platform_id: args.platform_id,
         }
     }
 }
+
 impl ClusterizerClient {
     pub async fn run(&self) -> Result<(), ClientError> {
         loop {
@@ -77,12 +81,15 @@ impl ClusterizerClient {
             .ok_or(ClientError::BadArchiveUrl)?;
         let download_path = slot_path.join(archive_name);
 
-        self
-            .prepare_slot(&download_path, &slot_path, &project_versions[0].archive_url)
+        self.prepare_slot(&slot_path, &download_path, &project_versions[0].archive_url)
             .await?;
 
         let result_data = self
-            .run_program(&slot_path, iter::empty::<OsString>(), Path::new("main"))
+            .run_program(
+                &slot_path,
+                &slot_path.join(format!("main{}", env::consts::EXE_SUFFIX)),
+                iter::empty::<OsString>(),
+            )
             .await?;
 
         self.api_client.submit_task(task.id, &result_data).await?;
@@ -91,8 +98,8 @@ impl ClusterizerClient {
 
     pub async fn prepare_slot(
         &self,
-        download_path: &Path,
         slot_path: &Path,
+        download_path: &Path,
         archive_url: &str,
     ) -> Result<(), ClientError> {
         let response = reqwest::get(archive_url).await?.error_for_status()?;
@@ -104,24 +111,20 @@ impl ClusterizerClient {
 
     pub async fn run_program<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(
         &self,
-        slot_path: &Path,
-        prog_argc: I,
-        prog_name: &Path,
+        current_dir: &Path,
+        program: &Path,
+        args: I,
     ) -> Result<SubmitRequest, ClientError> {
-        let abs_path = fs::canonicalize(prog_name)?;
-        let output = Command::new(abs_path)
-            .args(prog_argc)
-            .current_dir(slot_path)
+        let output = Command::new(fs::canonicalize(program)?)
+            .args(args)
+            .current_dir(current_dir)
             .output()
             .await?;
 
-        let exit_code = output.status.code().unwrap_or(-100);
-
-        let result_data = SubmitRequest {
+        Ok(SubmitRequest {
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
             stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-            exit_code,
-        };
-        Ok(result_data)
+            exit_code: output.status.code(),
+        })
     }
 }

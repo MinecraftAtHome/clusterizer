@@ -13,4 +13,6 @@ pub struct Args {
     pub api_key: Option<String>,
     #[arg(long, short, default_value = "https://clusterizer.mcathome.dev")]
     pub server_url: String,
+    #[arg(long, short)]
+    pub platform_id: i64,
 }
