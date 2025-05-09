@@ -9,8 +9,10 @@ use std::{
     time::Duration,
 };
 
-
-use clusterizer_common::{messages::{RegisterRequest, RegisterResponse, SubmitRequest}, types::Task};
+use clusterizer_common::{
+    messages::{RegisterRequest, RegisterResponse, SubmitRequest},
+    types::Task,
+};
 use tokio::process::Command;
 use zip::ZipArchive;
 
