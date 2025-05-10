@@ -1,11 +1,15 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::id::Id;
+
+use super::Assignment;
+
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct Result {
-    pub id: i64,
+    pub id: Id<Result>,
     pub created_at: DateTime<Utc>,
-    pub assignment_id: i64,
+    pub assignment_id: Id<Assignment>,
     pub stdout: String,
     pub stderr: String,
     pub exit_code: Option<i32>,

@@ -1,4 +1,5 @@
 use clusterizer_common::{
+    id::Id,
     messages::{RegisterRequest, RegisterResponse, SubmitRequest},
     types::{
         Assignment, Platform, Project, ProjectVersion, Result as ClusterizerResult, Task, User,
@@ -32,7 +33,7 @@ impl Client {
         self.get(uri).await
     }
 
-    pub async fn get_user(&self, user_id: i64) -> Result<User> {
+    pub async fn get_user(&self, user_id: Id<User>) -> Result<User> {
         let uri = format!("/users/{user_id}");
         self.get(&uri).await
     }
@@ -47,20 +48,23 @@ impl Client {
         self.get(uri).await
     }
 
-    pub async fn get_project(&self, project_id: i64) -> Result<Project> {
+    pub async fn get_project(&self, project_id: Id<Project>) -> Result<Project> {
         let uri = format!("/projects/{project_id}");
         self.get(&uri).await
     }
 
-    pub async fn get_project_results(&self, project_id: i64) -> Result<Vec<ClusterizerResult>> {
+    pub async fn get_project_results(
+        &self,
+        project_id: Id<Project>,
+    ) -> Result<Vec<ClusterizerResult>> {
         let uri = format!("/projects/{project_id}/results");
         self.get(&uri).await
     }
 
     pub async fn get_project_project_version(
         &self,
-        project_id: i64,
-        platform_id: i64,
+        project_id: Id<Project>,
+        platform_id: Id<Platform>,
     ) -> Result<ProjectVersion> {
         let uri = format!("/projects/{project_id}/project_version/{platform_id}");
         self.get(&uri).await
@@ -71,7 +75,7 @@ impl Client {
         self.get(uri).await
     }
 
-    pub async fn get_platform(&self, platform_id: i64) -> Result<Platform> {
+    pub async fn get_platform(&self, platform_id: Id<Platform>) -> Result<Platform> {
         let uri = format!("/platforms/{platform_id}");
         self.get(&uri).await
     }
@@ -81,7 +85,10 @@ impl Client {
         self.get(uri).await
     }
 
-    pub async fn get_project_version(&self, project_version_id: i64) -> Result<ProjectVersion> {
+    pub async fn get_project_version(
+        &self,
+        project_version_id: Id<ProjectVersion>,
+    ) -> Result<ProjectVersion> {
         let uri = format!("/project_versions/{project_version_id}");
         self.get(&uri).await
     }
@@ -91,7 +98,7 @@ impl Client {
         self.get(uri).await
     }
 
-    pub async fn get_task(&self, task_id: i64) -> Result<Task> {
+    pub async fn get_task(&self, task_id: Id<Task>) -> Result<Task> {
         let uri = format!("/tasks/{task_id}");
         self.get(&uri).await
     }
@@ -101,7 +108,7 @@ impl Client {
         self.get(uri).await
     }
 
-    pub async fn get_assignment(&self, assignment_id: i64) -> Result<Assignment> {
+    pub async fn get_assignment(&self, assignment_id: Id<Assignment>) -> Result<Assignment> {
         let uri = format!("/assignments/{assignment_id}");
         self.get(&uri).await
     }
@@ -111,18 +118,22 @@ impl Client {
         self.get(uri).await
     }
 
-    pub async fn get_result(&self, result_id: i64) -> Result<ClusterizerResult> {
+    pub async fn get_result(&self, result_id: Id<ClusterizerResult>) -> Result<ClusterizerResult> {
         let uri = format!("/results/{result_id}");
         self.get(&uri).await
     }
 
     // POST requests
-    pub async fn submit_task(&self, task_id: i64, submit_request: &SubmitRequest) -> Result<()> {
+    pub async fn submit_task(
+        &self,
+        task_id: Id<Task>,
+        submit_request: &SubmitRequest,
+    ) -> Result<()> {
         let uri = format!("/tasks/{task_id}/submit");
         self.post_data(&uri, submit_request).await
     }
 
-    pub async fn fetch_tasks(&self, platform_id: i64) -> Result<Vec<Task>> {
+    pub async fn fetch_tasks(&self, platform_id: Id<Platform>) -> Result<Vec<Task>> {
         let uri = format!("/tasks/fetch/{platform_id}");
         self.post(&uri).await
     }

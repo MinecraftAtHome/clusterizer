@@ -9,7 +9,11 @@ use std::{
     time::Duration,
 };
 
-use clusterizer_common::{messages::SubmitRequest, types::Task};
+use clusterizer_common::{
+    id::Id,
+    messages::SubmitRequest,
+    types::{Platform, Task},
+};
 use tokio::process::Command;
 use zip::ZipArchive;
 
@@ -18,7 +22,7 @@ use crate::{args::RunArgs, result::ClientResult};
 pub struct ClusterizerClient {
     api_client: clusterizer_api::Client,
     data_path: PathBuf,
-    platform_id: i64,
+    platform_id: Id<Platform>,
 }
 
 impl ClusterizerClient {
@@ -26,7 +30,7 @@ impl ClusterizerClient {
         ClusterizerClient {
             api_client: clusterizer_api::Client::new(server_url, args.api_key),
             data_path: args.data_path,
-            platform_id: args.platform_id,
+            platform_id: args.platform_id.into(),
         }
     }
     pub async fn run(&self) -> ClientResult<()> {

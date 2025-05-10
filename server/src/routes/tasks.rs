@@ -2,7 +2,11 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use clusterizer_common::{messages::SubmitRequest, types::Task};
+use clusterizer_common::{
+    id::Id,
+    messages::SubmitRequest,
+    types::{Assignment, Platform, Task},
+};
 
 use crate::{auth::Auth, result::ApiResult, state::AppState};
 
@@ -14,9 +18,12 @@ pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<Task>> {
     ))
 }
 
-pub async fn get_one(State(state): State<AppState>, Path(task_id): Path<i64>) -> ApiResult<Task> {
+pub async fn get_one(
+    State(state): State<AppState>,
+    Path(task_id): Path<Id<Task>>,
+) -> ApiResult<Task> {
     Ok(Json(
-        sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = $1", task_id)
+        sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = $1", task_id.raw())
             .fetch_one(&state.pool)
             .await?,
     ))
@@ -24,7 +31,7 @@ pub async fn get_one(State(state): State<AppState>, Path(task_id): Path<i64>) ->
 
 pub async fn fetch(
     State(state): State<AppState>,
-    Path(platform_id): Path<i64>,
+    Path(platform_id): Path<Id<Platform>>,
     Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
     let _guard = state.fetch_mutex.lock().await;
@@ -48,7 +55,7 @@ pub async fn fetch(
         WHERE
             a.id IS NULL
         ",
-        platform_id
+        platform_id.raw()
     )
     .fetch_optional(&state.pool)
     .await?;
@@ -64,15 +71,15 @@ pub async fn fetch(
                 $2
             )
             ",
-            task.id,
-            user_id
+            task.id.raw(),
+            user_id.raw()
         )
         .execute(&state.pool)
         .await?;
 
         Ok(Json(vec![task]))
     } else {
-        sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id)
+        sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id.raw())
             .fetch_one(&state.pool)
             .await?;
 
@@ -82,11 +89,11 @@ pub async fn fetch(
 
 pub async fn submit(
     State(state): State<AppState>,
-    Path(task_id): Path<i64>,
+    Path(task_id): Path<Id<Task>>,
     Auth(user_id): Auth,
     Json(request): Json<SubmitRequest>,
 ) -> ApiResult<()> {
-    let assignment = sqlx::query!(
+    let assignment_id: Id<Assignment> = sqlx::query_scalar!(
         "
         SELECT
             id
@@ -97,11 +104,12 @@ pub async fn submit(
             user_id = $2 AND
             canceled_at IS NULL
         ",
-        task_id,
-        user_id
+        task_id.raw(),
+        user_id.raw()
     )
     .fetch_one(&state.pool)
-    .await?;
+    .await?
+    .into();
 
     sqlx::query!(
         "
@@ -117,7 +125,7 @@ pub async fn submit(
             $4
         )
         ",
-        assignment.id,
+        assignment_id.raw(),
         request.stdout,
         request.stderr,
         request.exit_code

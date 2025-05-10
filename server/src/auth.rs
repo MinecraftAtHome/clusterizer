@@ -8,12 +8,13 @@ use axum_extra::{
     headers::{Authorization, authorization::Bearer},
 };
 use base64::prelude::*;
+use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 use crate::{result::ApiError, state::AppState};
 
-pub struct Auth(pub i64);
+pub struct Auth(pub Id<User>);
 
 impl FromRequestParts<AppState> for Auth {
     type Rejection = ApiError;
@@ -38,12 +39,12 @@ impl FromRequestParts<AppState> for Auth {
             .verify_slice(&api_key_bytes[8..])
             .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-        Ok(Auth(i64::from_le_bytes(id_bytes)))
+        Ok(Auth(i64::from_le_bytes(id_bytes).into()))
     }
 }
 
-pub fn api_key(state: &AppState, id: i64) -> String {
-    let id_bytes = id.to_le_bytes();
+pub fn api_key(state: &AppState, user_id: Id<User>) -> String {
+    let id_bytes = user_id.raw().to_le_bytes();
     let mac_bytes = Hmac::<Sha256>::new_from_slice(&state.secret)
         .unwrap()
         .chain_update(id_bytes)
