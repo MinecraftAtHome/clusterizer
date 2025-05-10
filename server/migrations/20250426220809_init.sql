@@ -53,5 +53,7 @@ CREATE TABLE results (
     assignment_id INT8 NOT NULL UNIQUE REFERENCES assignments(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdout TEXT NOT NULL,
     stderr TEXT NOT NULL,
-    exit_code INT4
+    exit_code INT4,
+    time_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    time_end TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

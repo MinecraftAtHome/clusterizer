@@ -9,6 +9,7 @@ use std::{
     time::Duration,
 };
 
+use chrono::Utc;
 use clusterizer_common::{messages::SubmitRequest, types::Task};
 use tokio::process::Command;
 use zip::ZipArchive;
@@ -76,16 +77,20 @@ impl ClusterizerClient {
             .canonicalize()?;
         let args: Empty<OsString> = iter::empty();
 
+        let time_start = Utc::now();
         let output = Command::new(program)
             .args(args)
             .current_dir(slot_path)
             .output()
             .await?;
+        let time_end = Utc::now();
 
         let result = SubmitRequest {
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
             stderr: String::from_utf8_lossy(&output.stderr).to_string(),
             exit_code: output.status.code(),
+            time_start,
+            time_end,
         };
 
         self.api_client.submit_task(task.id, &result).await?;
