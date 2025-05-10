@@ -9,10 +9,7 @@ use std::{
     time::Duration,
 };
 
-use clusterizer_common::{
-    messages::{RegisterRequest, RegisterResponse, SubmitRequest},
-    types::Task,
-};
+use clusterizer_common::{messages::SubmitRequest, types::Task};
 use tokio::process::Command;
 use zip::ZipArchive;
 
@@ -25,17 +22,12 @@ pub struct ClusterizerClient {
 }
 
 impl ClusterizerClient {
-    pub async fn new(args: RunArgs, server_url: String) -> ClusterizerClient {
+    pub fn new(args: RunArgs, server_url: String) -> ClusterizerClient {
         ClusterizerClient {
             api_client: clusterizer_api::Client::new(server_url, args.api_key),
             data_path: args.data_path,
             platform_id: args.platform_id,
         }
-    }
-    pub async fn register(server_url: String, user_name: String) -> ClientResult<RegisterResponse> {
-        Ok(clusterizer_api::Client::new(server_url, None)
-            .register_user(&RegisterRequest { name: user_name })
-            .await?)
     }
     pub async fn run(&self) -> ClientResult<()> {
         loop {
