@@ -64,7 +64,7 @@ impl ClusterizerClient {
 
         fs::create_dir_all(&slot_path)?;
         fs::create_dir_all(&cache_path)?;
-        let archive_cache_path = &cache_path.join(task.id.to_string() + ".zip");
+        let archive_cache_path = &cache_path.join(project_version.id.to_string() + ".zip");
         if archive_cache_path.exists() && archive_cache_path.is_file() {
             //cached
             ZipArchive::new(File::open(archive_cache_path)?)?.extract(&slot_path)?;
