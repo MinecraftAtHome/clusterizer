@@ -1,11 +1,15 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::id::Id;
+
+use super::{Platform, Project};
+
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct ProjectVersion {
-    pub id: i64,
+    pub id: Id<ProjectVersion>,
     pub created_at: DateTime<Utc>,
-    pub project_id: i64,
-    pub platform_id: i64,
+    pub project_id: Id<Project>,
+    pub platform_id: Id<Platform>,
     pub archive_url: String,
 }

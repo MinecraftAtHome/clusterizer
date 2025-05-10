@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use clusterizer_common::{
+    id::Id,
     messages::{RegisterRequest, RegisterResponse},
     types::User,
 };
@@ -22,9 +23,12 @@ pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<User>> {
     ))
 }
 
-pub async fn get_one(State(state): State<AppState>, Path(user_id): Path<i64>) -> ApiResult<User> {
+pub async fn get_one(
+    State(state): State<AppState>,
+    Path(user_id): Path<Id<User>>,
+) -> ApiResult<User> {
     Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id.raw())
             .fetch_one(&state.pool)
             .await?,
     ))
@@ -32,7 +36,7 @@ pub async fn get_one(State(state): State<AppState>, Path(user_id): Path<i64>) ->
 
 pub async fn get_profile(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<User> {
     Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id.raw())
             .fetch_one(&state.pool)
             .await?,
     ))
@@ -58,7 +62,7 @@ pub async fn register(
         Err(StatusCode::BAD_REQUEST)?;
     }
 
-    let user = sqlx::query!(
+    let user_id: Id<User> = sqlx::query_scalar!(
         "
         INSERT INTO users (
             name
@@ -70,9 +74,10 @@ pub async fn register(
         request.name
     )
     .fetch_one(&state.pool)
-    .await?;
+    .await?
+    .into();
 
     Ok(Json(RegisterResponse {
-        api_key: auth::api_key(&state, user.id),
+        api_key: auth::api_key(&state, user_id),
     }))
 }
