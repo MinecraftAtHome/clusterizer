@@ -10,7 +10,7 @@ pub struct GlobalArgs {
     #[arg(long, short, default_value = "https://clusterizer.mcathome.dev")]
     pub server_url: String,
     #[clap(subcommand)]
-    pub command: Option<Commands>,
+    pub command: Commands,
 }
 
 #[derive(Debug, Subcommand)]

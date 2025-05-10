@@ -19,18 +19,17 @@ async fn main() -> ClientResult<()> {
     let global_args = GlobalArgs::parse();
 
     match global_args.command {
-        Some(Commands::Register(register_args)) => {
+        Commands::Register(register_args) => {
             let register_response =
                 register(global_args.server_url, register_args.username).await?;
             println!("Api Key: {} ", register_response.api_key);
 
             Ok(())
         }
-        Some(Commands::Run(run_args)) => {
+        Commands::Run(run_args) => {
             Ok(ClusterizerClient::new(run_args, global_args.server_url)
                 .run()
                 .await?)
         }
-        None => Ok(()),
     }
 }
