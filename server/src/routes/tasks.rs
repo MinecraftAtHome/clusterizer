@@ -27,56 +27,36 @@ pub async fn fetch(
     Path(platform_id): Path<i64>,
     Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
-    let _guard = state.fetch_mutex.lock().await;
-
     let task = sqlx::query_as!(
         Task,
         "
-        SELECT
-            t.*
-        FROM
-            tasks t
-            JOIN projects p
-                ON t.project_id = p.id
-                AND p.active
-            JOIN project_versions pv
-                ON pv.project_id = p.id
-                AND pv.platform_id = $1
-        WHERE
-            t.tasks_to_assign > 0
+        WITH selected_task AS (
+            SELECT t.id
+            FROM tasks t
+            JOIN projects p ON t.project_id = p.id AND p.active
+            JOIN project_versions pv ON pv.project_id = p.id AND pv.platform_id = $1
+            WHERE t.tasks_to_assign > 0
+            LIMIT 1
+            FOR UPDATE SKIP LOCKED
+        ),
+        insert_assignment AS (
+            INSERT INTO assignments (task_id, user_id)
+            SELECT id, $2 FROM selected_task
+            RETURNING task_id
+        )
+        UPDATE tasks
+        SET tasks_to_assign = tasks_to_assign - 1
+        WHERE id IN (SELECT task_id FROM insert_assignment)
+        RETURNING *;
+
         ",
-        platform_id
+        platform_id,
+        user_id
     )
     .fetch_optional(&state.pool)
     .await?;
 
     if let Some(task) = task {
-        sqlx::query!(
-            "
-            INSERT INTO assignments (
-                task_id,
-                user_id
-            ) VALUES (
-                $1,
-                $2
-            )
-            ",
-            task.id,
-            user_id
-        )
-        .execute(&state.pool)
-        .await?;
-        sqlx::query!(
-            "
-            UPDATE tasks
-            SET tasks_to_assign = tasks_to_assign - 1
-            WHERE
-            id = $1;
-            ",
-            task.id,
-        )
-        .execute(&state.pool)
-        .await?;
         Ok(Json(vec![task]))
     } else {
         sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id)
