@@ -26,10 +26,8 @@ async fn main() -> ClientResult<()> {
 
             Ok(())
         }
-        Commands::Run(run_args) => {
-            Ok(ClusterizerClient::new(run_args, global_args.server_url)
-                .run()
-                .await?)
-        }
+        Commands::Run(run_args) => Ok(ClusterizerClient::new(run_args, global_args.server_url)
+            .run()
+            .await?),
     }
 }
