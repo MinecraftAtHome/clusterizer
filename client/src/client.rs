@@ -77,7 +77,7 @@ impl ClusterizerClient {
 
             let mut archive = ZipArchive::new(Cursor::new(&bytes))?;
             archive.extract(&slot_path)?;
-            File::create(cache_path.join(task.id.to_string() + ".zip"))?.write_all(&bytes)?;
+            File::create(cache_path.join(project_version.id.to_string() + ".zip"))?.write_all(&bytes)?;
         }
 
         let program = slot_path
