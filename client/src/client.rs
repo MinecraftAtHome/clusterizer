@@ -1,8 +1,8 @@
 use std::{
     env,
     ffi::OsString,
-    fs,
-    io::Cursor,
+    fs::{self, File},
+    io::{Cursor, Write},
     iter::{self, Empty},
     path::PathBuf,
     thread,
@@ -10,6 +10,7 @@ use std::{
 };
 
 use clusterizer_common::{messages::SubmitRequest, types::Task};
+use debug_print::debug_println;
 use tokio::process::Command;
 use zip::ZipArchive;
 
@@ -53,23 +54,36 @@ impl ClusterizerClient {
             .get_project_project_version(project.id, self.platform_id)
             .await?;
         let slot_path = self.data_path.join("slots").join(format!("{}", task.id));
-
+        let cache_path = self.data_path.join("cache");
         println!("Task id: {}, stdin: {}", task.id, task.stdin);
         println!("Project id: {}, name: {}", project.id, project.name);
-        println!(
+        debug_println!(
             "Project version id: {}, archive url: {}",
-            project_version.id, project_version.archive_url
+            project_version.id,
+            project_version.archive_url
         );
-        println!("Slot path: {}", slot_path.display());
+        debug_println!("Slot path: {}", slot_path.display());
 
         fs::create_dir_all(&slot_path)?;
+        fs::create_dir_all(&cache_path)?;
+        let archive_cache_path = &cache_path.join(project_version.id.to_string() + ".zip");
+        if archive_cache_path.exists() && archive_cache_path.is_file() {
+            //cached
+            debug_println!("Archive {} was cached.", archive_cache_path.display());
+            ZipArchive::new(File::open(archive_cache_path)?)?.extract(&slot_path)?;
+        } else {
+            //not cached
+            debug_println!("Archive {} is not cached.", archive_cache_path.display());
+            let response = reqwest::get(project_version.archive_url)
+                .await?
+                .error_for_status()?;
+            let bytes = response.bytes().await?;
 
-        let response = reqwest::get(project_version.archive_url)
-            .await?
-            .error_for_status()?;
-        let bytes = response.bytes().await?;
-
-        ZipArchive::new(Cursor::new(bytes))?.extract(&slot_path)?;
+            let mut archive = ZipArchive::new(Cursor::new(&bytes))?;
+            archive.extract(&slot_path)?;
+            File::create(cache_path.join(project_version.id.to_string() + ".zip"))?
+                .write_all(&bytes)?;
+        }
 
         let program = slot_path
             .join(format!("main{}", env::consts::EXE_SUFFIX))
