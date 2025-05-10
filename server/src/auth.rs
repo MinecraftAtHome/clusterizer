@@ -26,31 +26,40 @@ impl FromRequestParts<AppState> for Auth {
         let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> =
             parts.extract().await.map_err(|_| StatusCode::BAD_REQUEST)?;
 
-        let api_key_bytes = BASE64_STANDARD
-            .decode(bearer.token())
-            .map_err(|_| StatusCode::BAD_REQUEST)?;
-        let id_bytes: [u8; 8] = api_key_bytes[0..8]
-            .try_into()
+        let mut api_key_bytes = [0; 40];
+        let mut user_id_bytes = [0; 8];
+
+        let length = BASE64_STANDARD
+            .decode_slice(bearer.token(), &mut api_key_bytes)
             .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-        Hmac::<Sha256>::new_from_slice(&state.secret)
-            .unwrap()
-            .chain_update(id_bytes)
+        if length != api_key_bytes.len() {
+            Err(StatusCode::BAD_REQUEST)?;
+        }
+
+        hmac(state, &api_key_bytes[..8])
             .verify_slice(&api_key_bytes[8..])
             .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-        Ok(Auth(i64::from_le_bytes(id_bytes).into()))
+        user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
+
+        Ok(Auth(i64::from_le_bytes(user_id_bytes).into()))
     }
 }
 
 pub fn api_key(state: &AppState, user_id: Id<User>) -> String {
-    let id_bytes = user_id.raw().to_le_bytes();
-    let mac_bytes = Hmac::<Sha256>::new_from_slice(&state.secret)
-        .unwrap()
-        .chain_update(id_bytes)
-        .finalize()
-        .into_bytes();
-    let api_key_bytes = [&id_bytes, &mac_bytes[..]].concat();
+    let user_id_bytes = user_id.raw().to_le_bytes();
+    let hmac_bytes = hmac(state, &user_id_bytes).finalize().into_bytes();
+    let mut api_key_bytes = [0; 40];
 
-    BASE64_STANDARD.encode(&api_key_bytes)
+    api_key_bytes[..8].copy_from_slice(&user_id_bytes);
+    api_key_bytes[8..].copy_from_slice(&hmac_bytes);
+
+    BASE64_STANDARD.encode(api_key_bytes)
+}
+
+fn hmac(state: &AppState, bytes: &[u8]) -> Hmac<Sha256> {
+    Hmac::new_from_slice(&state.secret)
+        .unwrap()
+        .chain_update(bytes)
 }
