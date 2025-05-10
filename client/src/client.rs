@@ -2,9 +2,9 @@ use std::{
     env,
     ffi::OsString,
     fs::{self, File},
-    io::{self, Cursor, Write},
+    io::{Cursor, Write},
     iter::{self, Empty},
-    path::{Path, PathBuf},
+    path::PathBuf,
     thread,
     time::Duration,
 };
@@ -64,7 +64,7 @@ impl ClusterizerClient {
 
         fs::create_dir_all(&slot_path)?;
         fs::create_dir_all(&cache_path)?;
-        let archive_cache_path = &cache_path.join(task.id.to_string()+".zip");
+        let archive_cache_path = &cache_path.join(task.id.to_string() + ".zip");
         if archive_cache_path.exists() && archive_cache_path.is_file() {
             //cached
             ZipArchive::new(File::open(cache_path)?)?.extract(&slot_path)?;
@@ -77,7 +77,7 @@ impl ClusterizerClient {
 
             let mut archive = ZipArchive::new(Cursor::new(&bytes))?;
             archive.extract(&slot_path)?;
-            File::create(&cache_path.join(task.id.to_string()+".zip"))?.write_all(&bytes)?;
+            File::create(cache_path.join(task.id.to_string() + ".zip"))?.write_all(&bytes)?;
         }
 
         let program = slot_path
