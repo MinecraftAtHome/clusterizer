@@ -78,7 +78,7 @@ impl ClusterizerClient {
 
         let output = Command::new(program)
             .args(args)
-            .current_dir(slot_path)
+            .current_dir(&slot_path)
             .output()
             .await?;
 
@@ -89,7 +89,7 @@ impl ClusterizerClient {
         };
 
         self.api_client.submit_task(task.id, &result).await?;
-
+        fs::remove_dir(slot_path)?;
         Ok(())
     }
 }
