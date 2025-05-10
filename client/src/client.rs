@@ -1,8 +1,8 @@
 use std::{
     env,
     ffi::OsString,
-    fs,
-    io::Cursor,
+    fs::{self, File},
+    io::{self, Cursor, Write},
     iter::{self, Empty},
     path::PathBuf,
     thread,
@@ -53,7 +53,7 @@ impl ClusterizerClient {
             .get_project_project_version(project.id, self.platform_id)
             .await?;
         let slot_path = self.data_path.join("slots").join(format!("{}", task.id));
-
+        let cache_path = self.data_path.join("cache");
         println!("Task id: {}, stdin: {}", task.id, task.stdin);
         println!("Project id: {}, name: {}", project.id, project.name);
         println!(
@@ -63,13 +63,22 @@ impl ClusterizerClient {
         println!("Slot path: {}", slot_path.display());
 
         fs::create_dir_all(&slot_path)?;
-
-        let response = reqwest::get(project_version.archive_url)
+        fs::create_dir_all(&cache_path)?;
+        let archive_cache_path = Path::new(&cache_path.join(task.id.to_string().join(".zip")));
+        if(archive_cache_path.exists() && archive_cache_path.is_file()){
+            //cached
+        }else{
+            //not cached
+            let response = reqwest::get(project_version.archive_url)
             .await?
             .error_for_status()?;
-        let bytes = response.bytes().await?;
+            let bytes = response.bytes().await?;
 
-        ZipArchive::new(Cursor::new(bytes))?.extract(&slot_path)?;
+            let mut archive = ZipArchive::new(Cursor::new(&bytes))?;
+            archive.extract(&slot_path)?;
+            File::create(&cache_path.join(task.id.to_string().join(".zip")))?.write_all(&bytes)?;
+        }
+
 
         let program = slot_path
             .join(format!("main{}", env::consts::EXE_SUFFIX))
