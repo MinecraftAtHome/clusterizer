@@ -3,7 +3,7 @@ mod result;
 mod routes;
 mod state;
 
-use std::{env, sync::Arc};
+use std::env;
 
 use axum::{
     Router,
@@ -12,7 +12,7 @@ use axum::{
 use routes::*;
 use sqlx::PgPool;
 use state::AppState;
-use tokio::{net::TcpListener, sync::Mutex};
+use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +25,6 @@ async fn main() {
     let state = AppState {
         pool: PgPool::connect(&database_url).await.unwrap(),
         secret: secret.into_bytes(),
-        fetch_mutex: Arc::new(Mutex::new(())),
     };
 
     let app = Router::new()
