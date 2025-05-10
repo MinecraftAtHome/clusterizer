@@ -67,7 +67,7 @@ impl ClusterizerClient {
         let archive_cache_path = &cache_path.join(task.id.to_string() + ".zip");
         if archive_cache_path.exists() && archive_cache_path.is_file() {
             //cached
-            ZipArchive::new(File::open(cache_path)?)?.extract(&slot_path)?;
+            ZipArchive::new(File::open(archive_cache_path)?)?.extract(&slot_path)?;
         } else {
             //not cached
             let response = reqwest::get(project_version.archive_url)
