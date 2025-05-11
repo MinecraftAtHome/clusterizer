@@ -34,7 +34,10 @@ pub async fn fetch(
     Path(platform_id): Path<Id<Platform>>,
     Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
-    let mut transaction: sqlx::Transaction<'static, sqlx::Postgres> = state.pool.begin_with("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE").await?;
+    let mut transaction = state
+        .pool
+        .begin_with("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+        .await?;
     let task = sqlx::query_as!(
         Task,
         "

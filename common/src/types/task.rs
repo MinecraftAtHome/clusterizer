@@ -11,5 +11,5 @@ pub struct Task {
     pub created_at: DateTime<Utc>,
     pub project_id: Id<Project>,
     pub stdin: String,
-    pub assignments_remaining: i32
+    pub assignments_remaining: i32,
 }
