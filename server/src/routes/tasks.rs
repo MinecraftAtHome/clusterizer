@@ -53,8 +53,8 @@ pub async fn fetch(
                     AND pv.platform_id = $1
                 LEFT JOIN assignments a
                     ON a.task_id = t.id
-                    AND (a.canceled_at IS NULL
-                    AND a.user_id = $2) 
+                    AND a.canceled_at IS NULL
+                    AND a.user_id = $2
             WHERE
                 t.assignments_remaining > 0
                 AND a.id IS NULL
