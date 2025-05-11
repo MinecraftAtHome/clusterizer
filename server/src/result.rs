@@ -15,10 +15,8 @@ impl From<sqlx::Error> for ApiError {
             sqlx::Error::Database(ref err) if err.constraint() == Some("users_name_key") => {
                 StatusCode::BAD_REQUEST
             }
-            _ => {
-                eprintln!("{}", error);
+            _ => 
                 StatusCode::INTERNAL_SERVER_ERROR
-            }
         })
     }
 }
