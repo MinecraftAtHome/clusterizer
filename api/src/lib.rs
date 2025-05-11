@@ -1,11 +1,12 @@
+mod get;
+
 use clusterizer_common::{
     id::Id,
     messages::{RegisterRequest, RegisterResponse, SubmitRequest},
-    types::{
-        Assignment, Platform, Project, ProjectVersion, Result as ClusterizerResult, Task, User,
-    },
+    types::{Platform, Task},
 };
-use reqwest::{Method, RequestBuilder, Result, header};
+use get::{GetAll, GetAllBy, GetOne, GetOneBy};
+use reqwest::{IntoUrl, Method, RequestBuilder, Result, header};
 use serde::{Serialize, de::DeserializeOwned};
 
 pub struct Client {
@@ -27,127 +28,52 @@ impl Client {
         self.api_key = Some(api_key)
     }
 
-    // GET requests
-    pub async fn get_users(&self) -> Result<Vec<User>> {
-        let uri = "/users";
-        self.get(uri).await
+    pub async fn get_all<T: GetAll + DeserializeOwned>(&self) -> Result<Vec<T>> {
+        self.get(T::get_all(&self.url)).await
     }
 
-    pub async fn get_user(&self, user_id: Id<User>) -> Result<User> {
-        let uri = format!("/users/{user_id}");
-        self.get(&uri).await
-    }
-
-    pub async fn get_user_profile(&self) -> Result<User> {
-        let uri = "/users/profile";
-        self.get(uri).await
-    }
-
-    pub async fn get_projects(&self) -> Result<Vec<Project>> {
-        let uri = "/projects";
-        self.get(uri).await
-    }
-
-    pub async fn get_project(&self, project_id: Id<Project>) -> Result<Project> {
-        let uri = format!("/projects/{project_id}");
-        self.get(&uri).await
-    }
-
-    pub async fn get_project_results(
+    pub async fn get_all_by<T: GetAllBy<U> + DeserializeOwned, U>(
         &self,
-        project_id: Id<Project>,
-    ) -> Result<Vec<ClusterizerResult>> {
-        let uri = format!("/projects/{project_id}/results");
-        self.get(&uri).await
+        id: Id<U>,
+    ) -> Result<Vec<T>> {
+        self.get(T::get_all_by(&self.url, id)).await
     }
 
-    pub async fn get_project_project_version(
+    pub async fn get_one<T: GetOne + DeserializeOwned>(&self, id: Id<T>) -> Result<T> {
+        self.get(T::get_one(&self.url, id)).await
+    }
+
+    pub async fn get_one_by<T: GetOneBy<U> + DeserializeOwned, U>(
         &self,
-        project_id: Id<Project>,
-        platform_id: Id<Platform>,
-    ) -> Result<ProjectVersion> {
-        let uri = format!("/projects/{project_id}/project_version/{platform_id}");
-        self.get(&uri).await
+        id: Id<U>,
+    ) -> Result<Option<T>> {
+        self.get(T::get_one_by(&self.url, id)).await
     }
 
-    pub async fn get_platforms(&self) -> Result<Vec<Platform>> {
-        let uri = "/platforms";
-        self.get(uri).await
-    }
-
-    pub async fn get_platform(&self, platform_id: Id<Platform>) -> Result<Platform> {
-        let uri = format!("/platforms/{platform_id}");
-        self.get(&uri).await
-    }
-
-    pub async fn get_project_versions(&self) -> Result<Vec<ProjectVersion>> {
-        let uri = "/project_versions";
-        self.get(uri).await
-    }
-
-    pub async fn get_project_version(
-        &self,
-        project_version_id: Id<ProjectVersion>,
-    ) -> Result<ProjectVersion> {
-        let uri = format!("/project_versions/{project_version_id}");
-        self.get(&uri).await
-    }
-
-    pub async fn get_tasks(&self) -> Result<Vec<Task>> {
-        let uri = "/tasks";
-        self.get(uri).await
-    }
-
-    pub async fn get_task(&self, task_id: Id<Task>) -> Result<Task> {
-        let uri = format!("/tasks/{task_id}");
-        self.get(&uri).await
-    }
-
-    pub async fn get_assignments(&self) -> Result<Vec<Assignment>> {
-        let uri = "/assignments";
-        self.get(uri).await
-    }
-
-    pub async fn get_assignment(&self, assignment_id: Id<Assignment>) -> Result<Assignment> {
-        let uri = format!("/assignments/{assignment_id}");
-        self.get(&uri).await
-    }
-
-    pub async fn get_results(&self) -> Result<Vec<ClusterizerResult>> {
-        let uri = "/results";
-        self.get(uri).await
-    }
-
-    pub async fn get_result(&self, result_id: Id<ClusterizerResult>) -> Result<ClusterizerResult> {
-        let uri = format!("/results/{result_id}");
-        self.get(&uri).await
-    }
-
-    // POST requests
     pub async fn submit_task(
         &self,
         task_id: Id<Task>,
         submit_request: &SubmitRequest,
     ) -> Result<()> {
-        let uri = format!("/tasks/{task_id}/submit");
-        self.post_data(&uri, submit_request).await
+        let url = format!("{}/tasks/{task_id}/submit", self.url);
+        self.post_data(url, submit_request).await
     }
 
     pub async fn fetch_tasks(&self, platform_id: Id<Platform>) -> Result<Vec<Task>> {
-        let uri = format!("/tasks/fetch/{platform_id}");
-        self.post(&uri).await
+        let url = format!("{}/tasks/fetch/{platform_id}", self.url);
+        self.post(url).await
     }
 
     pub async fn register_user(
         &self,
         register_request: &RegisterRequest,
     ) -> Result<RegisterResponse> {
-        let uri = "/users/register";
-        self.post_data(uri, register_request).await
+        let url = format!("{}/users/register", self.url);
+        self.post_data(url, register_request).await
     }
 
-    fn request(&self, method: Method, uri: &str) -> RequestBuilder {
-        let mut request = self.client.request(method, format!("{}{}", self.url, uri));
+    fn request(&self, method: Method, url: impl IntoUrl) -> RequestBuilder {
+        let mut request = self.client.request(method, url);
 
         if let Some(ref api_key) = self.api_key {
             request = request.bearer_auth(api_key);
@@ -156,8 +82,8 @@ impl Client {
         request
     }
 
-    async fn get<Response: DeserializeOwned>(&self, uri: &str) -> Result<Response> {
-        self.request(Method::GET, uri)
+    async fn get<Response: DeserializeOwned>(&self, url: impl IntoUrl) -> Result<Response> {
+        self.request(Method::GET, url)
             .send()
             .await?
             .error_for_status()?
@@ -165,8 +91,8 @@ impl Client {
             .await
     }
 
-    async fn post<Response: DeserializeOwned>(&self, uri: &str) -> Result<Response> {
-        self.request(Method::POST, uri)
+    async fn post<Response: DeserializeOwned>(&self, url: impl IntoUrl) -> Result<Response> {
+        self.request(Method::POST, url)
             .send()
             .await?
             .error_for_status()?
@@ -176,10 +102,10 @@ impl Client {
 
     async fn post_data<Request: Serialize + ?Sized, Response: DeserializeOwned>(
         &self,
-        uri: &str,
+        url: impl IntoUrl,
         data: &Request,
     ) -> Result<Response> {
-        self.request(Method::POST, uri)
+        self.request(Method::POST, url)
             .header(header::CONTENT_TYPE, "application/json")
             .json(data)
             .send()

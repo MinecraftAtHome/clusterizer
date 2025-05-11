@@ -12,13 +12,16 @@ use std::{
 use clusterizer_common::{
     id::Id,
     messages::SubmitRequest,
-    types::{Platform, Task},
+    types::{Platform, ProjectVersion, Task},
 };
 use log::{debug, info};
 use tokio::process::Command;
 use zip::ZipArchive;
 
-use crate::{args::RunArgs, result::ClientResult};
+use crate::{
+    args::RunArgs,
+    result::{ClientError, ClientResult},
+};
 
 pub struct ClusterizerClient {
     api_client: clusterizer_api::Client,
@@ -52,11 +55,14 @@ impl ClusterizerClient {
     }
 
     async fn execute_task(&self, task: &Task) -> ClientResult<()> {
-        let project = self.api_client.get_project(task.project_id).await?;
+        let project = self.api_client.get_one(task.project_id).await?;
         let project_version = self
             .api_client
-            .get_project_project_version(project.id, self.platform_id)
-            .await?;
+            .get_all_by::<ProjectVersion, _>(task.project_id)
+            .await?
+            .into_iter()
+            .find(|project_version| project_version.platform_id == self.platform_id)
+            .ok_or(ClientError::ProjectVersionNotFound)?;
         let slot_path = self.data_path.join("slots").join(format!("{}", task.id));
         let cache_path = self.data_path.join("cache");
         info!("Task id: {}, stdin: {}", task.id, task.stdin);
