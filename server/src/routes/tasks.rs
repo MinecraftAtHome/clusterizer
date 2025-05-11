@@ -34,33 +34,45 @@ pub async fn fetch(
     Path(platform_id): Path<Id<Platform>>,
     Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
-    let _guard = state.fetch_mutex.lock().await;
-
+    let mut transaction: sqlx::Transaction<'static, sqlx::Postgres> = state.pool.begin_with("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE").await?;
     let task = sqlx::query_as!(
         Task,
         "
-        SELECT
-            t.*
-        FROM
-            tasks t
-            JOIN projects p
-                ON t.project_id = p.id
-                AND p.active
-            JOIN project_versions pv
-                ON pv.project_id = p.id
-                AND pv.platform_id = $1
-            LEFT JOIN assignments a
-                ON a.task_id = t.id
-                AND a.canceled_at IS NULL
-        WHERE
-            a.id IS NULL
+            SELECT
+                t.*
+            FROM
+                tasks t
+                JOIN projects p
+                    ON t.project_id = p.id
+                    AND p.active
+                JOIN project_versions pv
+                    ON pv.project_id = p.id
+                    AND pv.platform_id = $1
+                LEFT JOIN assignments a
+                    ON a.task_id = t.id
+                    AND (a.canceled_at IS NULL
+                    AND a.user_id = $2) 
+            WHERE
+                t.assignments_remaining > 0
+                AND a.id IS NULL
         ",
-        platform_id.raw()
+        platform_id.raw(),
+        user_id.raw()
     )
-    .fetch_optional(&state.pool)
+    .fetch_optional(&mut *transaction)
     .await?;
 
     if let Some(task) = task {
+        sqlx::query!(
+            "
+            UPDATE tasks SET assignments_remaining = assignments_remaining - 1
+            WHERE
+            id = $1
+            ",
+            task.id.raw()
+        )
+        .execute(&mut *transaction)
+        .await?;
         sqlx::query!(
             "
             INSERT INTO assignments (
@@ -74,15 +86,15 @@ pub async fn fetch(
             task.id.raw(),
             user_id.raw()
         )
-        .execute(&state.pool)
+        .execute(&mut *transaction)
         .await?;
-
+        transaction.commit().await?;
         Ok(Json(vec![task]))
     } else {
         sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id.raw())
-            .fetch_one(&state.pool)
+            .fetch_one(&mut *transaction)
             .await?;
-
+        transaction.rollback().await?;
         Ok(Json(vec![]))
     }
 }
