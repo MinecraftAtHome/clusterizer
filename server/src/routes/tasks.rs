@@ -8,25 +8,22 @@ use clusterizer_common::{
     types::{Assignment, Platform, Task},
 };
 
-use crate::{auth::Auth, result::ApiResult, state::AppState};
+use crate::{
+    auth::Auth,
+    query::{QueryAll, QueryOne},
+    result::ApiResult,
+    state::AppState,
+};
 
 pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<Task>> {
-    Ok(Json(
-        sqlx::query_as!(Task, "SELECT * FROM tasks")
-            .fetch_all(&state.pool)
-            .await?,
-    ))
+    Ok(Json(Task::query_all().fetch_all(&state.pool).await?))
 }
 
 pub async fn get_one(
     State(state): State<AppState>,
     Path(task_id): Path<Id<Task>>,
 ) -> ApiResult<Task> {
-    Ok(Json(
-        sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = $1", task_id.raw())
-            .fetch_one(&state.pool)
-            .await?,
-    ))
+    Ok(Json(Task::query_one(task_id).fetch_one(&state.pool).await?))
 }
 
 pub async fn fetch(

@@ -7,14 +7,14 @@ use clusterizer_common::{
     types::{Platform, Project, ProjectVersion, Result},
 };
 
-use crate::{result::ApiResult, state::AppState};
+use crate::{
+    query::{QueryAll, QueryOne},
+    result::ApiResult,
+    state::AppState,
+};
 
 pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<Project>> {
-    Ok(Json(
-        sqlx::query_as!(Project, "SELECT * FROM projects")
-            .fetch_all(&state.pool)
-            .await?,
-    ))
+    Ok(Json(Project::query_all().fetch_all(&state.pool).await?))
 }
 
 pub async fn get_one(
@@ -22,13 +22,9 @@ pub async fn get_one(
     Path(project_id): Path<Id<Project>>,
 ) -> ApiResult<Project> {
     Ok(Json(
-        sqlx::query_as!(
-            Project,
-            "SELECT * FROM projects WHERE id = $1",
-            project_id.raw()
-        )
-        .fetch_one(&state.pool)
-        .await?,
+        Project::query_one(project_id)
+            .fetch_one(&state.pool)
+            .await?,
     ))
 }
 
