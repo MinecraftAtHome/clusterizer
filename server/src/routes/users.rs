@@ -1,8 +1,4 @@
-use axum::{
-    Json,
-    extract::{Path, State},
-    http::StatusCode,
-};
+use axum::{Json, extract::State, http::StatusCode};
 use clusterizer_common::{
     id::Id,
     messages::{RegisterRequest, RegisterResponse},
@@ -11,24 +7,15 @@ use clusterizer_common::{
 
 use crate::{
     auth::{self, Auth},
-    query::{QueryAll, QueryOne},
+    query::SelectOne,
     result::ApiResult,
     state::AppState,
 };
 
-pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<User>> {
-    Ok(Json(User::query_all().fetch_all(&state.pool).await?))
-}
-
-pub async fn get_one(
-    State(state): State<AppState>,
-    Path(user_id): Path<Id<User>>,
-) -> ApiResult<User> {
-    Ok(Json(User::query_one(user_id).fetch_one(&state.pool).await?))
-}
-
 pub async fn get_profile(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<User> {
-    Ok(Json(User::query_one(user_id).fetch_one(&state.pool).await?))
+    Ok(Json(
+        User::select_one(user_id).fetch_one(&state.pool).await?,
+    ))
 }
 
 pub async fn register(

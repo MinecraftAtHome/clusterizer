@@ -8,6 +8,9 @@ use axum::{
     Router,
     routing::{get, post},
 };
+use clusterizer_common::types::{
+    Assignment, Platform, Project, ProjectVersion, Result, Task, User,
+};
 use routes::*;
 use sqlx::PgPool;
 use state::AppState;
@@ -25,32 +28,46 @@ async fn main() {
     };
 
     let app = Router::new()
-        .route("/users", get(users::get_all))
-        .route("/users/{user_id}", get(users::get_one))
+        .route("/users", get(get_all::<User>))
+        .route("/users/{id}", get(get_one::<User>))
+        .route(
+            "/users/{id}/assignments",
+            get(get_all_by::<Assignment, User>),
+        )
+        .route("/projects", get(get_all::<Project>))
+        .route("/projects/{id}", get(get_one::<Project>))
+        .route(
+            "/projects/{id}/project_versions",
+            get(get_all_by::<ProjectVersion, Project>),
+        )
+        .route("/projects/{id}/tasks", get(get_all_by::<Task, Project>))
+        .route("/platforms", get(get_all::<Platform>))
+        .route("/platforms/{id}", get(get_one::<Platform>))
+        .route(
+            "/platforms/{id}/project_versions",
+            get(get_all_by::<ProjectVersion, Platform>),
+        )
+        .route("/project_versions", get(get_all::<ProjectVersion>))
+        .route("/project_versions/{id}", get(get_one::<ProjectVersion>))
+        .route("/tasks", get(get_all::<Task>))
+        .route("/tasks/{id}", get(get_one::<Task>))
+        .route(
+            "/tasks/{id}/assignments",
+            get(get_all_by::<Assignment, Task>),
+        )
+        .route("/assignments", get(get_all::<Assignment>))
+        .route("/assignments/{id}", get(get_one::<Assignment>))
+        .route(
+            "/assignments/{id}/result",
+            get(get_one_by::<Result, Assignment>),
+        )
+        .route("/results", get(get_all::<Result>))
+        .route("/results/{id}", get(get_one::<Result>))
+        //
         .route("/users/profile", get(users::get_profile))
         .route("/users/register", post(users::register))
-        .route("/projects", get(projects::get_all))
-        .route("/projects/{project_id}", get(projects::get_one))
-        .route("/projects/{project_id}/results", get(projects::get_results))
-        .route(
-            "/projects/{project_id}/project_version/{platform_id}",
-            get(projects::get_project_version),
-        )
-        .route("/platforms", get(platforms::get_all))
-        .route("/platforms/{platform_id}", get(platforms::get_one))
-        .route("/project_versions", get(project_versions::get_all))
-        .route(
-            "/project_versions/{project_version_id}",
-            get(project_versions::get_one),
-        )
-        .route("/tasks", get(tasks::get_all))
-        .route("/tasks/{task_id}", get(tasks::get_one))
         .route("/tasks/fetch/{platform_id}", post(tasks::fetch))
         .route("/tasks/{task_id}/submit", post(tasks::submit))
-        .route("/assignments", get(assignments::get_all))
-        .route("/assignments/{assignment_id}", get(assignments::get_one))
-        .route("/results", get(results::get_all))
-        .route("/results/{result_id}", get(results::get_one))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();
