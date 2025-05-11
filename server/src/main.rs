@@ -1,4 +1,5 @@
 mod auth;
+mod query;
 mod result;
 mod routes;
 mod state;

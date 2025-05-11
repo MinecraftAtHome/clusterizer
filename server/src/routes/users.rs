@@ -11,35 +11,24 @@ use clusterizer_common::{
 
 use crate::{
     auth::{self, Auth},
+    query::{QueryAll, QueryOne},
     result::ApiResult,
     state::AppState,
 };
 
 pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<User>> {
-    Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users")
-            .fetch_all(&state.pool)
-            .await?,
-    ))
+    Ok(Json(User::query_all().fetch_all(&state.pool).await?))
 }
 
 pub async fn get_one(
     State(state): State<AppState>,
     Path(user_id): Path<Id<User>>,
 ) -> ApiResult<User> {
-    Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id.raw())
-            .fetch_one(&state.pool)
-            .await?,
-    ))
+    Ok(Json(User::query_one(user_id).fetch_one(&state.pool).await?))
 }
 
 pub async fn get_profile(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<User> {
-    Ok(Json(
-        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id.raw())
-            .fetch_one(&state.pool)
-            .await?,
-    ))
+    Ok(Json(User::query_one(user_id).fetch_one(&state.pool).await?))
 }
 
 pub async fn register(
