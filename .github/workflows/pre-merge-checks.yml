@@ -1,0 +1,44 @@
+on: push
+name: Rust pre-merge checks
+
+env:
+  RUSTFLAGS: "-Dwarnings"
+  DATABASE_URL: "postgres://postgres:balls@postgres/clusterizer"
+  CLUSTERIZER_SECRET: "balls"
+  CLUSTERIZER_ADDRESS: "0.0.0.0:3000"
+
+jobs:
+  cargo-checks:
+    # Containers must run in Linux based operating systems
+    runs-on: ubuntu-latest
+    # Docker Hub image that `container-job` executes in
+    container: rust:bookworm
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: balls
+
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: sqlx install
+        run: cargo install sqlx-cli
+      - name: rustup install clippy
+        run: rustup component add clippy rustfmt
+      - name: Replace values in .env to work in container
+        run: sed -i 's/localhost/postgres/' ./server/.env
+      - name: sqlx create database
+        run: sqlx database create
+      - name: sqlx migrate 
+        run: sqlx migrate run
+        working-directory: ./server
+      - name: Clippy Check
+        run: cargo clippy --all-targets --all-features
+        working-directory: ./server
+      - name: Cargo Format Check
+        run: cargo fmt --check
