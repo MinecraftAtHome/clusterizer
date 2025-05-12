@@ -1,47 +1,47 @@
 CREATE TABLE users (
-    id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    name TEXT NOT NULL
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    name text NOT NULL
 );
 
 CREATE UNIQUE INDEX users_name_key
-    ON users (LOWER(name));
+    ON users (lower(name));
 
 CREATE TABLE projects (
-    id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    name TEXT NOT NULL,
-    active BOOL NOT NULL
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    name text NOT NULL,
+    active bool NOT NULL
 );
 
 CREATE TABLE platforms (
-    id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    name TEXT NOT NULL
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    name text NOT NULL
 );
 
 CREATE TABLE project_versions (
-    id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    project_id INT8 NOT NULL REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    platform_id INT8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    archive_url TEXT NOT NULL
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    project_id int8 NOT NULL REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    platform_id int8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    archive_url text NOT NULL
 );
 
 CREATE TABLE tasks (
-    id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    project_id INT8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    stdin TEXT NOT NULL,
-    assignments_remaining INT4 NOT NULL DEFAULT 1
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    project_id int8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    stdin text NOT NULL,
+    assignments_remaining int4 NOT NULL DEFAULT 1
 );
 
 CREATE TABLE assignments (
-    id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    task_id INT8 NOT NULL REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    user_id INT8 NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    canceled_at TIMESTAMPTZ
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    task_id int8 NOT NULL REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    user_id int8 NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    canceled_at timestamptz
 );
 
 CREATE UNIQUE INDEX assignments_task_id_user_id_key
@@ -49,10 +49,10 @@ CREATE UNIQUE INDEX assignments_task_id_user_id_key
     WHERE canceled_at IS NULL;
 
 CREATE TABLE results (
-    id INT8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    assignment_id INT8 NOT NULL UNIQUE REFERENCES assignments(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    stdout TEXT NOT NULL,
-    stderr TEXT NOT NULL,
-    exit_code INT4
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    assignment_id int8 NOT NULL UNIQUE REFERENCES assignments(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    stdout text NOT NULL,
+    stderr text NOT NULL,
+    exit_code int4
 );
