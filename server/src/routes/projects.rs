@@ -71,7 +71,7 @@ pub async fn get_project_version(
     Ok(Json(
         sqlx::query_as!(
             ProjectVersion,
-            "SELECT * FROM project_versions WHERE project_id = $1 AND platform_id = $2",
+            "SELECT * FROM project_versions WHERE project_id = $1 AND platform_id = $2 AND disabled_at IS NULL",
             project_id.raw(),
             platform_id.raw(),
         )
