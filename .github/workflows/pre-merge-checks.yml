@@ -28,10 +28,8 @@ jobs:
         run: cargo install sqlx-cli
       - name: rustup install clippy
         run: rustup component add clippy rustfmt
-      - name: sqlx create database
-        run: sqlx database create
-      - name: sqlx migrate 
-        run: sqlx migrate run
+      - name: sqlx setup database
+        run: sqlx database setup
         working-directory: ./server
       - name: Clippy Check
         run: cargo clippy --all-targets --all-features
