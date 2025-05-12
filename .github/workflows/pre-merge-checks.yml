@@ -22,6 +22,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
       - name: sqlx install
         run: cargo install sqlx-cli
       - name: rustup install clippy
