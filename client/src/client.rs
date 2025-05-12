@@ -9,6 +9,7 @@ use std::{
     time::Duration,
 };
 
+use clusterizer_api::client::ApiClient;
 use clusterizer_common::{
     id::Id,
     messages::SubmitRequest,
@@ -24,7 +25,7 @@ use crate::{
 };
 
 pub struct ClusterizerClient {
-    api_client: clusterizer_api::Client,
+    client: ApiClient,
     data_path: PathBuf,
     platform_id: Id<Platform>,
 }
@@ -32,7 +33,7 @@ pub struct ClusterizerClient {
 impl ClusterizerClient {
     pub fn new(args: RunArgs, server_url: String) -> ClusterizerClient {
         ClusterizerClient {
-            api_client: clusterizer_api::Client::new(server_url, args.api_key),
+            client: ApiClient::new(server_url, args.api_key),
             data_path: args.data_path,
             platform_id: args.platform_id.into(),
         }
@@ -40,7 +41,7 @@ impl ClusterizerClient {
 
     pub async fn run(&self) -> ClientResult<()> {
         loop {
-            let tasks = self.api_client.fetch_tasks(self.platform_id).await?;
+            let tasks = self.client.fetch_tasks(self.platform_id).await?;
 
             if tasks.is_empty() {
                 println!("No tasks found. Sleeping before attempting again.");
@@ -56,9 +57,9 @@ impl ClusterizerClient {
     }
 
     async fn execute_task(&self, task: &Task) -> ClientResult<()> {
-        let project = self.api_client.get_one(task.project_id).await?;
+        let project = self.client.get_one(task.project_id).await?;
         let project_version = self
-            .api_client
+            .client
             .get_all_by::<ProjectVersion, _>(task.project_id)
             .await?
             .into_iter()
@@ -107,7 +108,7 @@ impl ClusterizerClient {
             exit_code: output.status.code(),
         };
 
-        self.api_client.submit_task(task.id, &result).await?;
+        self.client.submit_task(task.id, &result).await?;
         fs::remove_dir_all(slot_path)?;
         Ok(())
     }

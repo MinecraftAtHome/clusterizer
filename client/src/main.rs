@@ -1,6 +1,7 @@
 use args::{Commands, GlobalArgs};
 use clap::Parser;
 use client::ClusterizerClient;
+use clusterizer_api::client::ApiClient;
 use clusterizer_common::messages::{RegisterRequest, RegisterResponse};
 use env_logger::Env;
 use log::debug;
@@ -12,7 +13,7 @@ mod result;
 
 pub async fn register(server_url: String, user_name: String) -> ClientResult<RegisterResponse> {
     debug!("Registering...");
-    Ok(clusterizer_api::Client::new(server_url, None)
+    Ok(ApiClient::new(server_url, None)
         .register_user(&RegisterRequest { name: user_name })
         .await?)
 }
