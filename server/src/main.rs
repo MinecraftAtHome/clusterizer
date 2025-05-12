@@ -47,18 +47,6 @@ async fn main() {
             "/project_versions/{project_version_id}",
             get(project_versions::get_one),
         )
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         .route("/tasks", get(tasks::get_all))
         .route("/tasks/{task_id}", get(tasks::get_one))
         .route("/tasks/fetch/{platform_id}", post(tasks::fetch))
