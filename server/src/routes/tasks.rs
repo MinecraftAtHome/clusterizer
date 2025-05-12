@@ -38,6 +38,7 @@ pub async fn fetch(
         .pool
         .begin_with("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE")
         .await?;
+
     let task = sqlx::query_as!(
         Task,
         "
@@ -76,6 +77,7 @@ pub async fn fetch(
         )
         .execute(&mut *transaction)
         .await?;
+
         sqlx::query!(
             "
             INSERT INTO assignments (
@@ -91,13 +93,17 @@ pub async fn fetch(
         )
         .execute(&mut *transaction)
         .await?;
+
         transaction.commit().await?;
+
         Ok(Json(vec![task]))
     } else {
         sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id.raw())
             .fetch_one(&mut *transaction)
             .await?;
+
         transaction.rollback().await?;
+
         Ok(Json(vec![]))
     }
 }
