@@ -1,12 +1,6 @@
 on: push
 name: Rust pre-merge checks
 
-env:
-  RUSTFLAGS: "-Dwarnings"
-  DATABASE_URL: "postgres://postgres@postgres/clusterizer"
-  CLUSTERIZER_SECRET: "balls"
-  CLUSTERIZER_ADDRESS: "0.0.0.0:3000"
-
 jobs:
   server-checks:
     runs-on: ubuntu-latest
@@ -22,6 +16,11 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+    env:
+      RUSTFLAGS: "-Dwarnings"
+      DATABASE_URL: "postgres://postgres@postgres/clusterizer"
+      CLUSTERIZER_SECRET: "balls"
+      CLUSTERIZER_ADDRESS: "0.0.0.0:3000"
     steps:
       - uses: actions/checkout@v4
       - name: sqlx install
