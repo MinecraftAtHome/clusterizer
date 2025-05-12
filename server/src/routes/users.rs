@@ -1,5 +1,6 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{Json, extract::State};
 use clusterizer_common::{
+    errors::Infallible,
     id::Id,
     messages::{RegisterRequest, RegisterResponse},
     types::User,
@@ -8,11 +9,14 @@ use clusterizer_common::{
 use crate::{
     auth::{self, Auth},
     query::SelectOne,
-    result::ApiResult,
+    result::AppResult,
     state::AppState,
 };
 
-pub async fn get_profile(State(state): State<AppState>, Auth(user_id): Auth) -> ApiResult<User> {
+pub async fn get_profile(
+    State(state): State<AppState>,
+    Auth(user_id): Auth,
+) -> AppResult<User, Infallible> {
     Ok(Json(
         User::select_one(user_id).fetch_one(&state.pool).await?,
     ))
@@ -21,13 +25,13 @@ pub async fn get_profile(State(state): State<AppState>, Auth(user_id): Auth) -> 
 pub async fn register(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
-) -> ApiResult<RegisterResponse> {
+) -> AppResult<RegisterResponse, Infallible> {
     if request.name.len() < 3 {
-        Err(StatusCode::BAD_REQUEST)?;
+        Err(todo!() as Infallible)?;
     }
 
     if request.name.len() > 32 {
-        Err(StatusCode::BAD_REQUEST)?;
+        Err(todo!() as Infallible)?;
     }
 
     if !request
@@ -35,7 +39,7 @@ pub async fn register(
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || c == '_')
     {
-        Err(StatusCode::BAD_REQUEST)?;
+        Err(todo!() as Infallible)?;
     }
 
     let user_id: Id<User> = sqlx::query_scalar!(

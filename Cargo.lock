@@ -416,6 +416,7 @@ dependencies = [
  "chrono",
  "serde",
  "sqlx",
+ "thiserror",
 ]
 
 [[package]]
@@ -428,6 +429,7 @@ dependencies = [
  "clusterizer-common",
  "dotenvy",
  "hmac",
+ "serde",
  "sha2",
  "sqlx",
  "tokio",

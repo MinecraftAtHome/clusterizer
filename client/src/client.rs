@@ -37,6 +37,7 @@ impl ClusterizerClient {
             platform_id: args.platform_id.into(),
         }
     }
+
     pub async fn run(&self) -> ClientResult<()> {
         loop {
             let tasks = self.api_client.fetch_tasks(self.platform_id).await?;

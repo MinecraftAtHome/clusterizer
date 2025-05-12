@@ -3,31 +3,58 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use clusterizer_common::errors::{Infallible, NotFound};
+use serde::Serialize;
 
-pub struct ApiError(StatusCode);
+trait Status {
+    fn status(&self) -> StatusCode;
+}
 
-pub type ApiResult<T> = Result<Json<T>, ApiError>;
-
-impl From<sqlx::Error> for ApiError {
-    fn from(error: sqlx::Error) -> Self {
-        Self(match error {
-            sqlx::Error::RowNotFound => StatusCode::NOT_FOUND,
-            sqlx::Error::Database(ref err) if err.constraint() == Some("users_name_key") => {
-                StatusCode::BAD_REQUEST
-            }
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        })
+impl Status for Infallible {
+    fn status(&self) -> StatusCode {
+        StatusCode::INTERNAL_SERVER_ERROR
     }
 }
 
-impl From<StatusCode> for ApiError {
-    fn from(status_code: StatusCode) -> Self {
-        Self(status_code)
+impl Status for NotFound {
+    fn status(&self) -> StatusCode {
+        StatusCode::NOT_FOUND
     }
 }
 
-impl IntoResponse for ApiError {
+pub enum AppError<E> {
+    Specific(E),
+    Generic,
+}
+
+pub type AppResult<T, E> = Result<Json<T>, AppError<E>>;
+
+impl<T> From<T> for AppError<T> {
+    fn from(err: T) -> Self {
+        Self::Specific(err)
+    }
+}
+
+impl From<sqlx::Error> for AppError<Infallible> {
+    fn from(_: sqlx::Error) -> Self {
+        Self::Generic
+    }
+}
+
+impl From<sqlx::Error> for AppError<NotFound> {
+    fn from(err: sqlx::Error) -> Self {
+        match err {
+            sqlx::Error::RowNotFound => Self::Specific(NotFound),
+            _ => Self::Generic,
+        }
+    }
+}
+
+impl<E: Serialize + Status> IntoResponse for AppError<E> {
     fn into_response(self) -> Response {
-        self.0.into_response()
+        match self {
+            Self::Specific(err) => (err.status(), Json(err)).into_response(),
+            Self::Generic => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        }
     }
 }

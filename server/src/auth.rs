@@ -2,6 +2,7 @@ use axum::{
     RequestPartsExt,
     extract::FromRequestParts,
     http::{StatusCode, request::Parts},
+    response::{IntoResponse, Response},
 };
 use axum_extra::{
     TypedHeader,
@@ -12,34 +13,42 @@ use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::{result::ApiError, state::AppState};
+use crate::state::AppState;
+
+pub struct AuthRejection;
+
+impl IntoResponse for AuthRejection {
+    fn into_response(self) -> Response {
+        (StatusCode::BAD_REQUEST, "Authorization failed").into_response()
+    }
+}
 
 pub struct Auth(pub Id<User>);
 
 impl FromRequestParts<AppState> for Auth {
-    type Rejection = ApiError;
+    type Rejection = AuthRejection;
 
     async fn from_request_parts(
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> =
-            parts.extract().await.map_err(|_| StatusCode::BAD_REQUEST)?;
+            parts.extract().await.map_err(|_| AuthRejection)?;
 
         let mut api_key_bytes = [0; 40];
         let mut user_id_bytes = [0; 8];
 
         let length = BASE64_STANDARD
             .decode_slice(bearer.token(), &mut api_key_bytes)
-            .map_err(|_| StatusCode::BAD_REQUEST)?;
+            .map_err(|_| AuthRejection)?;
 
         if length != api_key_bytes.len() {
-            Err(StatusCode::BAD_REQUEST)?;
+            Err(AuthRejection)?;
         }
 
         hmac(state, &api_key_bytes[..8])
             .verify_slice(&api_key_bytes[8..])
-            .map_err(|_| StatusCode::UNAUTHORIZED)?;
+            .map_err(|_| AuthRejection)?;
 
         user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
 
