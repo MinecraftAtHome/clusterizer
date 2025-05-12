@@ -3,18 +3,19 @@ use axum::{
     extract::{Path, State},
 };
 use clusterizer_common::{
+    errors::Infallible,
     id::Id,
     messages::SubmitRequest,
     types::{Assignment, Platform, Task},
 };
 
-use crate::{auth::Auth, result::ApiResult, state::AppState};
+use crate::{auth::Auth, result::AppResult, state::AppState};
 
 pub async fn fetch(
     State(state): State<AppState>,
     Path(platform_id): Path<Id<Platform>>,
     Auth(user_id): Auth,
-) -> ApiResult<Vec<Task>> {
+) -> AppResult<Vec<Task>, Infallible> {
     let mut transaction = state
         .pool
         .begin_with("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE")
@@ -94,7 +95,7 @@ pub async fn submit(
     Path(task_id): Path<Id<Task>>,
     Auth(user_id): Auth,
     Json(request): Json<SubmitRequest>,
-) -> ApiResult<()> {
+) -> AppResult<(), Infallible> {
     let assignment_id: Id<Assignment> = sqlx::query_scalar!(
         "
         SELECT
