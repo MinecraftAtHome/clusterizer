@@ -9,16 +9,14 @@ env:
 
 jobs:
   cargo-checks:
-    # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
-    # Docker Hub image that `container-job` executes in
     container: rust:bookworm
     services:
       postgres:
         image: postgres
         env:
-          POSTGRES_PASSWORD: balls
-
+         POSTGRES_HOST_AUTH_METHOD: trust
+         POSTGRES_DB: clusterizer
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
