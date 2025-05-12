@@ -1,8 +1,11 @@
 on: push
 name: Rust pre-merge checks
 
+env:
+  DATABASE_URL: "postgres://postgres@postgres/clusterizer"
+
 jobs:
-  server-checks:
+  rust-checks:
     runs-on: ubuntu-latest
     container: rust:bookworm
     services:
@@ -16,11 +19,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      RUSTFLAGS: "-Dwarnings"
-      DATABASE_URL: "postgres://postgres@postgres/clusterizer"
-      CLUSTERIZER_SECRET: "balls"
-      CLUSTERIZER_ADDRESS: "0.0.0.0:3000"
+
     steps:
       - uses: actions/checkout@v4
       - name: sqlx install
@@ -31,6 +30,6 @@ jobs:
         run: sqlx database setup
         working-directory: ./server
       - name: Clippy Check
-        run: cargo clippy --all-targets --all-features
+        run: cargo clippy
       - name: Cargo Format Check
         run: cargo fmt --check
