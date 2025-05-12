@@ -26,7 +26,7 @@ async fn main() -> ClientResult<()> {
         Commands::Register(register_args) => {
             let register_response =
                 register(global_args.server_url, register_args.username).await?;
-            println!("Api Key: {} ", register_response.api_key);
+            println!("{}", register_response.api_key);
 
             Ok(())
         }
