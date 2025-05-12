@@ -3,8 +3,6 @@ mod result;
 mod routes;
 mod state;
 
-use std::env;
-
 use axum::{
     Router,
     routing::{get, post},
@@ -16,11 +14,9 @@ use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
-    dotenvy::dotenv().unwrap();
-
-    let database_url = env::var("DATABASE_URL").unwrap();
-    let secret = env::var("CLUSTERIZER_SECRET").unwrap();
-    let address = env::var("CLUSTERIZER_ADDRESS").unwrap();
+    let database_url = dotenvy::var("DATABASE_URL").unwrap();
+    let secret = dotenvy::var("CLUSTERIZER_SECRET").unwrap();
+    let address = dotenvy::var("CLUSTERIZER_ADDRESS").unwrap();
 
     let state = AppState {
         pool: PgPool::connect(&database_url).await.unwrap(),
