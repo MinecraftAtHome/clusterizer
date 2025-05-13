@@ -90,7 +90,6 @@ pub async fn fetch(
             .fetch_one(&mut *transaction)
             .await?;
         transaction.rollback().await?;
-        println!("Here?");
         Ok(Json(vec![]))
     }
 }
