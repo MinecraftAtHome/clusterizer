@@ -92,7 +92,7 @@ pub async fn fetch(
             .await?;
 
         transaction.rollback().await?;
-        
+
         Ok(Json(vec![]))
     }
 }
