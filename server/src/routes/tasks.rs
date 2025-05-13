@@ -42,23 +42,28 @@ pub async fn fetch(
     let task = sqlx::query_as!(
         Task,
         "
-            SELECT
-                t.*
-            FROM
-                tasks t
+            WITH cte AS (
+                SELECT t.id
+                FROM tasks t
                 JOIN projects p
                     ON t.project_id = p.id
                     AND p.active
                 JOIN project_versions pv
                     ON pv.project_id = p.id
                     AND pv.platform_id = $1
-                LEFT JOIN assignments a
-                    ON a.task_id = t.id
-                    AND a.canceled_at IS NULL
-                    AND a.user_id = $2
-            WHERE
-                t.assignments_remaining > 0
-                AND a.id IS NULL
+                WHERE 
+                    t.assignments_remaining > 0 AND
+                    NOT t.assigned_to_userids @> ARRAY[$2::bigint]
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE tasks
+            SET 
+                assigned_to_userids = assigned_to_userids || $2,
+                assignments_remaining = assignments_remaining - 1
+            FROM cte
+            WHERE tasks.id = cte.id
+            RETURNING tasks.*;
         ",
         platform_id.raw(),
         user_id.raw()
