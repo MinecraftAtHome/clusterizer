@@ -86,3 +86,52 @@ impl<T> Id<T> {
         self.raw
     }
 }
+
+#[cfg(feature = "sqlx")]
+mod sqlx {
+    use std::error::Error;
+
+    use sqlx::{
+        Database, Decode, Encode, Type,
+        encode::IsNull,
+        postgres::{PgHasArrayType, PgTypeInfo},
+    };
+
+    use super::Id;
+
+    impl<T, DB: Database> Type<DB> for Id<T>
+    where
+        i64: Type<DB>,
+    {
+        fn type_info() -> DB::TypeInfo {
+            i64::type_info()
+        }
+    }
+
+    impl<'q, T, DB: Database> Encode<'q, DB> for Id<T>
+    where
+        i64: Encode<'q, DB>,
+    {
+        fn encode_by_ref(
+            &self,
+            buf: &mut DB::ArgumentBuffer<'q>,
+        ) -> Result<IsNull, Box<dyn Error + Send + Sync>> {
+            self.raw.encode_by_ref(buf)
+        }
+    }
+
+    impl<'r, T, DB: Database> Decode<'r, DB> for Id<T>
+    where
+        i64: Decode<'r, DB>,
+    {
+        fn decode(value: DB::ValueRef<'r>) -> Result<Self, Box<dyn Error + Send + Sync>> {
+            i64::decode(value).map(Self::from)
+        }
+    }
+
+    impl<T> PgHasArrayType for Id<T> {
+        fn array_type_info() -> PgTypeInfo {
+            i64::array_type_info()
+        }
+    }
+}

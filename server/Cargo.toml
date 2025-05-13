@@ -7,7 +7,7 @@ edition = "2024"
 axum = "0.8.3"
 axum-extra = { version = "0.10.1", features = ["typed-header"] }
 base64 = "0.22.1"
-clusterizer-common = { version = "0.1.0", path = "../common" }
+clusterizer-common = { version = "0.1.0", path = "../common", features = ["sqlx"] }
 dotenvy = "0.15.7"
 hmac = "0.12.1"
 sha2 = "0.10.9"
