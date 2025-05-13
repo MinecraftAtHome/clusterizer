@@ -8,7 +8,7 @@ use axum::{
     routing::{get, post},
 };
 use routes::*;
-use sqlx::PgPool;
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use state::AppState;
 use tokio::net::TcpListener;
 
@@ -19,7 +19,9 @@ async fn main() {
     let address = dotenvy::var("CLUSTERIZER_ADDRESS").unwrap();
 
     let state = AppState {
-        pool: PgPool::connect(&database_url).await.unwrap(),
+        pool: PgPoolOptions::new()
+        .connect(&database_url)
+        .await.unwrap(),
         secret: secret.into_bytes(),
     };
 

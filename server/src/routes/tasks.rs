@@ -32,8 +32,9 @@ pub async fn get_one(
 pub async fn fetch(
     State(state): State<AppState>,
     Path(platform_id): Path<Id<Platform>>,
-    Auth(user_id): Auth,
+    Auth(user_id): Auth
 ) -> ApiResult<Vec<Task>> {
+    let mut transaction = state.pool.begin().await?;
     let task = sqlx::query_as!(
         Task,
         "
@@ -62,7 +63,7 @@ pub async fn fetch(
         platform_id.raw(),
         user_id.raw()
     )
-    .fetch_optional(&state.pool)
+    .fetch_optional(&mut *transaction)
     .await?;
 
     if let Some(task) = task {
@@ -79,15 +80,17 @@ pub async fn fetch(
             task.id.raw(),
             user_id.raw()
         )
-        .execute(&state.pool)
+        .execute(&mut *transaction)
         .await?;
+        transaction.commit().await?;
 
         Ok(Json(vec![task]))
     } else {
         sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id.raw())
-            .fetch_one(&state.pool)
+            .fetch_one(&mut *transaction)
             .await?;
-
+        transaction.rollback().await?;
+        println!("Here?");
         Ok(Json(vec![]))
     }
 }

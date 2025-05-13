@@ -12,5 +12,5 @@ pub struct Task {
     pub project_id: Id<Project>,
     pub stdin: String,
     pub assignments_needed: i32,
-    pub assigned_to_userids: Vec<Id<User>>,
+    pub assignment_user_ids: Vec<i64>,
 }
