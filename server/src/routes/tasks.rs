@@ -82,6 +82,7 @@ pub async fn fetch(
         )
         .execute(&mut *transaction)
         .await?;
+
         transaction.commit().await?;
 
         Ok(Json(vec![task]))
@@ -89,7 +90,9 @@ pub async fn fetch(
         sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id.raw())
             .fetch_one(&mut *transaction)
             .await?;
+
         transaction.rollback().await?;
+        
         Ok(Json(vec![]))
     }
 }
