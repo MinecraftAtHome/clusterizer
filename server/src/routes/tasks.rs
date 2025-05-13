@@ -12,7 +12,7 @@ use crate::{auth::Auth, result::ApiResult, state::AppState};
 
 pub async fn get_all(State(state): State<AppState>) -> ApiResult<Vec<Task>> {
     Ok(Json(
-        sqlx::query_as!(Task, "SELECT * FROM tasks")
+        sqlx::query_as_unchecked!(Task, "SELECT * FROM tasks")
             .fetch_all(&state.pool)
             .await?,
     ))
@@ -23,7 +23,7 @@ pub async fn get_one(
     Path(task_id): Path<Id<Task>>,
 ) -> ApiResult<Task> {
     Ok(Json(
-        sqlx::query_as!(Task, "SELECT * FROM tasks WHERE id = $1", task_id.raw())
+        sqlx::query_as_unchecked!(Task, "SELECT * FROM tasks WHERE id = $1", task_id.raw())
             .fetch_one(&state.pool)
             .await?,
     ))
@@ -35,7 +35,7 @@ pub async fn fetch(
     Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
     let mut transaction = state.pool.begin().await?;
-    let task = sqlx::query_as!(
+    let task = sqlx::query_as_unchecked!(
         Task,
         "
             WITH tasks_fetched AS (
