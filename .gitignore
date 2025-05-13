@@ -1,2 +1,4 @@
 /target
 /server/.env
+/client/cache
+/client/slots
