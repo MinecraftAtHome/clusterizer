@@ -34,7 +34,6 @@ pub async fn fetch(
     Path(platform_id): Path<Id<Platform>>,
     Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
-
     let task = sqlx::query_as!(
         Task,
         "
