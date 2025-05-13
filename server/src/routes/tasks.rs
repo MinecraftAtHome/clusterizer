@@ -34,10 +34,6 @@ pub async fn fetch(
     Path(platform_id): Path<Id<Platform>>,
     Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
-    let mut transaction = state
-        .pool
-        .begin_with("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE")
-        .await?;
 
     let task = sqlx::query_as!(
         Task,
@@ -68,21 +64,10 @@ pub async fn fetch(
         platform_id.raw(),
         user_id.raw()
     )
-    .fetch_optional(&mut *transaction)
+    .fetch_optional(&state.pool)
     .await?;
 
     if let Some(task) = task {
-        sqlx::query!(
-            "
-            UPDATE tasks SET assignments_remaining = assignments_remaining - 1
-            WHERE
-            id = $1
-            ",
-            task.id.raw()
-        )
-        .execute(&mut *transaction)
-        .await?;
-
         sqlx::query!(
             "
             INSERT INTO assignments (
@@ -96,18 +81,14 @@ pub async fn fetch(
             task.id.raw(),
             user_id.raw()
         )
-        .execute(&mut *transaction)
+        .execute(&state.pool)
         .await?;
-
-        transaction.commit().await?;
 
         Ok(Json(vec![task]))
     } else {
         sqlx::query_scalar!("SELECT 1 FROM platforms WHERE id = $1", platform_id.raw())
-            .fetch_one(&mut *transaction)
+            .fetch_one(&state.pool)
             .await?;
-
-        transaction.rollback().await?;
 
         Ok(Json(vec![]))
     }
