@@ -47,15 +47,14 @@ pub async fn fetch(
                     ON pv.project_id = p.id
                     AND pv.platform_id = $1
                 WHERE 
-                    t.assignments_remaining > 0 AND
-                    NOT t.assigned_to_userids @> ARRAY[$2::bigint]
+                    t.assignments_needed > coalesce(array_length(t.assigned_to_userids, 1), 0)
+                    AND NOT t.assigned_to_userids @> ARRAY[$2::bigint]
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
             )
             UPDATE tasks
             SET 
-                assigned_to_userids = assigned_to_userids || $2,
-                assignments_remaining = assignments_remaining - 1
+                assigned_to_userids = assigned_to_userids || $2
             FROM cte
             WHERE tasks.id = cte.id
             RETURNING tasks.*;
