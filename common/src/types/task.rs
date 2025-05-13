@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::id::Id;
 
-use super::{Project, User};
+use super::Project;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct Task {

@@ -32,7 +32,7 @@ pub async fn get_one(
 pub async fn fetch(
     State(state): State<AppState>,
     Path(platform_id): Path<Id<Platform>>,
-    Auth(user_id): Auth
+    Auth(user_id): Auth,
 ) -> ApiResult<Vec<Task>> {
     let mut transaction = state.pool.begin().await?;
     let task = sqlx::query_as!(
