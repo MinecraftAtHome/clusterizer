@@ -34,7 +34,7 @@ CREATE TABLE tasks (
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdin text NOT NULL,
     assignments_needed int4 NOT NULL DEFAULT 1,
-    assigned_to_userids int8[] NOT NULL DEFAULT ARRAY[]::int8[]
+    assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[]
 );
 
 CREATE TABLE assignments (
@@ -50,8 +50,8 @@ CREATE UNIQUE INDEX assignments_task_id_user_id_key
     WHERE canceled_at IS NULL;
 
 CREATE INDEX tasks_assignments_needed_assigned_to_idx
-ON tasks USING GIN (assigned_to_userids)
-WHERE assignments_needed < array_length(assigned_to_userids, 1);
+    ON tasks USING GIN (assignment_user_ids)
+    WHERE assignments_needed < COALESCE(array_length(assignment_user_ids, 1), 0);
 
 CREATE TABLE results (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
