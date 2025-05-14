@@ -64,10 +64,9 @@ async fn main() {
         .route("/results", get(get_all::<Result>))
         .route("/results/{id}", get(get_one::<Result>))
         //
-        .route("/users/profile", get(users::get_profile))
-        .route("/users/register", post(users::register))
-        .route("/tasks/fetch/{platform_id}", post(tasks::fetch))
-        .route("/tasks/{task_id}/submit", post(tasks::submit))
+        .route("/register", post(register::register))
+        .route("/fetch_tasks", post(fetch_tasks::fetch_tasks))
+        .route("/submit_result/{id}", post(submit_result::submit_result))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();

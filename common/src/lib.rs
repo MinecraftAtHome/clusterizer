@@ -1,4 +1,5 @@
 pub mod errors;
 pub mod id;
-pub mod messages;
+pub mod requests;
+pub mod responses;
 pub mod types;
