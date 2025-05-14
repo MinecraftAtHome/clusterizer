@@ -42,13 +42,10 @@ jobs:
         - name: Start server in background
           run: cargo run & echo $! > server.pid
           working-directory: ./server
-        - name: Wait for server to be ready
-          run: | 
-            for i in {1..30}; do
-              nc -z localhost 3000 && echo "Server is up!" && exit 0 || true
-              sleep 1
-            done
-            echo "Server did not start in time" && exit 1
+        - name: Sleep for 30 seconds
+          uses: jakejarvis/wait-action@master
+          with:
+            time: '30s'
         - name: Register client
           run: cargo run -- -s http://localhost:3000 register -u test > apikey.txt
           working-directory: ./client
