@@ -22,8 +22,8 @@ jobs:
     steps:
         - uses: actions/checkout@v4
         - uses: Swatinem/rust-cache@v2
-        - name: Install netcat-traditional
-          run: apt install netcat -y
+        - name: Install netcat
+          run: apt install netcat-traditional -y
         - name: sqlx install
           run: cargo install sqlx-cli
         - name: rustup install clippy
