@@ -3,12 +3,12 @@ use thiserror::Error;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize, Error)]
 pub enum RegisterError {
-    #[error("too short")]
+    #[error("name too short")]
     TooShort,
-    #[error("too long")]
+    #[error("name too long")]
     TooLong,
-    #[error("invalid character")]
+    #[error("name includes invalid character")]
     InvalidCharacter,
-    #[error("already exists")]
+    #[error("user already exists with that name")]
     AlreadyExists,
 }
