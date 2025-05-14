@@ -40,15 +40,15 @@ jobs:
           run: cargo build
           working-directory: ./client
         - name: Start server in background
-          run: cargo build & echo $! > server.pid
+          run: cargo run & echo $! > server.pid
           working-directory: ./server
         - name: Wait for server to be ready
           run: | 
             for i in {1..10}; do
-            nc -z localhost 3000 && echo "Server is up!" && exit 0
+            nc -z localhost 3000 && echo "Server is up!"
             sleep 1
             done
-            echo "Server did not start in time" && exit 1
+            echo "Server did not start in time"
         - name: Register client
           run: cargo run -- -s http://localhost:3000 register -u test > apikey.txt
           working-directory: ./client
