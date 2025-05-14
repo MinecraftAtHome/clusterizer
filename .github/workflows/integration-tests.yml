@@ -3,7 +3,8 @@ name: Integration tests
 
 env:
   DATABASE_URL: "postgres://postgres@postgres/clusterizer"
-
+  CLUSTERIZER_SECRET: "secret"
+  CLUSTERIZER_ADDRESS: "0.0.0.0:3000"
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
