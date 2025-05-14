@@ -41,13 +41,13 @@ pub async fn fetch(
             WITH tasks_fetched AS (
                 SELECT t.id
                 FROM tasks t
-                    JOIN projects p
-                        ON t.project_id = p.id
-                        AND p.active
-                    JOIN project_versions pv
-                        ON pv.project_id = p.id
-                        AND pv.platform_id = $1
-                WHERE 
+                     JOIN projects p
+                         ON t.project_id = p.id
+                         AND p.active
+                     JOIN project_versions pv
+                         ON pv.project_id = p.id
+                         AND pv.platform_id = $1
+                WHERE
                     t.assignments_needed > coalesce(array_length(t.assignment_user_ids, 1), 0)
                     AND NOT t.assignment_user_ids @> ARRAY[$2::bigint]
                 LIMIT 1
