@@ -50,5 +50,3 @@ jobs:
         - name: Register client
           run: cargo run -- -s http://localhost:3000 register -u test > apikey.txt
           working-directory: ./client
-        - name: Stop server
-          run: kill $(cat server.pid)
