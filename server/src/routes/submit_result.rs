@@ -31,7 +31,7 @@ pub async fn submit_result(
             AND canceled_at IS NULL
         "#,
         task_id,
-        user_id
+        user_id,
     )
     .fetch_one(&state.pool)
     .await?;
@@ -53,7 +53,7 @@ pub async fn submit_result(
         assignment_id,
         request.stdout,
         request.stderr,
-        request.exit_code
+        request.exit_code,
     )
     .execute(&state.pool)
     .await?;

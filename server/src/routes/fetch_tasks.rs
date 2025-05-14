@@ -8,10 +8,7 @@ pub async fn fetch_tasks(
     Auth(user_id): Auth,
     Json(request): Json<FetchTasksRequest>,
 ) -> AppResult<Json<Vec<Task>>, FetchTasksError> {
-    let mut transaction = state
-        .pool
-        .begin_with("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE")
-        .await?;
+    let mut tx = state.pool.begin().await?;
 
     let count = sqlx::query_scalar_unchecked!(
         r#"
@@ -25,7 +22,7 @@ pub async fn fetch_tasks(
         "#,
         request.project_ids
     )
-    .fetch_one(&mut *transaction)
+    .fetch_one(&mut *tx)
     .await? as usize;
 
     if count != request.project_ids.len() {
@@ -36,37 +33,36 @@ pub async fn fetch_tasks(
         Task,
         r#"
         SELECT
-            t.*
+            *
         FROM
-            tasks t
-            LEFT JOIN assignments a
-                ON a.task_id = t.id
-                AND a.canceled_at IS NULL
-                AND a.user_id = $1
+            tasks
         WHERE
-            t.assignments_remaining > 0
-            AND t.project_id = ANY($2)
-            AND a.id IS NULL
+            project_id = ANY($1)
+            AND cardinality(assignment_user_ids) < assignments_needed
+            AND $2 != ALL(assignment_user_ids)
+        FOR UPDATE SKIP LOCKED
+        LIMIT 1
         "#,
+        request.project_ids,
         user_id,
-        request.project_ids
     )
-    .fetch_optional(&mut *transaction)
+    .fetch_optional(&mut *tx)
     .await?;
 
-    if let Some(task) = task {
+    if let Some(task) = &task {
         sqlx::query_unchecked!(
             r#"
             UPDATE
                 tasks
             SET
-                assignments_remaining = assignments_remaining - 1
+                assignment_user_ids = assignment_user_ids || $2
             WHERE
                 id = $1
             "#,
-            task.id
+            task.id,
+            user_id,
         )
-        .execute(&mut *transaction)
+        .execute(&mut *tx)
         .await?;
 
         sqlx::query_unchecked!(
@@ -80,17 +76,13 @@ pub async fn fetch_tasks(
             )
             "#,
             task.id,
-            user_id
+            user_id,
         )
-        .execute(&mut *transaction)
+        .execute(&mut *tx)
         .await?;
+    };
 
-        transaction.commit().await?;
+    tx.commit().await?;
 
-        Ok(Json(vec![task]))
-    } else {
-        transaction.rollback().await?;
-
-        Ok(Json(vec![]))
-    }
+    Ok(Json(task.into_iter().collect()))
 }

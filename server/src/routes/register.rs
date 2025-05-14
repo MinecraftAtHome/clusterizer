@@ -34,7 +34,7 @@ pub async fn register(
         )
         RETURNING id "id: _"
         "#,
-        request.name
+        request.name,
     )
     .fetch_one(&state.pool)
     .await?;
