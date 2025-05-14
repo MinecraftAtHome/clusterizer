@@ -22,7 +22,7 @@ jobs:
     steps:
         - uses: actions/checkout@v4
         - uses: Swatinem/rust-cache@v2
-        - name: Install netcat
+        - name: Install netcat-traditional
           run: apt install netcat -y
         - name: sqlx install
           run: cargo install sqlx-cli
@@ -49,5 +49,6 @@ jobs:
             echo "Server did not start in time" && exit 1
         - name: Register client
           run: cargo run -- -s http://localhost:3000 register -u test > apikey.txt
+          working-directroy: ./client
         - name: Stop server
           run: kill $(cat server.pid)
