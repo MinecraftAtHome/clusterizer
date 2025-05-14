@@ -45,8 +45,8 @@ jobs:
         - name: Wait for server to be ready
           run: | 
             for i in {1..30}; do
-            nc -z localhost 3000 && echo "Server is up!" && exit 0
-            sleep 1
+              nc -z localhost 3000 && echo "Server is up!" && exit 0 || true
+              sleep 1
             done
             echo "Server did not start in time" && exit 1
         - name: Register client
