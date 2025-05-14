@@ -1,0 +1,50 @@
+on: push
+name: Integration tests
+
+env:
+  DATABASE_URL: "postgres://postgres@postgres/clusterizer"
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    container: rust:bookworm
+    services:
+      postgres:
+        image: postgres
+        env:
+         POSTGRES_HOST_AUTH_METHOD: trust
+         POSTGRES_DB: clusterizer
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+        - uses: actions/checkout@v4
+        - uses: Swatinem/rust-cache@v2
+        - name: sqlx install
+          run: cargo install sqlx-cli
+        - name: rustup install clippy
+          run: rustup component add clippy rustfmt
+        - name: sqlx setup database
+          run: sqlx database setup
+          working-directory: ./server
+        - name: Compile server
+          run: cargo build
+          working-directory: ./server
+        - name: Compile Client
+          run: cargo build
+          working-directory: ./client
+        - name: Start server in background
+          run: cargo build & echo $! > server.pid
+          working-directory: ./server
+        - name: Wait for server to be ready
+          run: for i in {1..10}; do
+            nc -z localhost 3000 && echo "Server is up!" && exit 0
+            sleep 1
+            done
+            echo "Server did not start in time" && exit 1
+        - name: Register client
+          run: cargo run -- -s http://localhost:3000 register -u test > apikey.txt
+        - name: Stop server
+          run: kill $(cat server.pid)
