@@ -29,14 +29,14 @@ macro_rules! select_all {
     ($t:ty: $query:literal) => {
         impl SelectAll for $t {
             fn select_all() -> Map<Self> {
-                sqlx::query_as!(Self, $query)
+                sqlx::query_as_unchecked!(Self, $query)
             }
         }
     };
     ($t:ty: $query:literal, $u:ty) => {
         impl SelectAllBy<$u> for $t {
             fn select_all_by(id: Id<$u>) -> Map<Self> {
-                sqlx::query_as!(Self, $query, id.raw())
+                sqlx::query_as_unchecked!(Self, $query, id)
             }
         }
     };
@@ -46,14 +46,14 @@ macro_rules! select_one {
     ($t:ty: $query:literal) => {
         impl SelectOne for $t {
             fn select_one(id: Id<Self>) -> Map<Self> {
-                sqlx::query_as!(Self, $query, id.raw())
+                sqlx::query_as_unchecked!(Self, $query, id)
             }
         }
     };
     ($t:ty: $query:literal, $u:ty) => {
         impl SelectOneBy<$u> for $t {
             fn select_one_by(id: Id<$u>) -> Map<Self> {
-                sqlx::query_as!(Self, $query, id.raw())
+                sqlx::query_as_unchecked!(Self, $query, id)
             }
         }
     };

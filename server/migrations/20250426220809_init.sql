@@ -33,7 +33,7 @@ CREATE TABLE tasks (
     created_at timestamptz NOT NULL DEFAULT now(),
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdin text NOT NULL,
-    assignments_remaining int4 NOT NULL DEFAULT 1
+    assignments_remaining int4 NOT NULL
 );
 
 CREATE TABLE assignments (
