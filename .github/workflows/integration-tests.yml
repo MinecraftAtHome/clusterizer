@@ -49,6 +49,6 @@ jobs:
             echo "Server did not start in time" && exit 1
         - name: Register client
           run: cargo run -- -s http://localhost:3000 register -u test > apikey.txt
-          working-directroy: ./client
+          working-directory: ./client
         - name: Stop server
           run: kill $(cat server.pid)
