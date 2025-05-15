@@ -13,18 +13,23 @@ use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::state::AppState;
-
-pub struct AuthRejection;
-
-impl IntoResponse for AuthRejection {
-    fn into_response(self) -> Response {
-        (StatusCode::BAD_REQUEST, "Authorization failed").into_response()
-    }
-}
+use crate::{query::SelectOne, state::AppState};
 
 pub struct Auth(pub Id<User>);
 
+pub enum AuthRejection {
+    BadApiKey,
+    UserDisabled,
+}
+
+impl IntoResponse for AuthRejection {
+    fn into_response(self) -> Response {
+        match self {
+            Self::BadApiKey => (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response(),
+            Self::UserDisabled => (StatusCode::BAD_REQUEST, "User is disabled").into_response(),
+        }
+    }
+}
 impl FromRequestParts<AppState> for Auth {
     type Rejection = AuthRejection;
 
@@ -32,27 +37,39 @@ impl FromRequestParts<AppState> for Auth {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> =
-            parts.extract().await.map_err(|_| AuthRejection)?;
+        let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> = parts
+            .extract()
+            .await
+            .map_err(|_| AuthRejection::BadApiKey)?;
 
         let mut api_key_bytes = [0; 40];
         let mut user_id_bytes = [0; 8];
 
         let length = BASE64_STANDARD
             .decode_slice(bearer.token(), &mut api_key_bytes)
-            .map_err(|_| AuthRejection)?;
+            .map_err(|_| AuthRejection::BadApiKey)?;
 
         if length != api_key_bytes.len() {
-            Err(AuthRejection)?;
+            Err(AuthRejection::BadApiKey)?;
         }
 
         hmac(state, &api_key_bytes[..8])
             .verify_slice(&api_key_bytes[8..])
-            .map_err(|_| AuthRejection)?;
+            .map_err(|_| AuthRejection::BadApiKey)?;
 
         user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
 
-        Ok(Auth(i64::from_le_bytes(user_id_bytes).into()))
+        let user_id = i64::from_le_bytes(user_id_bytes).into();
+        let user = User::select_one(user_id)
+            .fetch_one(&state.pool)
+            .await
+            .map_err(|_| AuthRejection::BadApiKey)?;
+
+        if user.disabled_at.is_some() {
+            Err(AuthRejection::UserDisabled)?;
+        }
+
+        Ok(Auth(user_id))
     }
 }
 

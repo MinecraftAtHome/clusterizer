@@ -9,8 +9,8 @@ use super::{Platform, Project};
 pub struct ProjectVersion {
     pub id: Id<ProjectVersion>,
     pub created_at: DateTime<Utc>,
+    pub disabled_at: Option<DateTime<Utc>>,
     pub project_id: Id<Project>,
     pub platform_id: Id<Platform>,
     pub archive_url: String,
-    pub disabled_at: Option<DateTime<Utc>>,
 }

@@ -7,5 +7,6 @@ use crate::id::Id;
 pub struct User {
     pub id: Id<User>,
     pub created_at: DateTime<Utc>,
+    pub disabled_at: Option<DateTime<Utc>>,
     pub name: String,
 }
