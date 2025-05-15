@@ -1,5 +1,5 @@
 use axum::{
-    extract::{FromRequestParts, Path, State}, http::{request::Parts, StatusCode}, response::{IntoResponse, Response}, routing::get, RequestPartsExt
+    extract::{FromRequestParts, Path, State}, http::{request::Parts, StatusCode}, response::{IntoResponse, Response}, RequestPartsExt
 };
 use axum_extra::{
     TypedHeader,
@@ -10,7 +10,7 @@ use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::{query::SelectOne, routes::{get_one, get_one_by}, state::AppState};
+use crate::{routes::get_one, state::AppState};
 
 pub struct AuthRejection;
 
@@ -57,7 +57,7 @@ impl FromRequestParts<AppState> for Auth {
                     return Err(AuthRejection)
                 }
             },
-            Err(e) =>{
+            Err(_) =>{
                 return Err(AuthRejection)
             }
         }
