@@ -16,7 +16,8 @@
                 "submitted",
                 "valid",
                 "invalid",
-                "inconclusive"
+                "inconclusive",
+                "error"
               ]
             }
           }

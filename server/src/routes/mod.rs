@@ -16,10 +16,8 @@ use crate::{
 pub mod fetch_tasks;
 pub mod register;
 pub mod submit_result;
-
-pub use fetch_tasks::fetch_tasks;
-pub use register::register;
-pub use submit_result::submit_result;
+pub mod validate_fetch;
+pub mod validate_submit;
 
 pub async fn get_all<T: Select + Send + Unpin>(
     State(state): State<AppState>,

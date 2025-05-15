@@ -13,7 +13,9 @@ use axum::{
 use clusterizer_common::records::{
     Assignment, Platform, Project, ProjectVersion, Result, Task, User,
 };
-use routes::{get_all, get_one};
+
+use routes::*;
+
 use sqlx::PgPool;
 use state::AppState;
 use tokio::{net::TcpListener, time};
@@ -54,10 +56,11 @@ async fn serve_task(state: AppState, address: String) {
         .route("/assignments/{id}", get(get_one::<Assignment>))
         .route("/results", get(get_all::<Result>))
         .route("/results/{id}", get(get_one::<Result>))
-        .route("/register", post(routes::register))
-        .route("/fetch_tasks", post(routes::fetch_tasks))
-        .route("/submit_result/{id}", post(routes::submit_result))
-        .layer(TraceLayer::new_for_http())
+        .route("/register", post(register::register))
+        .route("/fetch_tasks", post(fetch_tasks::fetch_tasks))
+        .route("/submit_result/{id}", post(submit_result::submit_result))
+        .route("/validate_fetch/{id}", get(validate_fetch::validate_fetch))
+        .route("/validate_submit", post(validate_submit::validate_submit))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();

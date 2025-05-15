@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM assignments WHERE id = $1",
+  "query": "\n                    SELECT\n                        *\n                    FROM\n                        assignments\n                    WHERE\n                        id = ANY($1)\n                ",
   "describe": {
     "columns": [
       {
@@ -15,21 +15,16 @@
       },
       {
         "ordinal": 2,
-        "name": "deadline_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 3,
         "name": "task_id",
         "type_info": "Int8"
       },
       {
-        "ordinal": 4,
+        "ordinal": 3,
         "name": "user_id",
         "type_info": "Int8"
       },
       {
-        "ordinal": 5,
+        "ordinal": 4,
         "name": "state",
         "type_info": {
           "Custom": {
@@ -52,7 +47,7 @@
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -60,9 +55,8 @@
       false,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "ce2921487afc54738ea394ab248c5602d215db4e5cf61484cf7b80c84b0cfe5c"
+  "hash": "5a7e0d775074335094b4e5e13fe9628db2f65fd407f22b21595bfb854c6e62fd"
 }

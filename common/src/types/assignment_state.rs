@@ -14,4 +14,5 @@ pub enum AssignmentState {
     Valid,
     Invalid,
     Inconclusive,
+    Error,
 }

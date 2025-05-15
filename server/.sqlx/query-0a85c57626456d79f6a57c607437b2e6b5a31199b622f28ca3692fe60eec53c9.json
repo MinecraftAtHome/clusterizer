@@ -42,7 +42,8 @@
                 "submitted",
                 "valid",
                 "invalid",
-                "inconclusive"
+                "inconclusive",
+                "error"
               ]
             }
           }
@@ -64,7 +65,8 @@
                 "submitted",
                 "valid",
                 "invalid",
-                "inconclusive"
+                "inconclusive",
+                "error"
               ]
             }
           }
