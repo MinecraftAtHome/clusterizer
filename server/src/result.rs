@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use clusterizer_common::errors::{
-    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError
+    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError,
 };
 use serde::Serialize;
 
