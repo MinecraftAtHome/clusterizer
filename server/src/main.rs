@@ -63,7 +63,6 @@ async fn main() {
         )
         .route("/results", get(get_all::<Result>))
         .route("/results/{id}", get(get_one::<Result>))
-        //
         .route("/register", post(register::register))
         .route("/fetch_tasks", post(fetch_tasks::fetch_tasks))
         .route("/submit_result/{id}", post(submit_result::submit_result))
