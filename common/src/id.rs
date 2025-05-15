@@ -3,6 +3,8 @@ use std::{
     fmt::{self, Debug, Display, Formatter},
     hash::{Hash, Hasher},
     marker::PhantomData,
+    num::ParseIntError,
+    str::FromStr,
 };
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -57,6 +59,14 @@ impl<T> Debug for Id<T> {
 impl<T> Display for Id<T> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self.raw)
+    }
+}
+
+impl<T> FromStr for Id<T> {
+    type Err = ParseIntError;
+
+    fn from_str(src: &str) -> Result<Self, Self::Err> {
+        i64::from_str(src).map(Self::from)
     }
 }
 

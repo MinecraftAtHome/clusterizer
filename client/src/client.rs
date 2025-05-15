@@ -3,16 +3,14 @@ use std::{
     ffi::OsString,
     fs::{self, File},
     iter::{self, Empty},
-    path::PathBuf,
     thread,
     time::Duration,
 };
 
 use clusterizer_api::client::ApiClient;
 use clusterizer_common::{
-    id::Id,
     requests::{FetchTasksRequest, SubmitResultRequest},
-    types::{Platform, ProjectVersion, Task},
+    types::{ProjectVersion, Task},
 };
 use log::{debug, error, info};
 use tokio::process::Command;
@@ -25,20 +23,17 @@ use crate::{
 
 pub struct ClusterizerClient {
     client: ApiClient,
-    data_path: PathBuf,
-    platform_id: Id<Platform>,
+    args: RunArgs,
 }
 
 impl ClusterizerClient {
     pub fn new(client: ApiClient, args: RunArgs) -> ClusterizerClient {
-        ClusterizerClient {
-            client,
-            data_path: args.data_path,
-            platform_id: args.platform_id.into(),
-        }
+        ClusterizerClient { client, args }
     }
 
     pub async fn run(&self) -> ClientResult<()> {
+        fs::create_dir_all(&self.args.cache_dir)?;
+
         loop {
             // TODO: cache project versions instead of fetching them each time. the cache can also
             // be used in execute_task when trying to find the right binary to use for a specific
@@ -46,7 +41,7 @@ impl ClusterizerClient {
 
             let mut project_ids: Vec<_> = self
                 .client
-                .get_all_by::<ProjectVersion, _>(self.platform_id)
+                .get_all_by::<ProjectVersion, _>(self.args.platform_id)
                 .await?
                 .into_iter()
                 .filter(|project_version| project_version.disabled_at.is_none())
@@ -82,11 +77,11 @@ impl ClusterizerClient {
             .await?
             .into_iter()
             .filter(|project_version| project_version.disabled_at.is_none())
-            .find(|project_version| project_version.platform_id == self.platform_id)
+            .find(|project_version| project_version.platform_id == self.args.platform_id)
             .ok_or(ClientError::ProjectVersionNotFound)?;
 
-        let slot_path = self.data_path.join("slots").join(format!("{}", task.id));
-        let cache_path = self.data_path.join("cache");
+        let slot_dir = tempfile::tempdir()?;
+        let slot_path = slot_dir.path();
 
         info!("Task id: {}, stdin: {}", task.id, task.stdin);
         info!("Project id: {}, name: {}", project.id, project.name);
@@ -96,10 +91,12 @@ impl ClusterizerClient {
         );
         debug!("Slot path: {}", slot_path.display());
 
-        fs::create_dir_all(&slot_path)?;
-        fs::create_dir_all(&cache_path)?;
+        fs::create_dir_all(slot_path)?;
 
-        let archive_cache_path = &cache_path.join(project_version.id.to_string() + ".zip");
+        let archive_cache_path = &self
+            .args
+            .cache_dir
+            .join(project_version.id.to_string() + ".zip");
 
         if archive_cache_path.is_file() {
             debug!("Archive {} was cached.", archive_cache_path.display());
@@ -115,7 +112,7 @@ impl ClusterizerClient {
             fs::write(archive_cache_path, &bytes)?;
         }
 
-        ZipArchive::new(File::open(archive_cache_path)?)?.extract(&slot_path)?;
+        ZipArchive::new(File::open(archive_cache_path)?)?.extract(slot_path)?;
 
         let program = slot_path
             .join(format!("main{}", env::consts::EXE_SUFFIX))
@@ -124,7 +121,7 @@ impl ClusterizerClient {
 
         let output = Command::new(program)
             .args(args)
-            .current_dir(&slot_path)
+            .current_dir(slot_path)
             .output()
             .await?;
 
@@ -135,8 +132,6 @@ impl ClusterizerClient {
         };
 
         self.client.submit_result(task.id, &result).await?;
-
-        fs::remove_dir_all(slot_path)?;
 
         Ok(())
     }
