@@ -1,8 +1,5 @@
 use axum::{
-    RequestPartsExt,
-    extract::FromRequestParts,
-    http::{StatusCode, request::Parts},
-    response::{IntoResponse, Response},
+    extract::{FromRequestParts, Path, State}, http::{request::Parts, StatusCode}, response::{IntoResponse, Response}, routing::get, RequestPartsExt
 };
 use axum_extra::{
     TypedHeader,
@@ -13,7 +10,7 @@ use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::state::AppState;
+use crate::{query::SelectOne, routes::{get_one, get_one_by}, state::AppState};
 
 pub struct AuthRejection;
 
@@ -37,7 +34,8 @@ impl FromRequestParts<AppState> for Auth {
 
         let mut api_key_bytes = [0; 40];
         let mut user_id_bytes = [0; 8];
-
+        
+        
         let length = BASE64_STANDARD
             .decode_slice(bearer.token(), &mut api_key_bytes)
             .map_err(|_| AuthRejection)?;
@@ -51,8 +49,19 @@ impl FromRequestParts<AppState> for Auth {
             .map_err(|_| AuthRejection)?;
 
         user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
-
-        Ok(Auth(i64::from_le_bytes(user_id_bytes).into()))
+        let user_id = i64::from_le_bytes(user_id_bytes).into();
+        let user = get_one::<User>(State(state.clone()), Path(user_id)).await;
+        match user {
+            Ok(user) => {
+                if user.disabled_at.is_some(){
+                    return Err(AuthRejection)
+                }
+            },
+            Err(e) =>{
+                return Err(AuthRejection)
+            }
+        }
+        Ok(Auth(user_id))
     }
 }
 
