@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::Id;
 
-use super::{Project, User};
+use super::{Project, Result, User};
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct Task {
@@ -13,6 +13,8 @@ pub struct Task {
     pub stdin: String,
     pub assignments_needed: i32,
     pub assignment_user_ids: Vec<Id<User>>,
+    pub canonical_result_id: Option<Id<Result>>,
+    pub quorum: i32,
 }
 
 #[non_exhaustive]

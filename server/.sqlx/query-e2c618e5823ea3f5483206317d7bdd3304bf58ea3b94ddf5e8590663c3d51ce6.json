@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                tasks\n            WHERE\n                project_id = $1 IS NOT FALSE\n            ",
+  "query": "\n        SELECT\n            t.*\n        FROM\n            tasks t\n            JOIN assignments a ON\n                a.task_id = t.id\n        WHERE\n            a.state not in ('canceled', 'expired')\n        GROUP BY\n            t.id\n        HAVING\n            t.project_id = ANY($1)\n            AND (\n                count(a.id) >= t.assignments_needed\n                OR t.canonical_result_id IS NOT NULL\n                )\n        ",
   "describe": {
     "columns": [
       {
@@ -46,7 +46,7 @@
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "0d6d91c4e0acb78e4fda4df1804d430966e8ae83a168de0d3444bb8a4c7b1051"
+  "hash": "e2c618e5823ea3f5483206317d7bdd3304bf58ea3b94ddf5e8590663c3d51ce6"
 }

@@ -5,7 +5,7 @@ use crate::types::{AssignmentState, Id};
 
 use super::{Task, User};
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Hash, Debug, Serialize, Deserialize)]
 pub struct Assignment {
     pub id: Id<Assignment>,
     pub created_at: DateTime<Utc>,

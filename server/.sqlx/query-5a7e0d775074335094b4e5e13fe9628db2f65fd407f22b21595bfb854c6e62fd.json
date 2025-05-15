@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                assignments\n            WHERE\n                task_id = $1 IS NOT FALSE\n                AND user_id = $2 IS NOT FALSE\n                AND state = $3 IS NOT FALSE\n            ",
+  "query": "\n                    SELECT\n                        *\n                    FROM\n                        assignments\n                    WHERE\n                        id = ANY($1)\n                ",
   "describe": {
     "columns": [
       {
@@ -47,25 +47,7 @@
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Int8",
-        {
-          "Custom": {
-            "name": "assignment_state",
-            "kind": {
-              "Enum": [
-                "init",
-                "canceled",
-                "expired",
-                "submitted",
-                "valid",
-                "invalid",
-                "inconclusive",
-                "error"
-              ]
-            }
-          }
-        }
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -76,5 +58,5 @@
       false
     ]
   },
-  "hash": "0a85c57626456d79f6a57c607437b2e6b5a31199b622f28ca3692fe60eec53c9"
+  "hash": "5a7e0d775074335094b4e5e13fe9628db2f65fd407f22b21595bfb854c6e62fd"
 }
