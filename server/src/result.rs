@@ -1,10 +1,8 @@
 use axum::{
-    Json,
-    http::StatusCode,
-    response::{IntoResponse, Response},
+    http::{status, StatusCode}, response::{IntoResponse, Response}, Json
 };
 use clusterizer_common::errors::{
-    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError,
+    FetchTasksError, ValidateFetchError, Infallible, NotFound, RegisterError, ValidateOkError, SubmitResultError
 };
 use serde::Serialize;
 
@@ -46,7 +44,22 @@ impl Status for SubmitResultError {
         }
     }
 }
-
+impl Status for ValidateFetchError{
+    fn status(&self) -> StatusCode {
+        match self{
+            Self::InvalidProject => StatusCode::NOT_FOUND,
+            Self::InvalidTask => StatusCode::NOT_FOUND
+        }
+    }
+}
+impl Status for ValidateOkError{
+    fn status(&self) -> StatusCode {
+        match self{
+            Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
+            Self::InvalidTask => StatusCode::NOT_FOUND
+        }
+    }
+}
 pub enum AppError<E> {
     Specific(E),
     Generic,
@@ -99,6 +112,24 @@ impl From<sqlx::Error> for AppError<SubmitResultError> {
             sqlx::Error::Database(err) if err.is_unique_violation() => {
                 Self::Specific(SubmitResultError::AlreadyExists)
             }
+            _ => Self::Generic,
+        }
+    }
+}
+
+impl From<sqlx::Error> for AppError<ValidateFetchError> {
+    fn from(err: sqlx::Error) -> Self {
+        match err {
+            sqlx::Error::RowNotFound => Self::Specific(ValidateFetchError::InvalidProject),
+            _ => Self::Generic,
+        }
+    }
+}
+
+impl From<sqlx::Error> for AppError<ValidateOkError> {
+    fn from(err: sqlx::Error) -> Self {
+        match err {
+            sqlx::Error::RowNotFound => Self::Specific(ValidateOkError::InvalidTask),
             _ => Self::Generic,
         }
     }
