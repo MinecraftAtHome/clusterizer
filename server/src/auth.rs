@@ -13,7 +13,7 @@ use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::{routes::get_one, state::AppState};
+use crate::{query::SelectOne, routes::get_one, state::AppState};
 
 pub struct Auth(pub Id<User>);
 
@@ -59,7 +59,7 @@ impl FromRequestParts<AppState> for Auth {
 
         user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
         let user_id = i64::from_le_bytes(user_id_bytes).into();
-        let user = get_one::<User>(State(state.clone()), Path(user_id)).await;
+        let user = User::select_one(user_id).fetch_one(&state.pool).await;
         match user {
             Ok(user) => {
                 if user.disabled_at.is_some() {
