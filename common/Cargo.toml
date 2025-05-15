@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = "0.8.4"
 chrono = { version = "0.4.40", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 sqlx = { version = "0.8.5", optional = true }

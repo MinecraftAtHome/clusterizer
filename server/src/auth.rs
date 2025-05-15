@@ -1,27 +1,18 @@
 use axum::{
     RequestPartsExt,
     extract::{FromRequestParts, Path, State},
-    http::{StatusCode, request::Parts},
-    response::{IntoResponse, Response},
+    http::request::Parts
 };
 use axum_extra::{
     TypedHeader,
     headers::{Authorization, authorization::Bearer},
 };
 use base64::prelude::*;
-use clusterizer_common::{id::Id, types::User};
+use clusterizer_common::{errors::AuthRejection, id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 use crate::{routes::get_one, state::AppState};
-
-pub struct AuthRejection;
-
-impl IntoResponse for AuthRejection {
-    fn into_response(self) -> Response {
-        (StatusCode::BAD_REQUEST, "Authorization failed").into_response()
-    }
-}
 
 pub struct Auth(pub Id<User>);
 
@@ -33,22 +24,22 @@ impl FromRequestParts<AppState> for Auth {
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> =
-            parts.extract().await.map_err(|_| AuthRejection)?;
+            parts.extract().await.map_err(|_| AuthRejection::BadAPIKey)?;
 
         let mut api_key_bytes = [0; 40];
         let mut user_id_bytes = [0; 8];
 
         let length = BASE64_STANDARD
             .decode_slice(bearer.token(), &mut api_key_bytes)
-            .map_err(|_| AuthRejection)?;
+            .map_err(|_| AuthRejection::BadAPIKey)?;
 
         if length != api_key_bytes.len() {
-            Err(AuthRejection)?;
+            Err(AuthRejection::BadAPIKey)?;
         }
 
         hmac(state, &api_key_bytes[..8])
             .verify_slice(&api_key_bytes[8..])
-            .map_err(|_| AuthRejection)?;
+            .map_err(|_| AuthRejection::BadAPIKey)?;
 
         user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
         let user_id = i64::from_le_bytes(user_id_bytes).into();
@@ -56,10 +47,10 @@ impl FromRequestParts<AppState> for Auth {
         match user {
             Ok(user) => {
                 if user.disabled_at.is_some() {
-                    return Err(AuthRejection);
+                    return Err(AuthRejection::UserDisabled);
                 }
             }
-            Err(_) => return Err(AuthRejection),
+            Err(_) => return Err(AuthRejection::BadAPIKey),
         }
         Ok(Auth(user_id))
     }

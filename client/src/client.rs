@@ -62,7 +62,7 @@ impl ClusterizerClient {
             } else {
                 for task in tasks {
                     if let Err(err) = self.execute_task(&task).await {
-                        error!("Error: {err}.");
+                        error!("Error: {}.", err);
                     }
                 }
             }
