@@ -1,14 +1,12 @@
 use axum::{
-    RequestPartsExt,
-    extract::{FromRequestParts, Path, State},
-    http::request::Parts,
+    extract::{FromRequestParts, Path, State}, http::{request::Parts, StatusCode}, response::{IntoResponse, Response}, RequestPartsExt
 };
 use axum_extra::{
     TypedHeader,
     headers::{Authorization, authorization::Bearer},
 };
 use base64::prelude::*;
-use clusterizer_common::{errors::AuthRejection, id::Id, types::User};
+use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
@@ -16,6 +14,19 @@ use crate::{routes::get_one, state::AppState};
 
 pub struct Auth(pub Id<User>);
 
+pub enum AuthRejection {
+    BadAPIKey,
+    UserDisabled,
+}
+
+impl IntoResponse for AuthRejection {
+    fn into_response(self) -> Response {
+        match self {
+            Self::BadAPIKey => (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response(),
+            Self::UserDisabled => (StatusCode::UNAUTHORIZED, "User is disabled.").into_response(),
+        }
+    }
+}
 impl FromRequestParts<AppState> for Auth {
     type Rejection = AuthRejection;
 

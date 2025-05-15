@@ -1,10 +1,8 @@
-pub mod auth_error;
 pub mod fetch_tasks_error;
 pub mod infallible;
 pub mod not_found;
 pub mod register_error;
 pub mod submit_result_error;
-pub use auth_error::AuthRejection;
 pub use fetch_tasks_error::FetchTasksError;
 pub use infallible::Infallible;
 pub use not_found::NotFound;
