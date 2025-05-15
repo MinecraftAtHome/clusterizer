@@ -1,6 +1,6 @@
 use axum::{
     RequestPartsExt,
-    extract::{FromRequestParts, Path, State},
+    extract::FromRequestParts,
     http::{StatusCode, request::Parts},
     response::{IntoResponse, Response},
 };
@@ -13,7 +13,7 @@ use clusterizer_common::{id::Id, types::User};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::{query::SelectOne, routes::get_one, state::AppState};
+use crate::{query::SelectOne, state::AppState};
 
 pub struct Auth(pub Id<User>);
 
