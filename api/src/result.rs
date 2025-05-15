@@ -1,5 +1,6 @@
 pub enum ApiError<E> {
     Specific(E),
+    String(String),
     Reqwest(reqwest::Error),
 }
 

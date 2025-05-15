@@ -100,19 +100,25 @@ impl ApiClient {
 }
 
 async fn send<Error: DeserializeOwned>(builder: RequestBuilder) -> ApiResult<Response, Error> {
-    let mut response = builder.send().await?;
+    let response = builder.send().await?;
 
-    if response.status().is_success() {
-        Ok(response)
-    } else {
+    if let Some(err) = response.error_for_status_ref().err() {
         if response
             .headers()
             .get(header::CONTENT_TYPE)
-            .is_none_or(|value| value != "application/json")
+            .is_some_and(|value| value == "application/json")
         {
-            response = response.error_for_status()?;
-        }
+            Err(ApiError::Specific(response.json().await?))
+        } else {
+            let string = response.text().await?;
 
-        Err(ApiError::Specific(response.json().await?))
+            if string.is_empty() {
+                Err(ApiError::Reqwest(err))
+            } else {
+                Err(ApiError::String(string))
+            }
+        }
+    } else {
+        Ok(response)
     }
 }

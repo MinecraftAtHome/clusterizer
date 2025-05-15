@@ -21,6 +21,7 @@ impl<E: Error + 'static> From<ApiError<E>> for ClientError {
     fn from(err: ApiError<E>) -> Self {
         match err {
             ApiError::Specific(err) => Self::Specific(Box::new(err)),
+            ApiError::String(err) => Self::Specific(err.into()),
             ApiError::Reqwest(err) => Self::Reqwest(err),
         }
     }
