@@ -26,7 +26,7 @@ impl IntoResponse for AuthRejection {
     fn into_response(self) -> Response {
         match self {
             Self::BadAPIKey => (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response(),
-            Self::UserDisabled => (StatusCode::UNAUTHORIZED, "User is disabled.").into_response(),
+            Self::UserDisabled => (StatusCode::BAD_REQUEST, "User is disabled.").into_response(),
         }
     }
 }
