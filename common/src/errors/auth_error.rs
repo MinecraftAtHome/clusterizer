@@ -1,4 +1,7 @@
-use axum::{http::StatusCode, response::{IntoResponse, Response}};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -13,13 +16,8 @@ pub enum AuthRejection {
 impl IntoResponse for AuthRejection {
     fn into_response(self) -> Response {
         match self {
-            Self::BadAPIKey => {
-                (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response()
-            },
-            Self::UserDisabled =>{
-                (StatusCode::UNAUTHORIZED, "User is disabled.").into_response()
-            }
-
+            Self::BadAPIKey => (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response(),
+            Self::UserDisabled => (StatusCode::UNAUTHORIZED, "User is disabled.").into_response(),
         }
     }
 }

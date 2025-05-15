@@ -1,7 +1,7 @@
 use axum::{
     RequestPartsExt,
     extract::{FromRequestParts, Path, State},
-    http::request::Parts
+    http::request::Parts,
 };
 use axum_extra::{
     TypedHeader,
@@ -23,8 +23,10 @@ impl FromRequestParts<AppState> for Auth {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> =
-            parts.extract().await.map_err(|_| AuthRejection::BadAPIKey)?;
+        let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> = parts
+            .extract()
+            .await
+            .map_err(|_| AuthRejection::BadAPIKey)?;
 
         let mut api_key_bytes = [0; 40];
         let mut user_id_bytes = [0; 8];
