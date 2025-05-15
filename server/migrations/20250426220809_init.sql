@@ -25,7 +25,8 @@ CREATE TABLE project_versions (
     created_at timestamptz NOT NULL DEFAULT now(),
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
     platform_id int8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    archive_url text NOT NULL
+    archive_url text NOT NULL,
+    disabled_at timestamptz
 );
 
 CREATE TABLE tasks (

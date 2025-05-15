@@ -12,4 +12,5 @@ pub struct ProjectVersion {
     pub project_id: Id<Project>,
     pub platform_id: Id<Platform>,
     pub archive_url: String,
+    pub disabled_at: Option<DateTime<Utc>>,
 }

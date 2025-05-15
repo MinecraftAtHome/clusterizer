@@ -49,6 +49,7 @@ impl ClusterizerClient {
                 .get_all_by::<ProjectVersion, _>(self.platform_id)
                 .await?
                 .into_iter()
+                .filter(|project_version| project_version.disabled_at.is_none())
                 .map(|project_version| project_version.project_id)
                 .collect();
 
@@ -80,6 +81,7 @@ impl ClusterizerClient {
             .get_all_by::<ProjectVersion, _>(task.project_id)
             .await?
             .into_iter()
+            .filter(|project_version| project_version.disabled_at.is_none())
             .find(|project_version| project_version.platform_id == self.platform_id)
             .ok_or(ClientError::ProjectVersionNotFound)?;
 
