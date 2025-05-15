@@ -18,14 +18,14 @@ use crate::{query::SelectOne, state::AppState};
 pub struct Auth(pub Id<User>);
 
 pub enum AuthRejection {
-    BadAPIKey,
+    BadApiKey,
     UserDisabled,
 }
 
 impl IntoResponse for AuthRejection {
     fn into_response(self) -> Response {
         match self {
-            Self::BadAPIKey => (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response(),
+            Self::BadApiKey => (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response(),
             Self::UserDisabled => (StatusCode::BAD_REQUEST, "User is disabled").into_response(),
         }
     }
@@ -40,34 +40,35 @@ impl FromRequestParts<AppState> for Auth {
         let TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>> = parts
             .extract()
             .await
-            .map_err(|_| AuthRejection::BadAPIKey)?;
+            .map_err(|_| AuthRejection::BadApiKey)?;
 
         let mut api_key_bytes = [0; 40];
         let mut user_id_bytes = [0; 8];
 
         let length = BASE64_STANDARD
             .decode_slice(bearer.token(), &mut api_key_bytes)
-            .map_err(|_| AuthRejection::BadAPIKey)?;
+            .map_err(|_| AuthRejection::BadApiKey)?;
 
         if length != api_key_bytes.len() {
-            Err(AuthRejection::BadAPIKey)?;
+            Err(AuthRejection::BadApiKey)?;
         }
 
         hmac(state, &api_key_bytes[..8])
             .verify_slice(&api_key_bytes[8..])
-            .map_err(|_| AuthRejection::BadAPIKey)?;
+            .map_err(|_| AuthRejection::BadApiKey)?;
 
         user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
+
         let user_id = i64::from_le_bytes(user_id_bytes).into();
-        let user = User::select_one(user_id).fetch_one(&state.pool).await;
-        match user {
-            Ok(user) => {
-                if user.disabled_at.is_some() {
-                    return Err(AuthRejection::UserDisabled);
-                }
-            }
-            Err(_) => return Err(AuthRejection::BadAPIKey),
+        let user = User::select_one(user_id)
+            .fetch_one(&state.pool)
+            .await
+            .map_err(|_| AuthRejection::BadApiKey)?;
+
+        if user.disabled_at.is_some() {
+            Err(AuthRejection::UserDisabled)?;
         }
+
         Ok(Auth(user_id))
     }
 }
