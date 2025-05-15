@@ -1,5 +1,8 @@
 use axum::{
-    extract::{FromRequestParts, Path, State}, http::{request::Parts, StatusCode}, response::{IntoResponse, Response}, RequestPartsExt
+    RequestPartsExt,
+    extract::{FromRequestParts, Path, State},
+    http::{StatusCode, request::Parts},
+    response::{IntoResponse, Response},
 };
 use axum_extra::{
     TypedHeader,
@@ -34,8 +37,7 @@ impl FromRequestParts<AppState> for Auth {
 
         let mut api_key_bytes = [0; 40];
         let mut user_id_bytes = [0; 8];
-        
-        
+
         let length = BASE64_STANDARD
             .decode_slice(bearer.token(), &mut api_key_bytes)
             .map_err(|_| AuthRejection)?;
@@ -53,13 +55,11 @@ impl FromRequestParts<AppState> for Auth {
         let user = get_one::<User>(State(state.clone()), Path(user_id)).await;
         match user {
             Ok(user) => {
-                if user.disabled_at.is_some(){
-                    return Err(AuthRejection)
+                if user.disabled_at.is_some() {
+                    return Err(AuthRejection);
                 }
-            },
-            Err(_) =>{
-                return Err(AuthRejection)
             }
+            Err(_) => return Err(AuthRejection),
         }
         Ok(Auth(user_id))
     }
