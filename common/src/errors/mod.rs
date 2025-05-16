@@ -6,6 +6,7 @@ pub mod submit_result_error;
 pub mod valdiate_fetch_error;
 pub mod validate_err_error;
 pub mod validate_ok_error;
+pub mod validate_state_error;
 
 pub use fetch_tasks_error::FetchTasksError;
 pub use infallible::Infallible;
@@ -15,3 +16,4 @@ pub use submit_result_error::SubmitResultError;
 pub use valdiate_fetch_error::ValidateFetchError;
 pub use validate_err_error::ValidateErrError;
 pub use validate_ok_error::ValidateOkError;
+pub use validate_state_error::ValidateStateError;

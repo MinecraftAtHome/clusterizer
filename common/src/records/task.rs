@@ -13,5 +13,5 @@ pub struct Task {
     pub stdin: String,
     pub assignments_needed: i32,
     pub assignment_user_ids: Vec<Id<User>>,
-    pub canonical_result_id: Id<Result>,
+    pub canonical_result_id: Option<Id<Result>>,
 }

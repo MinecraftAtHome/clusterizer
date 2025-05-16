@@ -15,8 +15,10 @@ use crate::{
 
 pub mod fetch_tasks;
 pub mod register;
-pub mod result_validation;
 pub mod submit_result;
+pub mod validate_err;
+pub mod validate_fetch;
+pub mod validate_ok;
 
 pub async fn get_all<T: SelectAll + Send + Unpin>(
     State(state): State<AppState>,

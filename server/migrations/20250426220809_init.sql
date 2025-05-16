@@ -69,6 +69,5 @@ CREATE TABLE results (
     assignment_id int8 NOT NULL UNIQUE REFERENCES assignments(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdout text NOT NULL,
     stderr text NOT NULL,
-    exit_code int4,
-    is_validated bool NOT NULL default False
+    exit_code int4
 );

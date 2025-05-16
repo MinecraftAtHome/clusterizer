@@ -47,22 +47,28 @@ impl Status for SubmitResultError {
         }
     }
 }
+
 impl Status for ValidateFetchError {
     fn status(&self) -> StatusCode {
         match self {
             Self::InvalidProject => StatusCode::NOT_FOUND,
-            Self::InvalidTask => StatusCode::NOT_FOUND,
         }
     }
 }
+
 impl Status for ValidateOkError {
     fn status(&self) -> StatusCode {
         match self {
-            Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
             Self::InvalidTask => StatusCode::NOT_FOUND,
+            Self::InvalidResult => StatusCode::NOT_FOUND,
+            Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
+            Self::AssignmentCanceledError => StatusCode::BAD_REQUEST,
+            Self::ResultCountQuorumNotEqual => StatusCode::BAD_REQUEST,
+            Self::ResultTaskRelationshipInconsistent => StatusCode::BAD_REQUEST
         }
     }
 }
+
 impl Status for ValidateErrError {
     fn status(&self) -> StatusCode {
         match self {
@@ -72,6 +78,7 @@ impl Status for ValidateErrError {
         }
     }
 }
+
 pub enum AppError<E> {
     Specific(E),
     Generic,
@@ -130,11 +137,8 @@ impl From<sqlx::Error> for AppError<SubmitResultError> {
 }
 
 impl From<sqlx::Error> for AppError<ValidateFetchError> {
-    fn from(err: sqlx::Error) -> Self {
-        match err {
-            sqlx::Error::RowNotFound => Self::Specific(ValidateFetchError::InvalidProject),
-            _ => Self::Generic,
-        }
+    fn from(_: sqlx::Error) -> Self {
+        Self::Generic
     }
 }
 
