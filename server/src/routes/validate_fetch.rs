@@ -36,11 +36,14 @@ pub async fn validate_fetch(
                 a.task_id = t.id
             JOIN results r ON
                 r.assignment_id = a.id
+        WHERE
+            a.state = 'validation_pending'
+            OR a.state = 'validation_inconclusive'
         GROUP BY
             t.id
         HAVING
             t.project_id = ANY($1)
-            AND count(r.id) >= t.assignments_needed
+            AND count(a.id) >= t.assignments_needed
         "#,
         request.project_ids,
     )

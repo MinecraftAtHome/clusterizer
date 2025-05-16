@@ -108,7 +108,7 @@ pub async fn validate_ok(
 
     //Set selected assignments to be valid
     let assignment_ids = &Vec::from_iter(results.iter().map(|result| result.assignment_id));
-    set_assignment_state::set_assignment_state(&state, AssignmentState::Valid, assignment_ids)
+    set_assignment_state::set_assignment_state(&state, AssignmentState::ValidationOk, assignment_ids)
         .await?;
 
     //Set assignments with results other than the ones we just set to be valid to be invalid
@@ -133,7 +133,7 @@ pub async fn validate_ok(
 
     set_assignment_state::set_assignment_state(
         &state,
-        AssignmentState::Invalid,
+        AssignmentState::ValidationError,
         &Vec::from_iter(assignments_other.iter().map(|assignment| assignment.id)),
     )
     .await?;

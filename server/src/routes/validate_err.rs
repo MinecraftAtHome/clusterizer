@@ -71,7 +71,7 @@ pub async fn validate_err(
         //Set validate state
         set_assignment_state::set_assignment_state(
             &state,
-            AssignmentState::Inconclusive,
+            AssignmentState::ValidationInconclusive,
             &Vec::from_iter(
                 Assignment::select_all_by(task_id)
                     .fetch_all(&state.pool)
