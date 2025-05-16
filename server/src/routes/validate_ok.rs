@@ -17,7 +17,8 @@ pub async fn validate_ok(
     Json(request): Json<ValidateOkRequest>,
 ) -> AppResult<(), ValidateOkError> {
     let task = Task::select_one(task_id).fetch_one(&state.pool).await?;
-
+    //Get task_id from results - distinct task ids. If there's more than one task id -> ResultTaskRelationshipInconsistent
+    //Use the same task id 
     let project = Project::select_one(task.project_id)
         .fetch_one(&state.pool)
         .await?;
@@ -30,6 +31,7 @@ pub async fn validate_ok(
                     results r
                 JOIN assignments a
                     ON a.id = r.assignment_id
+                    AND a.state in ('validation_pending', 'validation_inconclusive')
                 JOIN tasks t
                     ON t.id = a.task_id
                 WHERE
