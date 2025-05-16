@@ -5,8 +5,8 @@ use clusterizer_common::{
     responses::RegisterResponse,
     types::Task,
 };
-use reqwest::{IntoUrl, Method, RequestBuilder, Response, header};
-use serde::de::DeserializeOwned;
+use reqwest::{IntoUrl, RequestBuilder, Response, header};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
     get::{GetAll, GetAllBy, GetOne, GetOneBy},
@@ -30,7 +30,7 @@ impl ApiClient {
 
     pub async fn get_all<T: GetAll + DeserializeOwned>(&self) -> ApiResult<Vec<T>, Infallible> {
         let url = T::get_all(&self.url);
-        Ok(send(self.get(url)).await?.json().await?)
+        Ok(self.get(url).await?.json().await?)
     }
 
     pub async fn get_all_by<T: GetAllBy<U> + DeserializeOwned, U>(
@@ -38,12 +38,12 @@ impl ApiClient {
         id: Id<U>,
     ) -> ApiResult<Vec<T>, NotFound> {
         let url = T::get_all_by(&self.url, id);
-        Ok(send(self.get(url)).await?.json().await?)
+        Ok(self.get(url).await?.json().await?)
     }
 
     pub async fn get_one<T: GetOne + DeserializeOwned>(&self, id: Id<T>) -> ApiResult<T, NotFound> {
         let url = T::get_one(&self.url, id);
-        Ok(send(self.get(url)).await?.json().await?)
+        Ok(self.get(url).await?.json().await?)
     }
 
     pub async fn get_one_by<T: GetOneBy<U> + DeserializeOwned, U>(
@@ -51,7 +51,7 @@ impl ApiClient {
         id: Id<U>,
     ) -> ApiResult<Option<T>, NotFound> {
         let url = T::get_one_by(&self.url, id);
-        Ok(send(self.get(url)).await?.json().await?)
+        Ok(self.get(url).await?.json().await?)
     }
 
     pub async fn register(
@@ -59,7 +59,7 @@ impl ApiClient {
         request: &RegisterRequest,
     ) -> ApiResult<RegisterResponse, RegisterError> {
         let url = format!("{}/register", self.url);
-        Ok(send(self.post(url).json(request)).await?.json().await?)
+        Ok(self.post(url, request).await?.json().await?)
     }
 
     pub async fn fetch_tasks(
@@ -67,7 +67,7 @@ impl ApiClient {
         request: &FetchTasksRequest,
     ) -> ApiResult<Vec<Task>, FetchTasksError> {
         let url = format!("{}/fetch_tasks", self.url);
-        Ok(send(self.post(url).json(request)).await?.json().await?)
+        Ok(self.post(url, request).await?.json().await?)
     }
 
     pub async fn submit_result(
@@ -76,49 +76,50 @@ impl ApiClient {
         request: &SubmitResultRequest,
     ) -> ApiResult<(), SubmitResultError> {
         let url = format!("{}/submit_result/{task_id}", self.url);
-        send(self.post(url).json(request)).await?;
+        self.post(url, request).await?;
         Ok(())
     }
 
-    fn request(&self, method: Method, url: impl IntoUrl) -> RequestBuilder {
-        let mut request = self.client.request(method, url);
+    async fn get<Error: DeserializeOwned>(&self, url: impl IntoUrl) -> ApiResult<Response, Error> {
+        self.send(self.client.get(url)).await
+    }
 
+    async fn post<Error: DeserializeOwned>(
+        &self,
+        url: impl IntoUrl,
+        request: &impl Serialize,
+    ) -> ApiResult<Response, Error> {
+        self.send(self.client.post(url).json(request)).await
+    }
+
+    async fn send<Error: DeserializeOwned>(
+        &self,
+        mut request: RequestBuilder,
+    ) -> ApiResult<Response, Error> {
         if let Some(ref api_key) = self.api_key {
             request = request.bearer_auth(api_key);
         }
 
-        request
-    }
+        let response = request.send().await?;
 
-    fn get(&self, url: impl IntoUrl) -> RequestBuilder {
-        self.request(Method::GET, url)
-    }
-
-    fn post(&self, url: impl IntoUrl) -> RequestBuilder {
-        self.request(Method::POST, url)
-    }
-}
-
-async fn send<Error: DeserializeOwned>(builder: RequestBuilder) -> ApiResult<Response, Error> {
-    let response = builder.send().await?;
-
-    if let Some(err) = response.error_for_status_ref().err() {
-        if response
-            .headers()
-            .get(header::CONTENT_TYPE)
-            .is_some_and(|value| value == "application/json")
-        {
-            Err(ApiError::Specific(response.json().await?))
-        } else {
-            let string = response.text().await?;
-
-            if string.is_empty() {
-                Err(ApiError::Reqwest(err))
+        if let Some(err) = response.error_for_status_ref().err() {
+            if response
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .is_some_and(|value| value == "application/json")
+            {
+                Err(ApiError::Specific(response.json().await?))
             } else {
-                Err(ApiError::String(string))
+                let string = response.text().await?;
+
+                if string.is_empty() {
+                    Err(ApiError::Reqwest(err))
+                } else {
+                    Err(ApiError::String(string))
+                }
             }
+        } else {
+            Ok(response)
         }
-    } else {
-        Ok(response)
     }
 }
