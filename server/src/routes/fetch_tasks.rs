@@ -18,7 +18,7 @@ pub async fn fetch_tasks(
             projects
         WHERE
             id = ANY($1)
-            AND active
+            AND disabled_at IS NULL
         "#,
         request.project_ids
     )

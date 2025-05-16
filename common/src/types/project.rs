@@ -7,6 +7,6 @@ use crate::id::Id;
 pub struct Project {
     pub id: Id<Project>,
     pub created_at: DateTime<Utc>,
+    pub disabled_at: Option<DateTime<Utc>>,
     pub name: String,
-    pub active: bool,
 }

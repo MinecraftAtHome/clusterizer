@@ -11,8 +11,8 @@ CREATE UNIQUE INDEX users_name_key
 CREATE TABLE projects (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
-    name text NOT NULL,
-    active bool NOT NULL
+    disabled_at timestamptz,
+    name text NOT NULL
 );
 
 CREATE TABLE platforms (
