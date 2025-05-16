@@ -6,5 +6,5 @@ pub enum ValidateStateError {
     #[error("invalid assignment")]
     InvalidAssignment,
     #[error("validatestate value outside of range")]
-    BadValidateState
+    BadValidateState,
 }

@@ -14,5 +14,5 @@ pub enum ValidateOkError {
     #[error("result count does not equal quorum")]
     ResultCountQuorumNotEqual,
     #[error("assignments which have been canceled cannot be validated")]
-    AssignmentCanceledError
+    AssignmentCanceledError,
 }

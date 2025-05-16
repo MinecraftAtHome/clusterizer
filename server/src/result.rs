@@ -64,7 +64,7 @@ impl Status for ValidateOkError {
             Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
             Self::AssignmentCanceledError => StatusCode::BAD_REQUEST,
             Self::ResultCountQuorumNotEqual => StatusCode::BAD_REQUEST,
-            Self::ResultTaskRelationshipInconsistent => StatusCode::BAD_REQUEST
+            Self::ResultTaskRelationshipInconsistent => StatusCode::BAD_REQUEST,
         }
     }
 }

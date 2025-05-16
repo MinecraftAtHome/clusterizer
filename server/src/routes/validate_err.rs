@@ -9,11 +9,7 @@ use clusterizer_common::{
     types::{Project, Task},
 };
 
-use crate::{
-    query::SelectOne,
-    result::AppResult,
-    state::AppState,
-};
+use crate::{query::SelectOne, result::AppResult, state::AppState};
 
 pub async fn validate_err(
     State(state): State<AppState>,
