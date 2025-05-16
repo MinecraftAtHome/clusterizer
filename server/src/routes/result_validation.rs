@@ -1,15 +1,20 @@
-use axum::{extract::State, Json};
-use clusterizer_common::{errors::{ValidateFetchError, ValidateOkError}, requests::{validate_ok_request::ValidateOkRequest, CanonicalResultRequest, FetchTasksRequest}, types::Task};
+use axum::{Json, extract::State};
+use clusterizer_common::{
+    errors::{ValidateFetchError, ValidateOkError, validate_error::ValidateErrError},
+    requests::{FetchTasksRequest, ValidateErrRequest, validate_ok_request::ValidateOkRequest},
+    types::{Project, Task},
+};
 
-use crate::{auth::Auth, result::AppResult, state::AppState};
-
+use crate::{
+    query::{SelectOne, SelectOneBy},
+    result::AppResult,
+    state::AppState,
+};
 
 pub async fn validate_fetch(
     State(state): State<AppState>,
-    Auth(user_id): Auth,
     Json(request): Json<FetchTasksRequest>,
 ) -> AppResult<Json<Vec<Task>>, ValidateFetchError> {
-
     let count = sqlx::query_scalar_unchecked!(
         r#"
         SELECT
@@ -56,124 +61,78 @@ pub async fn validate_fetch(
 
 pub async fn validate_ok(
     State(state): State<AppState>,
-Auth(user_id): Auth,
-Json(request): Json<ValidateOkRequest>,) -> AppResult<(), ValidateOkError> {
-    let task_count = sqlx::query_scalar_unchecked!(
-        r#"
-        SELECT
-            count(1) as "count!"
-        FROM
-            tasks
-        WHERE
-            id = $1
-            AND canonical_result_id IS NULL
-        "#,
-        request.task_id.raw()
-    )
-    .fetch_one(&state.pool)
-    .await? as usize;
-
-    if task_count != 1 {
-        Err(ValidateOkError::InvalidTask)?;
+    Json(request): Json<ValidateOkRequest>,
+) -> AppResult<(), ValidateOkError> {
+    match Task::select_one(request.task_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|_| ValidateOkError::InvalidTask)?
+    {
+        Some(_) => {
+            sqlx::query_unchecked!(
+                r#"
+                UPDATE tasks
+                SET canonical_result_id = $2
+                WHERE
+                    id = $1
+                "#,
+                request.task_id.raw(),
+                request.canonical_result_id.raw()
+            )
+            .execute(&state.pool)
+            .await?;
+            sqlx::query_unchecked!(
+                r#"
+                UPDATE results
+                SET is_validated = True
+                WHERE
+                    id = ANY($1)
+                "#,
+                request.result_ids
+            )
+            .execute(&state.pool)
+            .await?;
+        }
+        None => Err(ValidateOkError::InvalidTask)?,
     }
 
-    sqlx::query_unchecked!(
-        r#"
-        UPDATE tasks
-        SET canonical_result_id = $2
-        WHERE
-            id = $1
-        "#,
-        request.task_id.raw(),
-        request.canonical_result_id.raw()
-    )
-    .execute(&state.pool)
-    .await?;
-    sqlx::query_unchecked!(
-        r#"
-        UPDATE result
-        SET validated = True
-        WHERE
-            id = ANY($1)
-        "#,
-        request.result_ids
-    )
-    .execute(&state.pool)
-    .await?;
     Ok(())
 }
-
-
 
 pub async fn validate_err(
     State(state): State<AppState>,
-Auth(user_id): Auth,
-Json(request): Json<ValidateErrRequest>,) -> AppResult<(), ValidateErrError> {
-    let project = Project::get_one_by(request.task_id)
-    let result_count = sqlx::query_scalar_unchecked!(
-        r#"
-        SELECT
-            count(1) as "count!"
-        FROM
-            result r
-        JOIN assignments a ON
-            a.id = r.assignment_id
-        JOIN tasks t ON
-            t.id = a.task_id
-        WHERE
-            r.id = $1
-        "#,
-        request.task_id.raw()
-    )
-    .fetch_one(&state.pool)
-    .await? as usize;
-
-    let task_count = sqlx::query_scalar_unchecked!(
-        r#"
-        SELECT
-            count(1) as "count!"
-        FROM
-            tasks
-        WHERE
-            id = $1
-            AND canonical_result_id IS NULL
-        "#,
-        request.task_id.raw()
-    )
-    .fetch_one(&state.pool)
-    .await? as usize;
-
-    if task_count != 1 {
-        Err(ValidateErrError::InvalidTask)?;
+    Json(request): Json<ValidateErrRequest>,
+) -> AppResult<(), ValidateErrError> {
+    match Task::select_one(request.task_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|_| ValidateErrError::InvalidTask)?
+    {
+        Some(task) => {
+            let project = Project::select_one_by(request.task_id)
+                .fetch_one(&state.pool)
+                .await
+                .map_err(|_| ValidateErrError::InvalidTask)?;
+            if request.assignments_needed == 0
+                || request.assignments_needed > project.quorum + task.assignments_needed
+            {
+                Err(ValidateErrError::AssignmentsNeededOutOfBounds)?
+            } else {
+                sqlx::query_unchecked!(
+                    r#"
+                    UPDATE tasks
+                    SET assignments_needed = assignments_needed + $2
+                    WHERE
+                        id = $1
+                    "#,
+                    request.task_id.raw(),
+                    request.assignments_needed
+                )
+                .execute(&state.pool)
+                .await?;
+            }
+        }
+        None => Err(ValidateErrError::InvalidTask)?,
     }
-    if request.assignments_needed == 0 || request.assignments_needed > {
-
-    }
-
-    sqlx::query_unchecked!(
-        r#"
-        UPDATE tasks
-        SET canonical_result_id = $2
-        WHERE
-            id = $1
-        "#,
-        request.task_id.raw(),
-        request.canonical_result_id.raw()
-    )
-    .execute(&state.pool)
-    .await?;
-    sqlx::query_unchecked!(
-        r#"
-        UPDATE result
-        SET validated = True
-        WHERE
-            id = ANY($1)
-        "#,
-        request.result_ids
-    )
-    .execute(&state.pool)
-    .await?;
     Ok(())
 }
-
-

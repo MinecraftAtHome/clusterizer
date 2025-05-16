@@ -13,6 +13,7 @@ CREATE TABLE projects (
     created_at timestamptz NOT NULL DEFAULT now(),
     disabled_at timestamptz,
     name text NOT NULL
+    quorum int4 NOT NULL
 );
 
 CREATE TABLE platforms (
@@ -68,5 +69,6 @@ CREATE TABLE results (
     assignment_id int8 NOT NULL UNIQUE REFERENCES assignments(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdout text NOT NULL,
     stderr text NOT NULL,
-    exit_code int4
+    exit_code int4,
+    is_validated bool NOT NULL default False
 );

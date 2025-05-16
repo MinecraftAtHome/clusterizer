@@ -9,4 +9,6 @@ pub struct Project {
     pub created_at: DateTime<Utc>,
     pub disabled_at: Option<DateTime<Utc>>,
     pub name: String,
+    pub active: bool,
+    pub quorum: i32,
 }

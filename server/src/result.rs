@@ -1,8 +1,11 @@
 use axum::{
-    http::{status, StatusCode}, response::{IntoResponse, Response}, Json
+    Json,
+    http::StatusCode,
+    response::{IntoResponse, Response},
 };
 use clusterizer_common::errors::{
-    FetchTasksError, ValidateFetchError, Infallible, NotFound, RegisterError, ValidateOkError, SubmitResultError
+    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError, ValidateFetchError,
+    ValidateOkError, validate_error::ValidateErrError,
 };
 use serde::Serialize;
 
@@ -44,19 +47,27 @@ impl Status for SubmitResultError {
         }
     }
 }
-impl Status for ValidateFetchError{
+impl Status for ValidateFetchError {
     fn status(&self) -> StatusCode {
-        match self{
+        match self {
             Self::InvalidProject => StatusCode::NOT_FOUND,
-            Self::InvalidTask => StatusCode::NOT_FOUND
+            Self::InvalidTask => StatusCode::NOT_FOUND,
         }
     }
 }
-impl Status for ValidateOkError{
+impl Status for ValidateOkError {
     fn status(&self) -> StatusCode {
-        match self{
+        match self {
             Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
-            Self::InvalidTask => StatusCode::NOT_FOUND
+            Self::InvalidTask => StatusCode::NOT_FOUND,
+        }
+    }
+}
+impl Status for ValidateErrError {
+    fn status(&self) -> StatusCode {
+        match self {
+            Self::AssignmentsNeededOutOfBounds => StatusCode::BAD_REQUEST,
+            Self::InvalidTask => StatusCode::NOT_FOUND,
         }
     }
 }
@@ -134,7 +145,14 @@ impl From<sqlx::Error> for AppError<ValidateOkError> {
         }
     }
 }
-
+impl From<sqlx::Error> for AppError<ValidateErrError> {
+    fn from(err: sqlx::Error) -> Self {
+        match err {
+            sqlx::Error::RowNotFound => Self::Specific(ValidateErrError::InvalidTask),
+            _ => Self::Generic,
+        }
+    }
+}
 impl<E: Serialize + Status> IntoResponse for AppError<E> {
     fn into_response(self) -> Response {
         match self {
