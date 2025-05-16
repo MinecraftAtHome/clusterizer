@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::{PgTypeInfo, PgTypeKind, PgValueRef}, Decode, Postgres, Type};
 
 use crate::types::{AssignmentState, Id};
 

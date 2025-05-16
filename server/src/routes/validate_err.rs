@@ -6,11 +6,11 @@ use clusterizer_common::{
     errors::ValidateErrError,
     id::Id,
     requests::ValidateErrRequest,
-    types::{Project, Result, Task},
+    types::{Project, Task},
 };
 
 use crate::{
-    query::{SelectAll, SelectOne},
+    query::SelectOne,
     result::AppResult,
     state::AppState,
 };
