@@ -6,10 +6,15 @@ use clusterizer_common::{
     errors::ValidateErrError,
     id::Id,
     requests::ValidateErrRequest,
-    types::{Project, Task},
+    types::{Assignment, AssignmentState, Project, Task},
 };
 
-use crate::{query::SelectOne, result::AppResult, state::AppState};
+use crate::{
+    query::{SelectAllBy, SelectOne},
+    result::AppResult,
+    state::AppState,
+    util::set_assignment_state,
+};
 
 pub async fn validate_err(
     State(state): State<AppState>,
@@ -64,16 +69,17 @@ pub async fn validate_err(
         .await?;
 
         //Set validate state
-        sqlx::query_unchecked!(
-            r#"
-            UPDATE assignments
-            SET validate_state = 4
-            WHERE
-                task_id = $1
-            "#,
-            task_id
+        set_assignment_state::set_assignment_state(
+            &state,
+            AssignmentState::Inconclusive,
+            &Vec::from_iter(
+                Assignment::select_all_by(task_id)
+                    .fetch_all(&state.pool)
+                    .await?
+                    .iter()
+                    .map(|assignment| assignment.id),
+            ),
         )
-        .execute(&state.pool)
         .await?;
     }
 

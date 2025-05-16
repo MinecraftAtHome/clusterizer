@@ -32,6 +32,7 @@ pub async fn submit_result(
         "#,
         task_id,
         user_id,
+        AssignmentState::Init
     )
     .fetch_one(&state.pool)
     .await?;

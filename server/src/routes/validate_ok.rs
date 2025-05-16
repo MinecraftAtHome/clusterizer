@@ -6,10 +6,10 @@ use clusterizer_common::{
     errors::ValidateOkError,
     id::Id,
     requests::ValidateOkRequest,
-    types::{Project, Task},
+    types::{AssignmentState, Project, Result, Task},
 };
 
-use crate::{query::SelectOne, result::AppResult, state::AppState};
+use crate::{query::SelectOne, result::AppResult, state::AppState, util::set_assignment_state};
 
 pub async fn validate_ok(
     State(state): State<AppState>,
@@ -90,27 +90,27 @@ pub async fn validate_ok(
     )
     .execute(&state.pool)
     .await?;
-    sqlx::query_unchecked!(
+
+    let results = sqlx::query_as_unchecked!(
+        Result,
         r#"
-        UPDATE 
-            assignments
-        SET 
-            validate_state = 2
+        SELECT 
+            r.*
         FROM 
-            assignments a
-        JOIN results r
-            ON r.assignment_id = a.id
-        JOIN tasks t
-            ON a.task_id = t.id
+            results r
         WHERE
             r.id = ANY($1)
-            AND t.id = $2
         "#,
-        request.result_ids,
-        task_id
+        request.result_ids
     )
-    .execute(&state.pool)
+    .fetch_all(&state.pool)
     .await?;
 
+    set_assignment_state::set_assignment_state(
+        &state,
+        AssignmentState::Validated,
+        &Vec::from_iter(results.iter().map(|result| result.assignment_id)),
+    )
+    .await?;
     Ok(())
 }
