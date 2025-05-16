@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use args::{ClusterizerArgs, Commands};
 use clap::Parser;
 use client::ClusterizerClient;
@@ -34,7 +36,7 @@ async fn run() -> ClientResult<()> {
 
             println!("{}", response.api_key);
         }
-        Commands::Run(args) => ClusterizerClient::new(client, args).run().await?,
+        Commands::Run(args) => Arc::new(ClusterizerClient::new(client, args)).run().await?,
     }
 
     Ok(())
