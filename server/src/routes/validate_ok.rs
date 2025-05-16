@@ -6,7 +6,7 @@ use clusterizer_common::{
     errors::ValidateOkError,
     id::Id,
     requests::ValidateOkRequest,
-    types::{AssignmentState, Project, Result, Task},
+    types::{Assignment, AssignmentState, Project, Result, Task},
 };
 
 use crate::{query::SelectOne, result::AppResult, state::AppState, util::set_assignment_state};
@@ -106,11 +106,65 @@ pub async fn validate_ok(
     .fetch_all(&state.pool)
     .await?;
 
+    //Set selected assignments to be valid
+    let assignment_ids = &Vec::from_iter(results.iter().map(|result| result.assignment_id));
+    set_assignment_state::set_assignment_state(&state, AssignmentState::Valid, assignment_ids)
+        .await?;
+
+    //Set assignments with results other than the ones we just set to be valid to be invalid
+    let assignments_other = sqlx::query_as_unchecked!(
+        Assignment,
+        r#"
+            SELECT
+                a.*
+            FROM
+                assignments a
+            LEFT JOIN results r
+                ON r.assignment_id = a.id
+            WHERE
+                a.id  <> ANY($1)
+                AND task_id = $2
+        "#,
+        assignment_ids,
+        task_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
     set_assignment_state::set_assignment_state(
         &state,
-        AssignmentState::Validated,
-        &Vec::from_iter(results.iter().map(|result| result.assignment_id)),
+        AssignmentState::Invalid,
+        &Vec::from_iter(assignments_other.iter().map(|assignment| assignment.id)),
     )
     .await?;
+
+    let assignments_unreturned = sqlx::query_as_unchecked!(
+        Assignment,
+        r#"
+            SELECT
+                a.*
+            FROM
+                assignments a
+            RIGHT JOIN results r
+                ON r.assignment_id = a.id
+            WHERE
+                task_id = $1
+                AND r.id IS NULL
+        "#,
+        task_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+    set_assignment_state::set_assignment_state(
+        &state,
+        AssignmentState::NotNeeded,
+        &Vec::from_iter(
+            assignments_unreturned
+                .iter()
+                .map(|assignment| assignment.id),
+        ),
+    )
+    .await?;
+
     Ok(())
 }
