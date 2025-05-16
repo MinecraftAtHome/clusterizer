@@ -4,8 +4,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use clusterizer_common::errors::{
-    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError, ValidateFetchError,
-    ValidateOkError, validate_error::ValidateErrError,
+    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError, ValidateErrError,
+    ValidateFetchError, ValidateOkError,
 };
 use serde::Serialize;
 
@@ -68,6 +68,7 @@ impl Status for ValidateErrError {
         match self {
             Self::AssignmentsNeededOutOfBounds => StatusCode::BAD_REQUEST,
             Self::InvalidTask => StatusCode::NOT_FOUND,
+            Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
         }
     }
 }

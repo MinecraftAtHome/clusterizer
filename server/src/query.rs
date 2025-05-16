@@ -63,7 +63,6 @@ select_all!(User: "SELECT * FROM users");
 select_one!(User: "SELECT * FROM users WHERE id = $1");
 select_all!(Project: "SELECT * FROM projects");
 select_one!(Project: "SELECT * FROM projects WHERE id = $1");
-select_one!(Project: "SELECT * FROM projects WHERE id = (SELECT project_id FROM tasks WHERE id = $1 LIMIT 1)", Task);
 select_all!(Platform: "SELECT * FROM platforms");
 select_one!(Platform: "SELECT * FROM platforms WHERE id = $1");
 select_all!(ProjectVersion: "SELECT * FROM project_versions");

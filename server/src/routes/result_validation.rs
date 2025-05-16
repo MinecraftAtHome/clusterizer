@@ -1,15 +1,11 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
-    errors::{ValidateFetchError, ValidateOkError, validate_error::ValidateErrError},
+    errors::{ValidateErrError, ValidateFetchError, ValidateOkError},
     requests::{FetchTasksRequest, ValidateErrRequest, validate_ok_request::ValidateOkRequest},
     types::{Project, Task},
 };
 
-use crate::{
-    query::{SelectOne, SelectOneBy},
-    result::AppResult,
-    state::AppState,
-};
+use crate::{query::SelectOne, result::AppResult, state::AppState};
 
 pub async fn validate_fetch(
     State(state): State<AppState>,
@@ -41,10 +37,10 @@ pub async fn validate_fetch(
             t.*
         FROM
             tasks t
-        JOIN assignments a ON
-            a.task_id = t.id
-        JOIN results r ON
-            r.assignment_id = a.id
+            JOIN assignments a ON
+                a.task_id = t.id
+            JOIN results r ON
+                r.assignment_id = a.id
         GROUP BY
             t.id
         HAVING
@@ -72,12 +68,22 @@ pub async fn validate_ok(
             sqlx::query_unchecked!(
                 r#"
                 UPDATE tasks
-                SET canonical_result_id = $2
+                SET canonical_result_id =  
+                                            (SELECT 
+                                                id 
+                                            FROM 
+                                                results 
+                                            WHERE 
+                                                id = ANY($2) 
+                                            ORDER BY 
+                                                created_at DESC 
+                                            LIMIT 1
+                                            )
                 WHERE
                     id = $1
                 "#,
                 request.task_id.raw(),
-                request.canonical_result_id.raw()
+                request.result_ids
             )
             .execute(&state.pool)
             .await?;
@@ -109,7 +115,7 @@ pub async fn validate_err(
         .map_err(|_| ValidateErrError::InvalidTask)?
     {
         Some(task) => {
-            let project = Project::select_one_by(request.task_id)
+            let project = Project::select_one(task.project_id)
                 .fetch_one(&state.pool)
                 .await
                 .map_err(|_| ValidateErrError::InvalidTask)?;
