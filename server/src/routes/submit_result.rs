@@ -6,10 +6,10 @@ use clusterizer_common::{
     errors::SubmitResultError,
     id::Id,
     requests::SubmitResultRequest,
-    types::{Assignment, Task},
+    types::{Assignment, AssignmentState, Task},
 };
 
-use crate::{auth::Auth, result::AppResult, state::AppState};
+use crate::{auth::Auth, result::AppResult, state::AppState, util::set_assignment_state};
 
 pub async fn submit_result(
     State(state): State<AppState>,
@@ -34,6 +34,13 @@ pub async fn submit_result(
         user_id,
     )
     .fetch_one(&state.pool)
+    .await?;
+
+    set_assignment_state::set_assignment_state(
+        &state,
+        AssignmentState::Submitted,
+        &[assignment_id],
+    )
     .await?;
 
     sqlx::query_unchecked!(
