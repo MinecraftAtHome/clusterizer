@@ -25,16 +25,16 @@ pub async fn validate_ok(
         request.assignment_ids
     )
     .fetch_all(&state.pool)
-    .await?;
-    println!(
-        "Request: {}\t db: {}",
-        request.assignment_ids.len(),
-        assignments.len()
-    );
+    .await? as Vec<Assignment>;
+
     if assignments.len() != request.assignment_ids.len() {
         Err(ValidateOkError::InvalidAssignment)?;
     }
 
+    if assignments.iter().any(|assignment| assignment.state == AssignmentState::Invalid) {
+        Err(ValidateOkError::AssignmentMarkedInvalidError)?;
+    }
+    
     let mut task_ids = Vec::from_iter(assignments.into_iter().map(|assignment| assignment.task_id));
     task_ids.sort();
     task_ids.dedup();

@@ -64,10 +64,14 @@ pub async fn validate_err(
     task_inconclusive_ids.sort();
     task_inconclusive_ids.dedup();
 
-    if task_error_ids.len() > 1 || task_inconclusive_ids.len() > 1 {
-        Err(ValidateErrError::AssignmentTaskRelationshipError)?
+    if task_inconclusive_ids.len() > 1 {
+        Err(ValidateErrError::InconclusiveRelationshipError)?
     }
 
+    if task_error_ids.len() > 1 {
+        Err(ValidateErrError::ErroredRelationshipError)?
+    }
+    
     if task_error_ids[0] != task_inconclusive_ids[0] {
         Err(ValidateErrError::RequestAssignmentsRelationshipError)?
     }

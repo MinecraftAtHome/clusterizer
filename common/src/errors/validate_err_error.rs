@@ -9,8 +9,10 @@ pub enum ValidateErrError {
     AssignmentsNeededOutOfBounds,
     #[error("canonical result already set")]
     CanonicalResultExists,
-    #[error("provided assignmennts belong to multiple tasks")]
-    AssignmentTaskRelationshipError,
+    #[error("provided error assignments belong to multiple tasks")]
+    ErroredRelationshipError,
+    #[error("provided inconclusive assignments belong to multiple tasks")]
+    InconclusiveRelationshipError,
     #[error(
         "provided inconclusive assignments belong to different tasks than the error assignments"
     )]

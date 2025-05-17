@@ -64,6 +64,7 @@ impl Status for ValidateOkError {
             Self::AssignmentCanceledError => StatusCode::BAD_REQUEST,
             Self::ResultCountQuorumNotEqual => StatusCode::BAD_REQUEST,
             Self::AssignmentTaskRelationshipError => StatusCode::BAD_REQUEST,
+            Self::AssignmentMarkedInvalidError => StatusCode::BAD_REQUEST,
         }
     }
 }
@@ -74,8 +75,9 @@ impl Status for ValidateErrError {
             Self::AssignmentsNeededOutOfBounds => StatusCode::BAD_REQUEST,
             Self::InvalidAssignment => StatusCode::NOT_FOUND,
             Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
-            Self::AssignmentTaskRelationshipError => StatusCode::BAD_REQUEST,
+            Self::InconclusiveRelationshipError => StatusCode::BAD_REQUEST,
             Self::RequestAssignmentsRelationshipError => StatusCode::BAD_REQUEST,
+            Self::ErroredRelationshipError => StatusCode::BAD_REQUEST,
         }
     }
 }
