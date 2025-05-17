@@ -1,16 +1,16 @@
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::State,
 };
 use clusterizer_common::{
     errors::ValidateErrError,
-    id::Id,
     requests::ValidateErrRequest,
-    types::{Assignment, AssignmentState, Project, Task},
+    types::{AssignmentState},
+    records::{Assignment, Project, Task}
 };
 
 use crate::{
-    query::{SelectAllBy, SelectOne},
+    query::SelectOne,
     result::AppResult,
     state::AppState,
     util::set_assignment_state,
@@ -20,7 +20,6 @@ pub async fn validate_err(
     State(state): State<AppState>,
     Json(request): Json<ValidateErrRequest>,
 ) -> AppResult<(), ValidateErrError> {
-
     let assignments_error = sqlx::query_as_unchecked!(
         Assignment,
         r#"
@@ -35,7 +34,6 @@ pub async fn validate_err(
     )
     .fetch_all(&state.pool)
     .await?;
-
 
     let assignments_inconclusive = sqlx::query_as_unchecked!(
         Assignment,
@@ -52,28 +50,42 @@ pub async fn validate_err(
     .fetch_all(&state.pool)
     .await?;
 
-    if assignments_inconclusive.len() != request.assignments_inconclusive.len() || assignments_error.len() != request.assignments_error.len() {
+    if assignments_inconclusive.len() != request.assignments_inconclusive.len()
+        || assignments_error.len() != request.assignments_error.len()
+    {
         Err(ValidateErrError::InvalidAssignment)?;
     }
 
-    let mut task_error_ids = Vec::from_iter(assignments_error.into_iter().map(|assignment| assignment.task_id));
+    let mut task_error_ids = Vec::from_iter(
+        assignments_error
+            .into_iter()
+            .map(|assignment| assignment.task_id),
+    );
     task_error_ids.sort();
     task_error_ids.dedup();
 
-    let mut task_inconclusive_ids = Vec::from_iter(assignments_inconclusive.into_iter().map(|assignment| assignment.task_id));
+    let mut task_inconclusive_ids = Vec::from_iter(
+        assignments_inconclusive
+            .into_iter()
+            .map(|assignment| assignment.task_id),
+    );
     task_inconclusive_ids.sort();
     task_inconclusive_ids.dedup();
 
     if task_error_ids.len() > 1 || task_inconclusive_ids.len() > 1 {
         Err(ValidateErrError::AssignmentTaskRelationshipError)?
     }
-    
-    if task_error_ids[0] != task_inconclusive_ids[0]{
+
+    if task_error_ids[0] != task_inconclusive_ids[0] {
         Err(ValidateErrError::RequestAssignmentsRelationshipError)?
     }
 
-    let task_error = Task::select_one(task_error_ids[0]).fetch_one(&state.pool).await?;
-    let task_inconclusive = Task::select_one(task_inconclusive_ids[0]).fetch_one(&state.pool).await?;
+    let task_error = Task::select_one(task_error_ids[0])
+        .fetch_one(&state.pool)
+        .await?;
+    let task_inconclusive = Task::select_one(task_inconclusive_ids[0])
+        .fetch_one(&state.pool)
+        .await?;
 
     if task_error.canonical_result_id.is_some() || task_inconclusive.canonical_result_id.is_some() {
         Err(ValidateErrError::CanonicalResultExists)?
@@ -120,7 +132,8 @@ pub async fn validate_err(
     .await? as i32;
 
     if request.assignments_needed <= 0
-        || request.assignments_needed + task_inconclusive.assignments_needed > project_inconclusive.quorum + result_inconclusive_count + result_error_count
+        || request.assignments_needed + task_inconclusive.assignments_needed
+            > project_inconclusive.quorum + result_inconclusive_count + result_error_count
     {
         Err(ValidateErrError::AssignmentsNeededOutOfBounds)?
     } else {

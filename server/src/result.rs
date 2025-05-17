@@ -75,7 +75,7 @@ impl Status for ValidateErrError {
             Self::InvalidAssignment => StatusCode::NOT_FOUND,
             Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
             Self::AssignmentTaskRelationshipError => StatusCode::BAD_REQUEST,
-            Self::RequestAssignmentsRelationshipError => StatusCode::BAD_REQUEST
+            Self::RequestAssignmentsRelationshipError => StatusCode::BAD_REQUEST,
         }
     }
 }

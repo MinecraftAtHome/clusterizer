@@ -11,6 +11,8 @@ pub enum ValidateErrError {
     CanonicalResultExists,
     #[error("provided assignmennts belong to multiple tasks")]
     AssignmentTaskRelationshipError,
-    #[error("provided inconclusive assignments belong to different tasks than the error assignments")]
+    #[error(
+        "provided inconclusive assignments belong to different tasks than the error assignments"
+    )]
     RequestAssignmentsRelationshipError,
 }

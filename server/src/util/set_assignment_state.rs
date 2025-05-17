@@ -10,7 +10,6 @@ pub async fn set_assignment_state(
     assignment_state: AssignmentState,
     assignment_ids: &[Id<Assignment>],
 ) -> sqlx::Result<()> {
-
     sqlx::query_unchecked!(
         r#"
         UPDATE 

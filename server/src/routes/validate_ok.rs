@@ -2,7 +2,8 @@ use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::ValidateOkError,
     requests::ValidateOkRequest,
-    types::{Assignment, AssignmentState, Project, Task},
+    types::{Id, AssignmentState},
+    records::{Assignment, Project, Task}
 };
 
 use crate::{query::SelectOne, result::AppResult, state::AppState, util::set_assignment_state};
@@ -25,7 +26,11 @@ pub async fn validate_ok(
     )
     .fetch_all(&state.pool)
     .await?;
-    println!("Request: {}\t db: {}", request.assignment_ids.len(), assignments.len());
+    println!(
+        "Request: {}\t db: {}",
+        request.assignment_ids.len(),
+        assignments.len()
+    );
     if assignments.len() != request.assignment_ids.len() {
         Err(ValidateOkError::InvalidAssignment)?;
     }
