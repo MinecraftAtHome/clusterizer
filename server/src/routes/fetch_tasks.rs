@@ -1,5 +1,5 @@
 use axum::{Json, extract::State};
-use clusterizer_common::{errors::FetchTasksError, requests::FetchTasksRequest, types::Task};
+use clusterizer_common::{errors::FetchTasksError, records::Task, requests::FetchTasksRequest};
 
 use crate::{auth::Auth, result::AppResult, state::AppState};
 

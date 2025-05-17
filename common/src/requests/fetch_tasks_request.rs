@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{id::Id, types::Project};
+use crate::{records::Project, types::Id};
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct FetchTasksRequest {

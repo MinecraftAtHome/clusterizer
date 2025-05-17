@@ -4,12 +4,12 @@ use axum::{
 };
 use clusterizer_common::{
     errors::SubmitResultError,
-    id::Id,
+    records::{Assignment, Task},
     requests::SubmitResultRequest,
-    types::{Assignment, AssignmentState, Task},
+    types::{AssignmentState, Id},
 };
 
-use crate::{auth::Auth, result::AppResult, state::AppState, util::set_assignment_state};
+use crate::{auth::Auth, result::AppResult, state::AppState, util};
 
 pub async fn submit_result(
     State(state): State<AppState>,
@@ -36,12 +36,7 @@ pub async fn submit_result(
     .fetch_one(&state.pool)
     .await?;
 
-    set_assignment_state::set_assignment_state(
-        &state,
-        AssignmentState::Submitted,
-        &[assignment_id],
-    )
-    .await?;
+    util::set_assignment_state(&state, AssignmentState::Submitted, &[assignment_id]).await?;
 
     sqlx::query_unchecked!(
         r#"

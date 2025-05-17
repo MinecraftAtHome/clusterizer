@@ -1,6 +1,6 @@
 use clusterizer_common::{
-    id::Id,
-    types::{Assignment, AssignmentState},
+    records::Assignment,
+    types::{AssignmentState, Id},
 };
 
 use crate::state::AppState;

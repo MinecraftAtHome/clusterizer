@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::id::Id;
+use crate::types::Id;
 
 use super::Assignment;
 

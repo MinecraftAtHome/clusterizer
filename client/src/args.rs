@@ -4,7 +4,7 @@ use clap::{
     Args, Parser, Subcommand,
     builder::{OsStr, Resettable},
 };
-use clusterizer_common::{id::Id, types::Platform};
+use clusterizer_common::{records::Platform, types::Id};
 
 #[derive(Debug, Parser)]
 #[command(name = "Clusterizer RS")]

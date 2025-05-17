@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::id::Id;
+use crate::types::{AssignmentState, Id};
 
-use super::{AssignmentState, Task, User};
+use super::{Task, User};
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct Assignment {

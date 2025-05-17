@@ -4,7 +4,7 @@ use axum::{
 };
 use clusterizer_common::{
     errors::{Infallible, NotFound},
-    id::Id,
+    types::Id,
 };
 
 use crate::{

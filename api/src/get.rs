@@ -1,6 +1,6 @@
 use clusterizer_common::{
-    id::Id,
-    types::{Assignment, Platform, Project, ProjectVersion, Result, Task, User},
+    records::{Assignment, Platform, Project, ProjectVersion, Result, Task, User},
+    types::Id,
 };
 
 pub trait GetAll: Sized {

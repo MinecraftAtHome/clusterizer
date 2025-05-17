@@ -9,7 +9,7 @@ use axum_extra::{
     headers::{Authorization, authorization::Bearer},
 };
 use base64::prelude::*;
-use clusterizer_common::{id::Id, types::User};
+use clusterizer_common::{records::User, types::Id};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 

@@ -1,12 +1,11 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::id::Id;
+use crate::types::Id;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct User {
-    pub id: Id<User>,
+pub struct Platform {
+    pub id: Id<Platform>,
     pub created_at: DateTime<Utc>,
-    pub disabled_at: Option<DateTime<Utc>>,
     pub name: String,
 }

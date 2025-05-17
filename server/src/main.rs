@@ -9,7 +9,7 @@ use axum::{
     Router,
     routing::{get, post},
 };
-use clusterizer_common::types::{
+use clusterizer_common::records::{
     Assignment, Platform, Project, ProjectVersion, Result, Task, User,
 };
 use routes::*;

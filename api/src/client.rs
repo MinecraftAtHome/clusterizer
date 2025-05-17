@@ -1,9 +1,9 @@
 use clusterizer_common::{
     errors::{FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError},
-    id::Id,
+    records::Task,
     requests::{FetchTasksRequest, RegisterRequest, SubmitResultRequest},
     responses::RegisterResponse,
-    types::Task,
+    types::Id,
 };
 use reqwest::{IntoUrl, RequestBuilder, Response, header};
 use serde::{Serialize, de::DeserializeOwned};
