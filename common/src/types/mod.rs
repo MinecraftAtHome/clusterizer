@@ -1,4 +1,5 @@
 pub mod assignment;
+pub mod assignment_state;
 pub mod platform;
 pub mod project;
 pub mod project_version;
@@ -7,6 +8,7 @@ pub mod task;
 pub mod user;
 
 pub use assignment::Assignment;
+pub use assignment_state::AssignmentState;
 pub use platform::Platform;
 pub use project::Project;
 pub use project_version::ProjectVersion;
