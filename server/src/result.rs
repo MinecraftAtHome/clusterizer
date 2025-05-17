@@ -63,7 +63,7 @@ impl Status for ValidateOkError {
             Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
             Self::AssignmentCanceledError => StatusCode::BAD_REQUEST,
             Self::ResultCountQuorumNotEqual => StatusCode::BAD_REQUEST,
-            Self::ResultTaskRelationshipInconsistent => StatusCode::BAD_REQUEST,
+            Self::AssignmentTaskRelationshipError => StatusCode::BAD_REQUEST,
         }
     }
 }
@@ -72,8 +72,10 @@ impl Status for ValidateErrError {
     fn status(&self) -> StatusCode {
         match self {
             Self::AssignmentsNeededOutOfBounds => StatusCode::BAD_REQUEST,
-            Self::InvalidTask => StatusCode::NOT_FOUND,
+            Self::InvalidAssignment => StatusCode::NOT_FOUND,
             Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
+            Self::AssignmentTaskRelationshipError => StatusCode::BAD_REQUEST,
+            Self::RequestAssignmentsRelationshipError => StatusCode::BAD_REQUEST
         }
     }
 }
@@ -152,7 +154,7 @@ impl From<sqlx::Error> for AppError<ValidateOkError> {
 impl From<sqlx::Error> for AppError<ValidateErrError> {
     fn from(err: sqlx::Error) -> Self {
         match err {
-            sqlx::Error::RowNotFound => Self::Specific(ValidateErrError::InvalidTask),
+            sqlx::Error::RowNotFound => Self::Specific(ValidateErrError::InvalidAssignment),
             _ => Self::Generic,
         }
     }

@@ -7,8 +7,8 @@ pub enum ValidateOkError {
     InvalidAssignment,
     #[error("canonical result already set")]
     CanonicalResultExists,
-    #[error("provided results belong to multiple tasks")]
-    ResultTaskRelationshipInconsistent,
+    #[error("provided assignments belong to multiple tasks")]
+    AssignmentTaskRelationshipError,
     #[error("result count does not equal quorum")]
     ResultCountQuorumNotEqual,
     #[error("assignments which have been canceled cannot be validated")]

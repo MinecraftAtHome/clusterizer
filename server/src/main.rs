@@ -68,8 +68,8 @@ async fn main() {
         .route("/fetch_tasks", post(fetch_tasks::fetch_tasks))
         .route("/submit_result/{id}", post(submit_result::submit_result))
         .route("/validate_fetch", post(validate_fetch::validate_fetch))
-        .route("/validate_ok/{id}", post(validate_ok::validate_ok))
-        .route("/validate_err/{id}", post(validate_err::validate_err))
+        .route("/validate_ok", post(validate_ok::validate_ok))
+        .route("/validate_err", post(validate_err::validate_err))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();

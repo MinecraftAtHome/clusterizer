@@ -47,7 +47,7 @@ pub async fn validate_fetch(
         "#,
         request.project_ids,
     )
-    .fetch_optional(&state.pool)
+    .fetch_all(&state.pool)
     .await?;
 
     Ok(Json(task.into_iter().collect()))

@@ -25,6 +25,5 @@ pub async fn set_assignment_state(
     )
     .execute(&state.pool)
     .await?;
-    println!("test2");
     Ok(())
 }

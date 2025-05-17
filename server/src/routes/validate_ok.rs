@@ -25,7 +25,7 @@ pub async fn validate_ok(
     )
     .fetch_all(&state.pool)
     .await?;
-
+    println!("Request: {}\t db: {}", request.assignment_ids.len(), assignments.len());
     if assignments.len() != request.assignment_ids.len() {
         Err(ValidateOkError::InvalidAssignment)?;
     }
@@ -35,7 +35,7 @@ pub async fn validate_ok(
     task_ids.dedup();
 
     if task_ids.len() > 1 || task_ids.is_empty() {
-        Err(ValidateOkError::ResultTaskRelationshipInconsistent)?;
+        Err(ValidateOkError::AssignmentTaskRelationshipError)?;
     }
 
     let task = Task::select_one(task_ids[0]).fetch_one(&state.pool).await?;
@@ -95,10 +95,10 @@ pub async fn validate_ok(
             LEFT JOIN results r
                 ON r.assignment_id = a.id
             WHERE
-                a.id  <> ANY($1)
+                a.state != $1
                 AND task_id = $2
         "#,
-        request.assignment_ids,
+        AssignmentState::Valid,
         task.id
     )
     .fetch_all(&state.pool)
