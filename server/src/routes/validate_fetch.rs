@@ -37,8 +37,8 @@ pub async fn validate_fetch(
             JOIN results r ON
                 r.assignment_id = a.id
         WHERE
-            a.state = 'validation_pending'
-            OR a.state = 'validation_inconclusive'
+            a.state = 'submitted'
+            OR a.state = 'inconclusive'
         GROUP BY
             t.id
         HAVING

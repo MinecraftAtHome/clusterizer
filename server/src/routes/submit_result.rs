@@ -18,8 +18,8 @@ pub async fn submit_result(
     Json(request): Json<SubmitResultRequest>,
 ) -> AppResult<(), SubmitResultError> {
     // TODO: fix race condition: assignment could get canceled before result is inserted
-
-    let assignment_id = sqlx::query_scalar_unchecked!(
+    println!("Test");
+    let assignment_query = sqlx::query_scalar_unchecked!(
         r#"
         SELECT
             id "id: Id<Assignment>"
@@ -60,6 +60,6 @@ pub async fn submit_result(
     )
     .execute(&state.pool)
     .await?;
-
+println!("Test4");
     Ok(())
 }
