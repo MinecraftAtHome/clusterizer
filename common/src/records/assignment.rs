@@ -13,3 +13,11 @@ pub struct Assignment {
     pub user_id: Id<User>,
     pub state: AssignmentState,
 }
+
+#[non_exhaustive]
+#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
+pub struct AssignmentFilter {
+    pub task_id: Option<Id<Task>>,
+    pub user_id: Option<Id<User>>,
+    pub state: Option<AssignmentState>,
+}

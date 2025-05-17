@@ -10,3 +10,9 @@ pub struct Project {
     pub disabled_at: Option<DateTime<Utc>>,
     pub name: String,
 }
+
+#[non_exhaustive]
+#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
+pub struct ProjectFilter {
+    pub disabled: Option<bool>,
+}
