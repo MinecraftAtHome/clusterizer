@@ -1,18 +1,16 @@
-use std::collections::HashMap;
 
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::State,
 };
 use clusterizer_common::{
     errors::ValidateOkError,
-    id::Id,
     requests::ValidateOkRequest,
-    types::{Assignment, AssignmentState, Project, Result, Task, assignment},
+    types::{Assignment, AssignmentState, Project, Task},
 };
 
 use crate::{
-    query::{SelectAll, SelectAllBy, SelectOne},
+    query::SelectOne,
     result::AppResult,
     state::AppState,
     util::set_assignment_state,
@@ -45,7 +43,7 @@ pub async fn validate_ok(
     task_ids.sort();
     task_ids.dedup();
 
-    if task_ids.len() > 1 || task_ids.len() == 0 {
+    if task_ids.len() > 1 || task_ids.is_empty() {
         Err(ValidateOkError::ResultTaskRelationshipInconsistent)?;
     }
 
