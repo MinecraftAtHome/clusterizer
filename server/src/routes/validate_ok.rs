@@ -1,9 +1,9 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::ValidateOkError,
+    records::{Assignment, Project, Task},
     requests::ValidateOkRequest,
-    types::{Id, AssignmentState},
-    records::{Assignment, Project, Task}
+    types::AssignmentState,
 };
 
 use crate::{query::SelectOne, result::AppResult, state::AppState, util::set_assignment_state};

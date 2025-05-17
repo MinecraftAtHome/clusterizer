@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{types::Id, records::Assignment};
+use crate::{records::Assignment, types::Id};
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct ValidateOkRequest {
