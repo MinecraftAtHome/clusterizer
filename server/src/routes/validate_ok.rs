@@ -1,20 +1,11 @@
-
-use axum::{
-    Json,
-    extract::State,
-};
+use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::ValidateOkError,
     requests::ValidateOkRequest,
     types::{Assignment, AssignmentState, Project, Task},
 };
 
-use crate::{
-    query::SelectOne,
-    result::AppResult,
-    state::AppState,
-    util::set_assignment_state,
-};
+use crate::{query::SelectOne, result::AppResult, state::AppState, util::set_assignment_state};
 
 pub async fn validate_ok(
     State(state): State<AppState>,
