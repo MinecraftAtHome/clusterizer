@@ -9,3 +9,7 @@ pub struct Platform {
     pub created_at: DateTime<Utc>,
     pub name: String,
 }
+
+#[non_exhaustive]
+#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
+pub struct PlatformFilter;

@@ -14,3 +14,16 @@ pub struct Result {
     pub stderr: String,
     pub exit_code: Option<i32>,
 }
+
+#[non_exhaustive]
+#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
+pub struct ResultFilter {
+    pub assignment_id: Option<Id<Assignment>>,
+}
+
+impl ResultFilter {
+    pub fn assignment_id(mut self, assignment_id: Id<Assignment>) -> Self {
+        self.assignment_id = Some(assignment_id);
+        self
+    }
+}

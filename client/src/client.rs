@@ -12,7 +12,7 @@ use std::{
 
 use clusterizer_api::client::ApiClient;
 use clusterizer_common::{
-    records::{Project, ProjectVersion, Task},
+    records::{Project, ProjectFilter, ProjectVersion, ProjectVersionFilter, Task},
     requests::{FetchTasksRequest, SubmitResultRequest},
     types::Id,
 };
@@ -93,19 +93,21 @@ impl ClusterizerClient {
         let tasks = loop {
             let mut projects: HashMap<_, _> = self
                 .client
-                .get_all::<Project>()
+                .get_all::<Project>(&ProjectFilter::default().disabled(false))
                 .await?
                 .into_iter()
-                .filter(|project| project.disabled_at.is_none())
                 .map(|project| (project.id, project))
                 .collect();
 
             let projects: HashMap<_, _> = self
                 .client
-                .get_all_by::<ProjectVersion, _>(self.args.platform_id)
+                .get_all::<ProjectVersion>(
+                    &ProjectVersionFilter::default()
+                        .platform_id(self.args.platform_id)
+                        .disabled(false),
+                )
                 .await?
                 .into_iter()
-                .filter(|project_version| project_version.disabled_at.is_none())
                 .filter_map(|project_version| {
                     projects
                         .remove(&project_version.project_id)
