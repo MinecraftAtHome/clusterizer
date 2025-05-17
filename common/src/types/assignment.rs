@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::id::Id;
 
-use super::{Task, User};
+use super::{AssignmentState, Task, User};
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct Assignment {
@@ -11,5 +11,5 @@ pub struct Assignment {
     pub created_at: DateTime<Utc>,
     pub task_id: Id<Task>,
     pub user_id: Id<User>,
-    pub canceled_at: Option<DateTime<Utc>>,
+    pub state: AssignmentState,
 }

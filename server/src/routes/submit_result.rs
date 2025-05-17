@@ -28,7 +28,7 @@ pub async fn submit_result(
         WHERE
             task_id = $1
             AND user_id = $2
-            AND canceled_at IS NULL
+            AND state != 'canceled'
         "#,
         task_id,
         user_id,

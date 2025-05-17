@@ -39,17 +39,27 @@ CREATE TABLE tasks (
     assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[]
 );
 
+CREATE TYPE assignment_state AS ENUM (
+    'init', 
+    'canceled', 
+    'expired',
+    'submitted', 
+    'valid', 
+    'invalid',  
+    'inconclusive'
+);
+
 CREATE TABLE assignments (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
     task_id int8 NOT NULL REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
     user_id int8 NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    canceled_at timestamptz
+    state assignment_state NOT NULL DEFAULT 'init'
 );
 
 CREATE UNIQUE INDEX assignments_task_id_user_id_key
     ON assignments (task_id, user_id)
-    WHERE canceled_at IS NULL;
+    WHERE state != 'canceled' AND state != 'expired';
 
 CREATE TABLE results (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
