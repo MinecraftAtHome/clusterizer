@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use axum::{
     Json,
     extract::{Path, State},
@@ -6,66 +8,58 @@ use clusterizer_common::{
     errors::ValidateOkError,
     id::Id,
     requests::ValidateOkRequest,
-    types::{Assignment, AssignmentState, Project, Result, Task},
+    types::{Assignment, AssignmentState, Project, Result, Task, assignment},
 };
 
-use crate::{query::SelectOne, result::AppResult, state::AppState, util::set_assignment_state};
+use crate::{
+    query::{SelectAll, SelectAllBy, SelectOne},
+    result::AppResult,
+    state::AppState,
+    util::set_assignment_state,
+};
 
 pub async fn validate_ok(
     State(state): State<AppState>,
-    Path(task_id): Path<Id<Task>>,
     Json(request): Json<ValidateOkRequest>,
 ) -> AppResult<(), ValidateOkError> {
-    let task = Task::select_one(task_id).fetch_one(&state.pool).await?;
-    //Get task_id from results - distinct task ids. If there's more than one task id -> ResultTaskRelationshipInconsistent
-    //Use the same task id 
+    let assignments = sqlx::query_as_unchecked!(
+        Assignment,
+        r#"
+            SELECT
+                *
+            FROM
+                assignments
+            WHERE
+                id = ANY($1)
+        "#,
+        request.assignment_ids
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if assignments.len() != request.assignment_ids.len() {
+        Err(ValidateOkError::InvalidAssignment)?;
+    }
+
+    let mut task_ids = Vec::from_iter(assignments.into_iter().map(|assignment| assignment.task_id));
+    task_ids.sort();
+    task_ids.dedup();
+
+    if task_ids.len() > 1 || task_ids.len() == 0 {
+        Err(ValidateOkError::ResultTaskRelationshipInconsistent)?;
+    }
+
+    let task = Task::select_one(task_ids[0]).fetch_one(&state.pool).await?;
+
     let project = Project::select_one(task.project_id)
         .fetch_one(&state.pool)
         .await?;
 
-    let result_count = sqlx::query_scalar_unchecked!(
-        r#"
-                SELECT
-                    count(1) as "count!"
-                FROM
-                    results r
-                JOIN assignments a
-                    ON a.id = r.assignment_id
-                    AND a.state in ('validation_pending', 'validation_inconclusive')
-                JOIN tasks t
-                    ON t.id = a.task_id
-                WHERE
-                    t.id = $1
-            "#,
-        task_id
-    )
-    .fetch_one(&state.pool)
-    .await? as usize;
-    let result_task_count = sqlx::query_scalar_unchecked!(
-        r#"
-                SELECT
-                    count(1) as "count!"
-                FROM
-                    results r
-                WHERE
-                    r.id = ANY($1)
-            "#,
-        request.result_ids
-    )
-    .fetch_one(&state.pool)
-    .await? as usize;
-
     if task.canonical_result_id.is_some() {
         Err(ValidateOkError::CanonicalResultExists)?
     }
-    if request.result_ids.len() != project.quorum as usize {
+    if request.assignment_ids.len() != project.quorum as usize {
         Err(ValidateOkError::ResultCountQuorumNotEqual)?
-    }
-    if request.result_ids.len() != result_task_count {
-        Err(ValidateOkError::ResultTaskRelationshipInconsistent)?
-    }
-    if request.result_ids.len() != result_count {
-        Err(ValidateOkError::InvalidResult)?
     }
 
     sqlx::query_unchecked!(
@@ -75,43 +69,31 @@ pub async fn validate_ok(
         SET 
             canonical_result_id =  
             (SELECT 
-                id 
+                r.id 
              FROM 
-                results 
-             WHERE 
-                id = ANY($2) 
+                results r
+             JOIN assignments a
+                ON a.id = r.assignment_id
+             WHERE a.id = ANY($2)
              ORDER BY 
-                created_at DESC 
+                r.created_at DESC 
              LIMIT 1
             )
         WHERE
             id = $1
         "#,
-        task_id,
-        request.result_ids
+        task.id,
+        request.assignment_ids
     )
     .execute(&state.pool)
     .await?;
 
-    let results = sqlx::query_as_unchecked!(
-        Result,
-        r#"
-        SELECT 
-            r.*
-        FROM 
-            results r
-        WHERE
-            r.id = ANY($1)
-        "#,
-        request.result_ids
+    set_assignment_state::set_assignment_state(
+        &state,
+        AssignmentState::ValidationOk,
+        &request.assignment_ids,
     )
-    .fetch_all(&state.pool)
     .await?;
-
-    //Set selected assignments to be valid
-    let assignment_ids = &Vec::from_iter(results.iter().map(|result| result.assignment_id));
-    set_assignment_state::set_assignment_state(&state, AssignmentState::ValidationOk, assignment_ids)
-        .await?;
 
     //Set assignments with results other than the ones we just set to be valid to be invalid
     let assignments_other = sqlx::query_as_unchecked!(
@@ -127,8 +109,8 @@ pub async fn validate_ok(
                 a.id  <> ANY($1)
                 AND task_id = $2
         "#,
-        assignment_ids,
-        task_id
+        request.assignment_ids,
+        task.id
     )
     .fetch_all(&state.pool)
     .await?;
@@ -153,7 +135,7 @@ pub async fn validate_ok(
                 task_id = $1
                 AND r.id IS NULL
         "#,
-        task_id
+        task.id
     )
     .fetch_all(&state.pool)
     .await?;

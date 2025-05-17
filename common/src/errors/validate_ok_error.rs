@@ -3,10 +3,8 @@ use thiserror::Error;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize, Error)]
 pub enum ValidateOkError {
-    #[error("invalid task")]
-    InvalidTask,
-    #[error("invalid result")]
-    InvalidResult,
+    #[error("invalid assignment")]
+    InvalidAssignment,
     #[error("canonical result already set")]
     CanonicalResultExists,
     #[error("provided results belong to multiple tasks")]

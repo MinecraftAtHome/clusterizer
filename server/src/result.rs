@@ -59,8 +59,7 @@ impl Status for ValidateFetchError {
 impl Status for ValidateOkError {
     fn status(&self) -> StatusCode {
         match self {
-            Self::InvalidTask => StatusCode::NOT_FOUND,
-            Self::InvalidResult => StatusCode::NOT_FOUND,
+            Self::InvalidAssignment => StatusCode::NOT_FOUND,
             Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
             Self::AssignmentCanceledError => StatusCode::BAD_REQUEST,
             Self::ResultCountQuorumNotEqual => StatusCode::BAD_REQUEST,
@@ -145,7 +144,7 @@ impl From<sqlx::Error> for AppError<ValidateFetchError> {
 impl From<sqlx::Error> for AppError<ValidateOkError> {
     fn from(err: sqlx::Error) -> Self {
         match err {
-            sqlx::Error::RowNotFound => Self::Specific(ValidateOkError::InvalidTask),
+            sqlx::Error::RowNotFound => Self::Specific(ValidateOkError::InvalidAssignment),
             _ => Self::Generic,
         }
     }
