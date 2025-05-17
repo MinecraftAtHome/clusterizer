@@ -12,7 +12,8 @@ CREATE TABLE projects (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
     disabled_at timestamptz,
-    name text NOT NULL
+    name text NOT NULL,
+    quorum int4 NOT NULL
 );
 
 CREATE TABLE platforms (
@@ -36,7 +37,8 @@ CREATE TABLE tasks (
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdin text NOT NULL,
     assignments_needed int4 NOT NULL,
-    assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[]
+    assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[],
+    canonical_result_id int8
 );
 
 CREATE TYPE assignment_state AS ENUM (

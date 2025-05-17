@@ -4,7 +4,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use clusterizer_common::errors::{
-    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError,
+    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError, ValidateErrError,
+    ValidateFetchError, ValidateOkError,
 };
 use serde::Serialize;
 
@@ -43,6 +44,40 @@ impl Status for SubmitResultError {
         match self {
             Self::InvalidTask => StatusCode::NOT_FOUND,
             Self::AlreadyExists => StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
+impl Status for ValidateFetchError {
+    fn status(&self) -> StatusCode {
+        match self {
+            Self::InvalidProject => StatusCode::NOT_FOUND,
+        }
+    }
+}
+
+impl Status for ValidateOkError {
+    fn status(&self) -> StatusCode {
+        match self {
+            Self::InvalidAssignment => StatusCode::NOT_FOUND,
+            Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
+            Self::AssignmentCanceledError => StatusCode::BAD_REQUEST,
+            Self::ResultCountQuorumNotEqual => StatusCode::BAD_REQUEST,
+            Self::AssignmentTaskRelationshipError => StatusCode::BAD_REQUEST,
+            Self::AssignmentMarkedInvalidError => StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
+impl Status for ValidateErrError {
+    fn status(&self) -> StatusCode {
+        match self {
+            Self::AssignmentsNeededOutOfBounds => StatusCode::BAD_REQUEST,
+            Self::InvalidAssignment => StatusCode::NOT_FOUND,
+            Self::CanonicalResultExists => StatusCode::BAD_REQUEST,
+            Self::InconclusiveRelationshipError => StatusCode::BAD_REQUEST,
+            Self::RequestAssignmentsRelationshipError => StatusCode::BAD_REQUEST,
+            Self::ErroredRelationshipError => StatusCode::BAD_REQUEST,
         }
     }
 }
@@ -104,6 +139,28 @@ impl From<sqlx::Error> for AppError<SubmitResultError> {
     }
 }
 
+impl From<sqlx::Error> for AppError<ValidateFetchError> {
+    fn from(_: sqlx::Error) -> Self {
+        Self::Generic
+    }
+}
+
+impl From<sqlx::Error> for AppError<ValidateOkError> {
+    fn from(err: sqlx::Error) -> Self {
+        match err {
+            sqlx::Error::RowNotFound => Self::Specific(ValidateOkError::InvalidAssignment),
+            _ => Self::Generic,
+        }
+    }
+}
+impl From<sqlx::Error> for AppError<ValidateErrError> {
+    fn from(err: sqlx::Error) -> Self {
+        match err {
+            sqlx::Error::RowNotFound => Self::Specific(ValidateErrError::InvalidAssignment),
+            _ => Self::Generic,
+        }
+    }
+}
 impl<E: Serialize + Status> IntoResponse for AppError<E> {
     fn into_response(self) -> Response {
         match self {

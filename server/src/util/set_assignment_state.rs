@@ -24,6 +24,5 @@ pub async fn set_assignment_state(
     )
     .execute(&state.pool)
     .await?;
-
     Ok(())
 }
