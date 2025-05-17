@@ -3,6 +3,7 @@ mod query;
 mod result;
 mod routes;
 mod state;
+mod util;
 
 use axum::{
     Router,
