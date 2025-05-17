@@ -28,11 +28,11 @@ pub async fn submit_result(
         WHERE
             task_id = $1
             AND user_id = $2
-            AND state != 'canceled'
+            AND state != $3
         "#,
         task_id,
         user_id,
-        AssignmentState::Init
+        AssignmentState::Canceled
     )
     .fetch_one(&state.pool)
     .await?;

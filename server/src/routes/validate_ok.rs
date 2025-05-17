@@ -79,7 +79,7 @@ pub async fn validate_ok(
 
     set_assignment_state::set_assignment_state(
         &state,
-        AssignmentState::ValidationOk,
+        AssignmentState::Valid,
         &request.assignment_ids,
     )
     .await?;
@@ -106,36 +106,8 @@ pub async fn validate_ok(
 
     set_assignment_state::set_assignment_state(
         &state,
-        AssignmentState::ValidationError,
+        AssignmentState::Invalid,
         &Vec::from_iter(assignments_other.iter().map(|assignment| assignment.id)),
-    )
-    .await?;
-
-    let assignments_unreturned = sqlx::query_as_unchecked!(
-        Assignment,
-        r#"
-            SELECT
-                a.*
-            FROM
-                assignments a
-            RIGHT JOIN results r
-                ON r.assignment_id = a.id
-            WHERE
-                task_id = $1
-                AND r.id IS NULL
-        "#,
-        task.id
-    )
-    .fetch_all(&state.pool)
-    .await?;
-    set_assignment_state::set_assignment_state(
-        &state,
-        AssignmentState::NotNeeded,
-        &Vec::from_iter(
-            assignments_unreturned
-                .iter()
-                .map(|assignment| assignment.id),
-        ),
     )
     .await?;
 
