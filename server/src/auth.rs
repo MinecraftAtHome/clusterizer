@@ -13,7 +13,7 @@ use clusterizer_common::{records::User, types::Id};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use crate::{query::SelectOne, state::AppState};
+use crate::{state::AppState, util::Select};
 
 pub struct Auth(pub Id<User>);
 

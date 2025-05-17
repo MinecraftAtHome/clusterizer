@@ -9,7 +9,7 @@ use reqwest::{IntoUrl, RequestBuilder, Response, header};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
-    get::{GetAll, GetAllBy, GetOne, GetOneBy},
+    get::Get,
     result::{ApiError, ApiResult},
 };
 
@@ -28,29 +28,19 @@ impl ApiClient {
         }
     }
 
-    pub async fn get_all<T: GetAll + DeserializeOwned>(&self) -> ApiResult<Vec<T>, Infallible> {
-        let url = T::get_all(&self.url);
-        Ok(self.get(url).await?.json().await?)
-    }
-
-    pub async fn get_all_by<T: GetAllBy<U> + DeserializeOwned, U>(
+    pub async fn get_all<T: Get + DeserializeOwned>(
         &self,
-        id: Id<U>,
-    ) -> ApiResult<Vec<T>, NotFound> {
-        let url = T::get_all_by(&self.url, id);
-        Ok(self.get(url).await?.json().await?)
+        filter: &T::Filter,
+    ) -> ApiResult<Vec<T>, Infallible>
+    where
+        T::Filter: Serialize,
+    {
+        let url = format!("{}/{}", self.url, T::PATH);
+        Ok(self.get_query(url, filter).await?.json().await?)
     }
 
-    pub async fn get_one<T: GetOne + DeserializeOwned>(&self, id: Id<T>) -> ApiResult<T, NotFound> {
-        let url = T::get_one(&self.url, id);
-        Ok(self.get(url).await?.json().await?)
-    }
-
-    pub async fn get_one_by<T: GetOneBy<U> + DeserializeOwned, U>(
-        &self,
-        id: Id<U>,
-    ) -> ApiResult<Option<T>, NotFound> {
-        let url = T::get_one_by(&self.url, id);
+    pub async fn get_one<T: Get + DeserializeOwned>(&self, id: Id<T>) -> ApiResult<T, NotFound> {
+        let url = format!("{}/{}/{}", self.url, T::PATH, id);
         Ok(self.get(url).await?.json().await?)
     }
 
@@ -82,6 +72,14 @@ impl ApiClient {
 
     async fn get<Error: DeserializeOwned>(&self, url: impl IntoUrl) -> ApiResult<Response, Error> {
         self.send(self.client.get(url)).await
+    }
+
+    async fn get_query<Error: DeserializeOwned>(
+        &self,
+        url: impl IntoUrl,
+        query: &impl Serialize,
+    ) -> ApiResult<Response, Error> {
+        self.send(self.client.get(url).query(query)).await
     }
 
     async fn post<Error: DeserializeOwned>(
