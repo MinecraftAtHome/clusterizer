@@ -14,3 +14,9 @@ pub struct Task {
     pub assignments_needed: i32,
     pub assignment_user_ids: Vec<Id<User>>,
 }
+
+#[non_exhaustive]
+#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
+pub struct TaskFilter {
+    pub project_id: Option<Id<Project>>,
+}

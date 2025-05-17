@@ -1,5 +1,4 @@
 mod auth;
-mod query;
 mod result;
 mod routes;
 mod state;
@@ -12,7 +11,7 @@ use axum::{
 use clusterizer_common::records::{
     Assignment, Platform, Project, ProjectVersion, Result, Task, User,
 };
-use routes::*;
+use routes::{get_all, get_one};
 use sqlx::PgPool;
 use state::AppState;
 use tokio::net::TcpListener;
@@ -31,42 +30,21 @@ async fn main() {
     let app = Router::new()
         .route("/users", get(get_all::<User>))
         .route("/users/{id}", get(get_one::<User>))
-        .route(
-            "/users/{id}/assignments",
-            get(get_all_by::<Assignment, User>),
-        )
         .route("/projects", get(get_all::<Project>))
         .route("/projects/{id}", get(get_one::<Project>))
-        .route(
-            "/projects/{id}/project_versions",
-            get(get_all_by::<ProjectVersion, Project>),
-        )
-        .route("/projects/{id}/tasks", get(get_all_by::<Task, Project>))
         .route("/platforms", get(get_all::<Platform>))
         .route("/platforms/{id}", get(get_one::<Platform>))
-        .route(
-            "/platforms/{id}/project_versions",
-            get(get_all_by::<ProjectVersion, Platform>),
-        )
         .route("/project_versions", get(get_all::<ProjectVersion>))
         .route("/project_versions/{id}", get(get_one::<ProjectVersion>))
         .route("/tasks", get(get_all::<Task>))
         .route("/tasks/{id}", get(get_one::<Task>))
-        .route(
-            "/tasks/{id}/assignments",
-            get(get_all_by::<Assignment, Task>),
-        )
         .route("/assignments", get(get_all::<Assignment>))
         .route("/assignments/{id}", get(get_one::<Assignment>))
-        .route(
-            "/assignments/{id}/result",
-            get(get_one_by::<Result, Assignment>),
-        )
         .route("/results", get(get_all::<Result>))
         .route("/results/{id}", get(get_one::<Result>))
-        .route("/register", post(register::register))
-        .route("/fetch_tasks", post(fetch_tasks::fetch_tasks))
-        .route("/submit_result/{id}", post(submit_result::submit_result))
+        .route("/register", post(routes::register))
+        .route("/fetch_tasks", post(routes::fetch_tasks))
+        .route("/submit_result/{id}", post(routes::submit_result))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();

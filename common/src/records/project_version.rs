@@ -14,3 +14,11 @@ pub struct ProjectVersion {
     pub platform_id: Id<Platform>,
     pub archive_url: String,
 }
+
+#[non_exhaustive]
+#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
+pub struct ProjectVersionFilter {
+    pub disabled: Option<bool>,
+    pub project_id: Option<Id<Project>>,
+    pub platform_id: Option<Id<Platform>>,
+}
