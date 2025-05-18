@@ -1,5 +1,9 @@
 use axum::{Json, extract::State};
-use clusterizer_common::{errors::FetchTasksError, records::Task, requests::FetchTasksRequest};
+use clusterizer_common::{
+    errors::FetchTasksError,
+    records::{Project, Task},
+    requests::FetchTasksRequest,
+};
 
 use crate::{
     auth::Auth,
@@ -14,24 +18,30 @@ pub async fn fetch_tasks(
 ) -> AppResult<Json<Vec<Task>>, FetchTasksError> {
     let mut tx = state.pool.begin().await?;
 
-    let count = sqlx::query_scalar_unchecked!(
+    let projects = sqlx::query_as_unchecked!(
+        Project,
         r#"
         SELECT
-            count(*) as "count!"
+            *
         FROM
             projects
         WHERE
             id = ANY($1)
-            AND disabled_at IS NULL
         "#,
         request.project_ids
     )
-    .fetch_one(&mut *tx)
-    .await? as usize;
+    .fetch_all(&mut *tx)
+    .await?;
 
-    if count != request.project_ids.len() {
+    if projects.len() != request.project_ids.len() {
         Err(AppError::Specific(FetchTasksError::InvalidProject))?;
     }
+
+    let project_ids: Vec<_> = projects
+        .into_iter()
+        .filter(|project| project.disabled_at.is_none())
+        .map(|project| project.id)
+        .collect();
 
     let task = sqlx::query_as_unchecked!(
         Task,
@@ -47,7 +57,7 @@ pub async fn fetch_tasks(
         FOR UPDATE SKIP LOCKED
         LIMIT 1
         "#,
-        request.project_ids,
+        project_ids,
         user_id,
     )
     .fetch_optional(&mut *tx)

@@ -2,7 +2,7 @@ use std::{
     collections::{HashMap, VecDeque},
     env,
     ffi::OsString,
-    fs::{self},
+    fs,
     io::Cursor,
     iter::{self, Empty},
     process::{Output, Stdio},
@@ -93,7 +93,7 @@ impl ClusterizerClient {
         let tasks = loop {
             let mut projects: HashMap<_, _> = self
                 .client
-                .get_all::<Project>(&ProjectFilter::default().disabled(false))
+                .get_all::<Project>(&ProjectFilter::default())
                 .await?
                 .into_iter()
                 .map(|project| (project.id, project))
