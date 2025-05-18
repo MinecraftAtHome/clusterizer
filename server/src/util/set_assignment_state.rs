@@ -3,13 +3,12 @@ use clusterizer_common::{
     types::{AssignmentState, Id},
 };
 
-use crate::state::AppState;
+use super::Query;
 
-pub async fn set_assignment_state(
-    state: &AppState,
-    assignment_state: AssignmentState,
+pub fn set_assignment_state(
     assignment_ids: &[Id<Assignment>],
-) -> sqlx::Result<()> {
+    assignment_state: AssignmentState,
+) -> Query {
     sqlx::query_unchecked!(
         r#"
         UPDATE 
@@ -22,8 +21,4 @@ pub async fn set_assignment_state(
         assignment_state,
         assignment_ids
     )
-    .execute(&state.pool)
-    .await?;
-
-    Ok(())
 }
