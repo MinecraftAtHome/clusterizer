@@ -65,7 +65,9 @@ pub async fn submit_result(
     .await
     .map_unique_violation(SubmitResultError::AlreadyExists)?;
 
-    util::set_assignment_state(&state, AssignmentState::Submitted, &[assignment_id]).await?;
+    util::set_assignment_state(&[assignment_id], AssignmentState::Submitted)
+        .execute(&state.pool)
+        .await?;
 
     Ok(())
 }
