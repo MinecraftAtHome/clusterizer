@@ -9,7 +9,7 @@ use clusterizer_common::{
 
 use crate::{
     query::{SelectAll, SelectAllBy, SelectOne, SelectOneBy},
-    result::AppResult,
+    result::{AppResult, ResultExt},
     state::AppState,
 };
 
@@ -30,7 +30,10 @@ pub async fn get_all_by<T: SelectAllBy<U> + Send + Unpin, U: SelectOne + Send + 
     let result = T::select_all_by(id).fetch_all(&state.pool).await?;
 
     if result.is_empty() {
-        U::select_one(id).fetch_one(&state.pool).await?;
+        U::select_one(id)
+            .fetch_one(&state.pool)
+            .await
+            .map_not_found(NotFound)?;
     }
 
     Ok(Json(result))
@@ -40,7 +43,12 @@ pub async fn get_one<T: SelectOne + Send + Unpin>(
     State(state): State<AppState>,
     Path(id): Path<Id<T>>,
 ) -> AppResult<Json<T>, NotFound> {
-    Ok(Json(T::select_one(id).fetch_one(&state.pool).await?))
+    Ok(Json(
+        T::select_one(id)
+            .fetch_one(&state.pool)
+            .await
+            .map_not_found(NotFound)?,
+    ))
 }
 
 pub async fn get_one_by<T: SelectOneBy<U> + Send + Unpin, U: SelectOne + Send + Unpin>(
@@ -50,7 +58,10 @@ pub async fn get_one_by<T: SelectOneBy<U> + Send + Unpin, U: SelectOne + Send + 
     let result = T::select_one_by(id).fetch_optional(&state.pool).await?;
 
     if result.is_none() {
-        U::select_one(id).fetch_one(&state.pool).await?;
+        U::select_one(id)
+            .fetch_one(&state.pool)
+            .await
+            .map_not_found(NotFound)?;
     }
 
     Ok(Json(result))

@@ -25,11 +25,12 @@ pub enum AuthRejection {
 impl IntoResponse for AuthRejection {
     fn into_response(self) -> Response {
         match self {
-            Self::BadApiKey => (StatusCode::BAD_REQUEST, "Bad API Key provided").into_response(),
+            Self::BadApiKey => (StatusCode::BAD_REQUEST, "Bad API key provided").into_response(),
             Self::UserDisabled => (StatusCode::BAD_REQUEST, "User is disabled").into_response(),
         }
     }
 }
+
 impl FromRequestParts<AppState> for Auth {
     type Rejection = AuthRejection;
 

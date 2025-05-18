@@ -3,18 +3,22 @@ use clusterizer_common::{
     errors::RegisterError, requests::RegisterRequest, responses::RegisterResponse,
 };
 
-use crate::{auth, result::AppResult, state::AppState};
+use crate::{
+    auth,
+    result::{AppError, AppResult, ResultExt},
+    state::AppState,
+};
 
 pub async fn register(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
 ) -> AppResult<Json<RegisterResponse>, RegisterError> {
     if request.name.len() < 3 {
-        Err(RegisterError::TooShort)?;
+        Err(AppError::Specific(RegisterError::TooShort))?;
     }
 
     if request.name.len() > 32 {
-        Err(RegisterError::TooLong)?;
+        Err(AppError::Specific(RegisterError::TooLong))?;
     }
 
     if !request
@@ -22,7 +26,7 @@ pub async fn register(
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || c == '_')
     {
-        Err(RegisterError::InvalidCharacter)?;
+        Err(AppError::Specific(RegisterError::InvalidCharacter))?;
     }
 
     let user_id = sqlx::query_scalar_unchecked!(
@@ -37,7 +41,8 @@ pub async fn register(
         request.name,
     )
     .fetch_one(&state.pool)
-    .await?;
+    .await
+    .map_unique_violation(RegisterError::AlreadyExists)?;
 
     Ok(Json(RegisterResponse {
         api_key: auth::api_key(&state, user_id),
