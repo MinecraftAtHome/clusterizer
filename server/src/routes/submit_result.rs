@@ -9,7 +9,12 @@ use clusterizer_common::{
     types::{AssignmentState, Id},
 };
 
-use crate::{auth::Auth, result::AppResult, state::AppState, util};
+use crate::{
+    auth::Auth,
+    result::{AppResult, ResultExt},
+    state::AppState,
+    util,
+};
 
 pub async fn submit_result(
     State(state): State<AppState>,
@@ -34,9 +39,8 @@ pub async fn submit_result(
         user_id,
     )
     .fetch_one(&state.pool)
-    .await?;
-
-    util::set_assignment_state(&state, AssignmentState::Submitted, &[assignment_id]).await?;
+    .await
+    .map_not_found(SubmitResultError::InvalidTask)?;
 
     sqlx::query_unchecked!(
         r#"
@@ -58,7 +62,10 @@ pub async fn submit_result(
         request.exit_code,
     )
     .execute(&state.pool)
-    .await?;
+    .await
+    .map_unique_violation(SubmitResultError::AlreadyExists)?;
+
+    util::set_assignment_state(&state, AssignmentState::Submitted, &[assignment_id]).await?;
 
     Ok(())
 }

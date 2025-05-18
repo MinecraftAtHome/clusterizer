@@ -1,7 +1,11 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{errors::FetchTasksError, records::Task, requests::FetchTasksRequest};
 
-use crate::{auth::Auth, result::AppResult, state::AppState};
+use crate::{
+    auth::Auth,
+    result::{AppError, AppResult},
+    state::AppState,
+};
 
 pub async fn fetch_tasks(
     State(state): State<AppState>,
@@ -26,7 +30,7 @@ pub async fn fetch_tasks(
     .await? as usize;
 
     if count != request.project_ids.len() {
-        Err(FetchTasksError::InvalidProject)?;
+        Err(AppError::Specific(FetchTasksError::InvalidProject))?;
     }
 
     let task = sqlx::query_as_unchecked!(
