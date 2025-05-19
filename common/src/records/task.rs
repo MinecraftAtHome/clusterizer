@@ -1,7 +1,7 @@
+use crate::types::Id;
+use crate::types::duration::ClDuration;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-
-use crate::types::Id;
 
 use super::{Project, User};
 
@@ -9,6 +9,7 @@ use super::{Project, User};
 pub struct Task {
     pub id: Id<Task>,
     pub created_at: DateTime<Utc>,
+    pub deadline: ClDuration,
     pub project_id: Id<Project>,
     pub stdin: String,
     pub assignments_needed: i32,

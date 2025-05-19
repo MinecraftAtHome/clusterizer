@@ -11,6 +11,7 @@ use axum::{
 use clusterizer_common::records::{
     Assignment, Platform, Project, ProjectVersion, Result, Task, User,
 };
+use log::{error, info};
 use routes::{get_all, get_one};
 use sqlx::PgPool;
 use state::AppState;
@@ -21,11 +22,27 @@ async fn main() {
     let database_url = dotenvy::var("DATABASE_URL").unwrap();
     let secret = dotenvy::var("CLUSTERIZER_SECRET").unwrap();
     let address = dotenvy::var("CLUSTERIZER_ADDRESS").unwrap();
+    let pool = PgPool::connect(&database_url).await.unwrap();
 
     let state = AppState {
-        pool: PgPool::connect(&database_url).await.unwrap(),
+        pool: pool.clone(),
         secret: secret.into_bytes(),
     };
+
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_secs(60 * 15)).await;
+            let result = util::update_assignments_exceed_deadline(&pool).await;
+            match result {
+                Ok(num_updated) => {
+                    info!("{:?} assignments exceed deadline", num_updated);
+                }
+                Err(error) => {
+                    error!("Failed to update assignments exceed deadline {:?}", error);
+                }
+            }
+        }
+    });
 
     let app = Router::new()
         .route("/users", get(get_all::<User>))

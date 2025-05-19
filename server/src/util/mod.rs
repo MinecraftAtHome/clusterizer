@@ -3,9 +3,11 @@ use sqlx::{
     postgres::{PgArguments, PgRow},
 };
 
+pub mod assignment_deadline;
 pub mod select;
 pub mod set_assignment_state;
 
+pub use assignment_deadline::update_assignments_exceed_deadline;
 pub use select::Select;
 pub use set_assignment_state::set_assignment_state;
 
