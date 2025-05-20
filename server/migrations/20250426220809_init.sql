@@ -33,7 +33,7 @@ CREATE TABLE project_versions (
 CREATE TABLE tasks (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
-    deadline interval NOT NULL DEFAULT '3 days'::interval,
+    deadline interval NOT NULL,
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdin text NOT NULL,
     assignments_needed int4 NOT NULL,
