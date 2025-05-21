@@ -1,91 +1,83 @@
-use ::sqlx::error::BoxDynError;
-use chrono::Duration;
 use serde::{Deserialize, Serialize};
 
 // modified implementation of https://github.com/launchbadge/sqlx/blob/main/sqlx-postgres/src/types/interval.rs
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Default, Serialize, Deserialize)]
-pub struct ClDuration {
-    pub months: i32,
-    pub days: i32,
-    pub microseconds: i64,
+pub struct Duration(chrono::Duration);
+
+impl From<Duration> for chrono::Duration {
+    fn from(duration: Duration) -> Self {
+        duration.0
+    }
 }
 
-impl TryFrom<Duration> for ClDuration {
-    type Error = BoxDynError;
-    fn try_from(value: Duration) -> Result<Self, BoxDynError> {
-        value
-            .num_nanoseconds()
-            .map_or::<Result<_, Self::Error>, _>(
-                Err("Overflow has occurred for PostgreSQL `INTERVAL`".into()),
-                |nanoseconds| {
-                    if nanoseconds % 1000 != 0 {
-                        return Err(
-                            "PostgreSQL `INTERVAL` does not support nanoseconds precision".into(),
-                        );
-                    }
-                    Ok(())
-                },
-            )?;
-
-        value.num_microseconds().map_or(
-            Err("Overflow has occurred for PostgreSQL `INTERVAL`".into()),
-            |microseconds| {
-                Ok(Self {
-                    months: 0,
-                    days: 0,
-                    microseconds,
-                })
-            },
-        )
+impl From<chrono::Duration> for Duration {
+    fn from(duration: chrono::Duration) -> Self {
+        Duration(duration)
     }
 }
 
 #[cfg(feature = "sqlx")]
 mod sqlx {
-    use std::mem;
-
-    use crate::types::duration::ClDuration;
-    use byteorder::{NetworkEndian, ReadBytesExt};
+    use crate::types::duration::Duration;
     use sqlx::encode::IsNull;
     use sqlx::error::BoxDynError;
-    use sqlx::postgres::{PgArgumentBuffer, PgValueFormat, PgValueRef};
+    use sqlx::postgres::types::PgInterval;
+    use sqlx::postgres::{PgArgumentBuffer, PgValueRef};
     use sqlx::{Decode, Encode, Postgres};
 
-    impl<'de> Decode<'de, Postgres> for ClDuration {
+    pub fn pg_interval_to_chrono_duration(pg_interval: PgInterval) -> chrono::Duration {
+        let duration_days = (pg_interval.months * 30) + pg_interval.days;
+
+        chrono::Duration::microseconds(pg_interval.microseconds)
+            + chrono::Duration::days(duration_days as i64)
+    }
+
+    impl<'de> Decode<'de, Postgres> for Duration {
         fn decode(value: PgValueRef<'de>) -> Result<Self, BoxDynError> {
-            match value.format() {
-                PgValueFormat::Binary => {
-                    let mut buf = value.as_bytes()?;
-                    let microseconds = buf.read_i64::<NetworkEndian>()?;
-                    let days = buf.read_i32::<NetworkEndian>()?;
-                    let months = buf.read_i32::<NetworkEndian>()?;
-
-                    Ok(ClDuration {
-                        months,
-                        days,
-                        microseconds,
-                    })
-                }
-
-                // TODO: Implement parsing of text mode
-                PgValueFormat::Text => Err(
-                    "not implemented: decode `INTERVAL` in text mode (unprepared queries)".into(),
-                ),
-            }
+            let pg_interval = PgInterval::decode(value)?;
+            Ok(pg_interval_to_chrono_duration(pg_interval).into())
         }
     }
 
-    impl Encode<'_, Postgres> for ClDuration {
+    impl Encode<'_, Postgres> for Duration {
         fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> Result<IsNull, BoxDynError> {
-            buf.extend(&self.microseconds.to_be_bytes());
-            buf.extend(&self.days.to_be_bytes());
-            buf.extend(&self.months.to_be_bytes());
-
-            Ok(IsNull::No)
+            let duration: chrono::Duration = self.0;
+            let pg_interval = PgInterval::try_from(duration)?;
+            pg_interval.encode_by_ref(buf)
         }
+    }
+}
 
-        fn size_hint(&self) -> usize {
-            2 * mem::size_of::<i64>()
-        }
+#[cfg(all(test, feature = "sqlx"))]
+mod tests {
+    use super::sqlx::pg_interval_to_chrono_duration;
+    use chrono::Duration;
+    use sqlx::postgres::types::PgInterval;
+
+    #[test]
+    fn test_pg_interval_to_chrono_duration() {
+        let interval = PgInterval {
+            months: 0,
+            days: 0,
+            microseconds: 5_000_000,
+        };
+        let duration = pg_interval_to_chrono_duration(interval);
+        assert_eq!(duration, Duration::seconds(5));
+
+        let interval = PgInterval {
+            months: 0,
+            days: 2,
+            microseconds: 0,
+        };
+        let duration = pg_interval_to_chrono_duration(interval);
+        assert_eq!(duration, Duration::days(2));
+
+        let interval = PgInterval {
+            months: 1,
+            days: 0,
+            microseconds: 0,
+        };
+        let duration = pg_interval_to_chrono_duration(interval);
+        assert_eq!(duration, Duration::days(30));
     }
 }
