@@ -15,7 +15,7 @@ use routes::{get_all, get_one};
 use sqlx::PgPool;
 use state::AppState;
 use tokio::net::TcpListener;
-
+use tokio::time;
 #[tokio::main]
 async fn main() {
     let database_url = dotenvy::var("DATABASE_URL").unwrap();
@@ -26,11 +26,12 @@ async fn main() {
         secret: secret.into_bytes(),
     };
 
-    let schedule_state = state.clone();
+    let deadline_task_state = state.clone();
+    let mut deadline_interval = time::interval(time::Duration::from_secs(60 * 15));
     tokio::spawn(async move {
         loop {
-            tokio::time::sleep(tokio::time::Duration::from_secs(60 * 15)).await;
-            let _result = util::update_assignments_exceed_deadline(&schedule_state).await;
+            deadline_interval.tick().await;
+            let _result = util::update_assignments_exceed_deadline(&deadline_task_state).await;
             //TODO log result
         }
     });

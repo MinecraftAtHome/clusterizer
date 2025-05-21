@@ -432,7 +432,6 @@ dependencies = [
  "clusterizer-common",
  "dotenvy",
  "hmac",
- "log",
  "serde",
  "sha2",
  "sqlx",
