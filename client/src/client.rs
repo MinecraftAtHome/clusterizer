@@ -119,6 +119,7 @@ impl ClusterizerClient {
                 .client
                 .fetch_tasks(&FetchTasksRequest {
                     project_ids: projects.keys().copied().collect(),
+                    limit: self.args.threads,
                 })
                 .await?
                 .into_iter()

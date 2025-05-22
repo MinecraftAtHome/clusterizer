@@ -43,7 +43,7 @@ pub async fn fetch_tasks(
         .map(|project| project.id)
         .collect();
 
-    let task = sqlx::query_as_unchecked!(
+    let tasks = sqlx::query_as_unchecked!(
         Task,
         r#"
         SELECT
@@ -55,15 +55,16 @@ pub async fn fetch_tasks(
             AND cardinality(assignment_user_ids) < assignments_needed
             AND $2 != ALL(assignment_user_ids)
         FOR UPDATE SKIP LOCKED
-        LIMIT 1
+        LIMIT $3
         "#,
         project_ids,
         user_id,
+        request.limit.min(32) as i64,
     )
-    .fetch_optional(&mut *tx)
+    .fetch_all(&mut *tx)
     .await?;
 
-    if let Some(task) = &task {
+    for task in &tasks {
         sqlx::query_unchecked!(
             r#"
             UPDATE
@@ -94,9 +95,9 @@ pub async fn fetch_tasks(
         )
         .execute(&mut *tx)
         .await?;
-    };
+    }
 
     tx.commit().await?;
 
-    Ok(Json(task.into_iter().collect()))
+    Ok(Json(tasks))
 }
