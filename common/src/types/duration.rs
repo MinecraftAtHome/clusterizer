@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Serialize, Deserialize,
+    Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default, Serialize, Deserialize,
 )]
 pub struct Duration(chrono::Duration);
 
