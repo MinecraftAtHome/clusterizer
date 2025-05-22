@@ -415,7 +415,6 @@ dependencies = [
 name = "clusterizer-common"
 version = "0.1.0"
 dependencies = [
- "byteorder",
  "chrono",
  "serde",
  "sqlx",
@@ -429,6 +428,7 @@ dependencies = [
  "axum",
  "axum-extra",
  "base64 0.22.1",
+ "chrono",
  "clusterizer-common",
  "dotenvy",
  "hmac",

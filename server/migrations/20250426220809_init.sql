@@ -53,6 +53,7 @@ CREATE TYPE assignment_state AS ENUM (
 CREATE TABLE assignments (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
+    deadline_at timestamptz NOT NULL,
     task_id int8 NOT NULL REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
     user_id int8 NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     state assignment_state NOT NULL DEFAULT 'init'

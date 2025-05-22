@@ -14,8 +14,8 @@ use clusterizer_common::records::{
 use routes::{get_all, get_one};
 use sqlx::PgPool;
 use state::AppState;
-use tokio::net::TcpListener;
-use tokio::time;
+use tokio::{net::TcpListener, time};
+
 #[tokio::main]
 async fn main() {
     let database_url = dotenvy::var("DATABASE_URL").unwrap();
@@ -28,13 +28,6 @@ async fn main() {
 
     let deadline_task_state = state.clone();
     let mut deadline_interval = time::interval(time::Duration::from_secs(60 * 15));
-    tokio::spawn(async move {
-        loop {
-            deadline_interval.tick().await;
-            let _result = util::update_assignments_exceed_deadline(&deadline_task_state).await;
-            //TODO log result
-        }
-    });
 
     let app = Router::new()
         .route("/users", get(get_all::<User>))
@@ -58,5 +51,14 @@ async fn main() {
 
     let listener = TcpListener::bind(address).await.unwrap();
 
-    axum::serve(listener, app).await.unwrap();
+    tokio::join!(
+        async move {
+            loop {
+                deadline_interval.tick().await;
+                let _result = util::update_expired_assignments(&deadline_task_state).await;
+                //TODO log error if present
+            }
+        },
+        axum::serve(listener, app)
+    );
 }

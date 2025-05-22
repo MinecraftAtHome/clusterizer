@@ -65,18 +65,26 @@ pub async fn fetch_tasks(
     .await?;
 
     for task in &tasks {
+        let created_at = chrono::Utc::now();
+        let deadline_at = created_at + chrono::Duration::from(task.deadline);
         sqlx::query_unchecked!(
             r#"
             INSERT INTO assignments (
                 task_id,
-                user_id
+                user_id,
+                created_at,
+                deadline_at
             ) VALUES (
                 $1,
-                $2
+                $2,
+                $3,
+                $4
             )
             "#,
             task.id,
             user_id,
+            created_at,
+            deadline_at,
         )
         .execute(&mut *tx)
         .await?;

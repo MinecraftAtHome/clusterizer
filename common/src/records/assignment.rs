@@ -9,6 +9,7 @@ use super::{Task, User};
 pub struct Assignment {
     pub id: Id<Assignment>,
     pub created_at: DateTime<Utc>,
+    pub deadline_at: DateTime<Utc>,
     pub task_id: Id<Task>,
     pub user_id: Id<User>,
     pub state: AssignmentState,

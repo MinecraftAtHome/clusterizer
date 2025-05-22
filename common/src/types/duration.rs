@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-// modified implementation of https://github.com/launchbadge/sqlx/blob/main/sqlx-postgres/src/types/interval.rs
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Default, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Serialize, Deserialize,
+)]
 pub struct Duration(chrono::Duration);
 
 impl From<Duration> for chrono::Duration {
@@ -19,12 +20,10 @@ impl From<chrono::Duration> for Duration {
 #[cfg(feature = "sqlx")]
 mod sqlx {
     use crate::types::duration::Duration;
-    use sqlx::encode::IsNull;
-    use sqlx::error::BoxDynError;
-    use sqlx::postgres::types::PgInterval;
-    use sqlx::postgres::{PgArgumentBuffer, PgValueRef};
-    use sqlx::{Decode, Encode, Postgres};
-
+    use sqlx::{
+        Decode, Encode, Postgres, encode::IsNull, error::BoxDynError, postgres::PgArgumentBuffer,
+        postgres::PgValueRef, postgres::types::PgInterval,
+    };
     pub fn pg_interval_to_chrono_duration(pg_interval: PgInterval) -> chrono::Duration {
         let duration_days = (pg_interval.months * 30) + pg_interval.days;
 
