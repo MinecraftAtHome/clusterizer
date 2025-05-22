@@ -33,7 +33,7 @@ pub async fn submit_result(
             task_id = $1
             AND user_id = $2
             AND state != 'canceled'
-        FOR SHARE
+        FOR UPDATE
         "#,
         task_id,
         user_id,
