@@ -34,3 +34,6 @@ jobs:
         run: cargo clippy -- -D warnings
       - name: Cargo Format Check
         run: cargo fmt --check
+      - name: Sqlx Prepare Check
+        run: cargo sqlx prepare --check
+        working-directory: ./server

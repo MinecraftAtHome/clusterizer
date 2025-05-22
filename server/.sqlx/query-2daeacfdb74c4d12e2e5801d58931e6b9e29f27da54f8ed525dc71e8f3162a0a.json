@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM results WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "assignment_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "stdout",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "stderr",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "exit_code",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "2daeacfdb74c4d12e2e5801d58931e6b9e29f27da54f8ed525dc71e8f3162a0a"
+}

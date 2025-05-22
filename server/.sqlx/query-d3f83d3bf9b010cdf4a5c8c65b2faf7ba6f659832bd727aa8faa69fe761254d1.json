@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE \n            assignments\n        SET \n            state = $1\n        WHERE\n            id = ANY($2)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "assignment_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "canceled",
+                "expired",
+                "submitted",
+                "valid",
+                "invalid",
+                "inconclusive"
+              ]
+            }
+          }
+        },
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d3f83d3bf9b010cdf4a5c8c65b2faf7ba6f659832bd727aa8faa69fe761254d1"
+}
