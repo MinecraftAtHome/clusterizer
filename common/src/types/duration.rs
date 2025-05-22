@@ -31,8 +31,8 @@ mod sqlx {
             + chrono::Duration::days(duration_days as i64)
     }
 
-    impl<'de> Decode<'de, Postgres> for Duration {
-        fn decode(value: PgValueRef<'de>) -> Result<Self, BoxDynError> {
+    impl<'r> Decode<'r, Postgres> for Duration {
+        fn decode(value: PgValueRef<'r>) -> Result<Self, BoxDynError> {
             let pg_interval = PgInterval::decode(value)?;
             Ok(pg_interval_to_chrono_duration(pg_interval).into())
         }
