@@ -72,7 +72,7 @@ CREATE TABLE results (
 );
 
 CREATE FUNCTION trigger_function_tasks_remove_assignment_user_id()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     UPDATE tasks
     SET assignment_user_ids = array_remove(tasks.assignment_user_ids, OLD.user_id)
@@ -87,3 +87,19 @@ CREATE TRIGGER assignments_trigger_remove_assignment_user_id
     FOR EACH ROW
     WHEN (NEW.state = 'canceled' OR NEW.state = 'expired')
     EXECUTE FUNCTION trigger_function_tasks_remove_assignment_user_id();
+
+CREATE FUNCTION trigger_function_tasks_add_assignment_user_id()
+    RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE tasks
+    SET assignment_user_ids = tasks.assignment_user_ids || NEW.user_id
+    WHERE tasks.id = NEW.task_id;
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER assignments_trigger_add_assignment_user_id
+    BEFORE INSERT
+    ON assignments
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_function_tasks_add_assignment_user_id();
