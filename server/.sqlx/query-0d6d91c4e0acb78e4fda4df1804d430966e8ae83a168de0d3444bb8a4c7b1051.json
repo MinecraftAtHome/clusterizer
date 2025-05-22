@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                *\n            FROM\n                tasks\n            WHERE\n                project_id = $1 IS NOT FALSE\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "project_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "stdin",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "assignments_needed",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "assignment_user_ids",
+        "type_info": "Int8Array"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0d6d91c4e0acb78e4fda4df1804d430966e8ae83a168de0d3444bb8a4c7b1051"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE\n                tasks\n            SET\n                assignment_user_ids = assignment_user_ids || $2\n            WHERE\n                id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "759cf93909fd38d3759fb3543fd547e1b5d4ef9f5074b2d2ef181c979270de3b"
+}
