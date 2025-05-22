@@ -1,5 +1,4 @@
-use crate::types::Id;
-use crate::types::duration::Duration;
+use crate::types::{Duration, Id};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 

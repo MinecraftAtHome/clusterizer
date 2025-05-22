@@ -41,7 +41,14 @@ mod sqlx {
     impl Encode<'_, Postgres> for Duration {
         fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> Result<IsNull, BoxDynError> {
             let duration: chrono::Duration = self.0;
-            let pg_interval = PgInterval::try_from(duration)?;
+            let num_days = duration.num_days() as i32;
+            let num_micros =
+                (duration.num_seconds() % 86400) * 1_000_000 + duration.subsec_micros() as i64;
+            let pg_interval = PgInterval {
+                months: num_days / 30,
+                days: num_days % 30,
+                microseconds: num_micros,
+            };
             pg_interval.encode_by_ref(buf)
         }
     }
@@ -50,6 +57,7 @@ mod sqlx {
 #[cfg(all(test, feature = "sqlx"))]
 mod tests {
     use super::sqlx::pg_interval_to_chrono_duration;
+    use crate::types::duration;
     use chrono::Duration;
     use sqlx::postgres::types::PgInterval;
 
@@ -78,5 +86,28 @@ mod tests {
         };
         let duration = pg_interval_to_chrono_duration(interval);
         assert_eq!(duration, Duration::days(30));
+    }
+
+    #[test]
+    fn test_duration_conversion() {
+        let chrono_duration = Duration::seconds(30);
+        let wrapper_duration: duration::Duration = chrono_duration.into();
+        let chrono_duration_converted: Duration = wrapper_duration.into();
+        assert_eq!(chrono_duration, chrono_duration_converted);
+
+        let chrono_minutes = Duration::minutes(5);
+        let wrapper_duration: duration::Duration = chrono_minutes.into();
+        let chrono_duration_converted: Duration = wrapper_duration.into();
+        assert_eq!(chrono_minutes, chrono_duration_converted);
+
+        let chrono_days = Duration::days(7);
+        let wrapper_duration: duration::Duration = chrono_days.into();
+        let chrono_duration_converted: Duration = wrapper_duration.into();
+        assert_eq!(chrono_days, chrono_duration_converted);
+
+        let chrono_micros = Duration::microseconds(1_500_000);
+        let wrapper_duration: duration::Duration = chrono_micros.into();
+        let chrono_duration_converted: Duration = wrapper_duration.into();
+        assert_eq!(chrono_micros, chrono_duration_converted);
     }
 }
