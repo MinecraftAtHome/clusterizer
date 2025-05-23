@@ -9,7 +9,7 @@ use clusterizer_common::{
 };
 
 use crate::{
-    result::{AppError, AppResult, ResultExt},
+    result::{AppError, AppResult},
     state::AppState,
 };
 
@@ -33,11 +33,11 @@ pub async fn validate_fetch(
     .fetch_optional(&mut *tx)
     .await?;
 
-    match project_result{
+    match project_result {
         Some(project) => {
-             let task = sqlx::query_as_unchecked!(
-                    Task,
-                    r#"
+            let task = sqlx::query_as_unchecked!(
+                Task,
+                r#"
                     SELECT
                         t.*
                     FROM
@@ -55,15 +55,13 @@ pub async fn validate_fetch(
                             OR t.canonical_result_id IS NOT NULL
                             )
                     "#,
-                    project.id
-                )
-                .fetch_all(&state.pool)
-                .await?;
-                tx.commit().await?;
-                Ok(Json(task.into_iter().collect()))
-        },
-        None => Err(AppError::Specific(ValidateFetchError::InvalidProject))
+                project.id
+            )
+            .fetch_all(&state.pool)
+            .await?;
+            tx.commit().await?;
+            Ok(Json(task.into_iter().collect()))
+        }
+        None => Err(AppError::Specific(ValidateFetchError::InvalidProject)),
     }
-
-   
 }
