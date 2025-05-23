@@ -15,21 +15,26 @@
       },
       {
         "ordinal": 2,
+        "name": "deadline",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 3,
         "name": "project_id",
         "type_info": "Int8"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "stdin",
         "type_info": "Text"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "assignments_needed",
         "type_info": "Int4"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "assignment_user_ids",
         "type_info": "Int8Array"
       }
@@ -40,6 +45,7 @@
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,
