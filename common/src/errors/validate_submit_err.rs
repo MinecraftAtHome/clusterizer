@@ -5,12 +5,10 @@ use thiserror::Error;
 pub enum ValidateSubmitError {
     #[error("invalid assignment")]
     InvalidAssignment,
-    #[error("invalid assignment state")]
-    InvalidAssignmentState,
-    #[error("provided assignments needed value out of bounds")]
-    AssignmentsNeededOutOfBounds,
-    #[error("result count is less than quorum")]
-    ResultCountLessThanQuorum,
+    #[error("task already validated and this result is not valid")]
+    InconsistentValidationState,
+    #[error("too many groups meeting quorum were provided")]
+    ValidityAmbiguous,
     #[error("state transition forbidden")]
     StateTransitionForbidden,
 }

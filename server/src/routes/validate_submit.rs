@@ -23,13 +23,13 @@ pub async fn validate_submit(
     let assignments = sqlx::query_as_unchecked!(
         Assignment,
         r#"
-                    SELECT
-                        *
-                    FROM
-                        assignments
-                    WHERE
-                        id = ANY($1)
-                "#,
+        SELECT
+            *
+        FROM
+            assignments
+        WHERE
+            id = ANY($1)
+        "#,
         assignment_ids
     )
     .fetch_all(&state.pool)
@@ -43,6 +43,7 @@ pub async fn validate_submit(
     task_ids.sort();
     task_ids.dedup();
 
+    // Generate a map of tasks to assignments with that task_id for use in the next loop
     let task_assignment_map = assignments.iter().fold(
         HashMap::new(),
         |mut map: HashMap<Id<Task>, Vec<Id<Assignment>>>, assignment| {
@@ -53,22 +54,26 @@ pub async fn validate_submit(
         },
     );
 
-    for task_id in task_assignment_map.keys() {
+    // Loop through all tasks that have been submitted for validation via their assignments
+    // This avoids a MixedTasks error as we simply error with "too few results" instead for that particular task
+    for (task_id, task_assignments) in task_assignment_map.iter() {
         let task = Select::select_one(*task_id).fetch_one(&state.pool).await?;
-
-        let task_db_assignments = task_assignment_map[task_id].clone();
 
         let mut group_map: HashMap<i32, i32> = HashMap::new();
         let mut errored_assignments: Vec<Id<Assignment>> = Vec::new();
-        for assignment in task_db_assignments.iter() {
-            let group_num = request.assignments[assignment];
-            if group_num.is_some() {
-                *group_map.entry(group_num.unwrap()).or_insert(0) += 1;
-            } else {
+
+        // Get group number and count of assignments in each group
+        for assignment in task_assignments.iter() {
+            let group_num_option = request.assignments[assignment];
+
+            match group_num_option {
+                // Task has a group number, so use it.
+                Some(group_num) => *group_map.entry(group_num).or_insert(0) += 1,
                 // Task errored, so add one to assignments needed
-                errored_assignments.push(*assignment);
+                None => errored_assignments.push(*assignment),
             }
         }
+
         let valid_groups: Vec<i32> = group_map
             .iter()
             .filter(|kvp| *kvp.1 >= task.quorum)
@@ -83,11 +88,12 @@ pub async fn validate_submit(
 
         if valid_groups.len() > 1 {
             // Cannot have more than one valid group - this is inconsistent
+            Err(AppError::Specific(ValidateSubmitError::ValidityAmbiguous))?
         }
         if valid_groups.len() == 1 || task.canonical_result_id.is_some() {
             // Valid
 
-            let valid_assignments: Vec<Id<Assignment>> = task_db_assignments
+            let valid_assignments: Vec<Id<Assignment>> = task_assignments
                 .iter()
                 .filter(|assignment| {
                     if let Some(group_num) = request.assignments[assignment] {
@@ -99,7 +105,7 @@ pub async fn validate_submit(
                 .cloned()
                 .collect();
 
-            let invalid_assignments: Vec<Id<Assignment>> = task_db_assignments
+            let invalid_assignments: Vec<Id<Assignment>> = task_assignments
                 .iter()
                 .filter(|assignment| {
                     invalid_groups
@@ -132,24 +138,25 @@ pub async fn validate_submit(
                 // If we don't have a valid result yet
                 sqlx::query_unchecked!(
                     r#"
-                            UPDATE 
-                                tasks
-                            SET 
-                                canonical_result_id =  
-                                (SELECT 
-                                    r.id 
-                                FROM 
-                                    results r
-                                JOIN assignments a
-                                    ON a.id = r.assignment_id
-                                WHERE a.id = ANY($2)
-                                ORDER BY 
-                                    r.created_at DESC 
-                                LIMIT 1
-                                )
-                            WHERE
-                                id = $1
-                                "#,
+                    UPDATE 
+                        tasks
+                    SET 
+                        canonical_result_id =  
+                        (
+                        SELECT 
+                            r.id 
+                        FROM 
+                            results r
+                        JOIN assignments a
+                            ON a.id = r.assignment_id
+                        WHERE a.id = ANY($2)
+                        ORDER BY 
+                            r.created_at DESC 
+                        LIMIT 1
+                        )
+                    WHERE
+                        id = $1
+                    "#,
                     task.id,
                     valid_assignments
                 )
@@ -179,11 +186,11 @@ pub async fn validate_submit(
             // Cannot be inconclusive if a result is canonical already. Either it's valid or it's not.
             if task.canonical_result_id.is_some() {
                 Err(AppError::Specific(
-                    ValidateSubmitError::InvalidAssignmentState,
+                    ValidateSubmitError::InconsistentValidationState,
                 ))?
             }
 
-            let inconclusive_assignments: Vec<Id<Assignment>> = task_db_assignments
+            let inconclusive_assignments: Vec<Id<Assignment>> = task_assignments
                 .iter()
                 .filter(|assignment| {
                     invalid_groups
@@ -201,11 +208,11 @@ pub async fn validate_submit(
             }
             sqlx::query_unchecked!(
                 r#"
-                            UPDATE tasks
-                            SET assignments_needed = assignments_needed + $2
-                            WHERE
-                                id = $1
-                        "#,
+                UPDATE tasks
+                SET assignments_needed = assignments_needed + $2
+                WHERE
+                    id = $1
+                "#,
                 task.id,
                 task.quorum - (errored_assignments.len() as i32 + max_count)
             )
