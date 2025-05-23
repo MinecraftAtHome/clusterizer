@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    UPDATE \n                        tasks\n                    SET \n                        canonical_result_id =  \n                        (\n                        SELECT \n                            r.id \n                        FROM \n                            results r\n                        JOIN assignments a\n                            ON a.id = r.assignment_id\n                        WHERE a.id = ANY($2)\n                        ORDER BY \n                            r.created_at DESC \n                        LIMIT 1\n                        )\n                    WHERE\n                        id = $1\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e50af1fefea907cbd07f1e038aebefe495c216b5f5aee18a5812b41c57f0eb4f"
+}
