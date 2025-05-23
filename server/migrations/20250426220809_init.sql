@@ -18,7 +18,8 @@ CREATE TABLE projects (
 CREATE TABLE platforms (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
-    name text NOT NULL
+    name text NOT NULL,
+    tester_archive_url text NOT NULL
 );
 
 CREATE TABLE project_versions (

@@ -3,8 +3,9 @@ use std::{
     env,
     ffi::OsString,
     fs,
-    io::Cursor,
+    io::{Cursor, ErrorKind},
     iter::{self, Empty},
+    path::Path,
     process::{Output, Stdio},
     sync::Arc,
     time::Duration,
@@ -12,7 +13,10 @@ use std::{
 
 use clusterizer_api::client::ApiClient;
 use clusterizer_common::{
-    records::{Project, ProjectFilter, ProjectVersion, ProjectVersionFilter, Task},
+    records::{
+        Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion, ProjectVersionFilter,
+        Task,
+    },
     requests::{FetchTasksRequest, SubmitResultRequest},
     types::Id,
 };
@@ -22,9 +26,10 @@ use zip::ZipArchive;
 
 use crate::{args::RunArgs, result::ClientResult};
 
-pub struct ClusterizerClient {
+struct ClusterizerClient {
     client: ApiClient,
     args: RunArgs,
+    platform_ids: Vec<Id<Platform>>,
 }
 
 struct TaskInfo {
@@ -40,13 +45,7 @@ enum Return {
 }
 
 impl ClusterizerClient {
-    pub fn new(client: ApiClient, args: RunArgs) -> ClusterizerClient {
-        ClusterizerClient { client, args }
-    }
-
-    pub async fn run(self: Arc<Self>) -> ClientResult<()> {
-        fs::create_dir_all(&self.args.cache_dir)?;
-
+    async fn run(self: Arc<Self>) -> ClientResult<()> {
         let mut set = JoinSet::new();
         let mut tasks = VecDeque::new();
         let mut fetching_tasks = true;
@@ -101,13 +100,10 @@ impl ClusterizerClient {
 
             let projects: HashMap<_, _> = self
                 .client
-                .get_all::<ProjectVersion>(
-                    &ProjectVersionFilter::default()
-                        .platform_id(self.args.platform_id)
-                        .disabled(false),
-                )
+                .get_all::<ProjectVersion>(&ProjectVersionFilter::default().disabled(false))
                 .await?
                 .into_iter()
+                .filter(|project_version| self.platform_ids.contains(&project_version.platform_id))
                 .filter_map(|project_version| {
                     projects
                         .remove(&project_version.project_id)
@@ -152,24 +148,17 @@ impl ClusterizerClient {
             project_version, ..
         } in &tasks
         {
-            let project_version_dir = self.args.cache_dir.join(project_version.id.to_string());
+            let project_version_dir = self
+                .args
+                .project_versions_dir()
+                .join(project_version.id.to_string());
 
-            if project_version_dir.exists() {
-                debug!("Archive {} was cached.", project_version_dir.display());
-            } else {
-                debug!("Archive {} is not cached.", project_version_dir.display());
-
-                let bytes = reqwest::get(&project_version.archive_url)
-                    .await?
-                    .error_for_status()?
-                    .bytes()
-                    .await?;
-
-                let extract_dir = tempfile::tempdir_in(&self.args.cache_dir)?;
-
-                ZipArchive::new(Cursor::new(bytes))?.extract(&extract_dir)?;
-                fs::rename(&extract_dir, project_version_dir)?;
-            }
+            download_archive(
+                &project_version.archive_url,
+                &project_version_dir,
+                &self.args.cache_dir,
+            )
+            .await?;
         }
 
         Ok(Return::FetchTasks(tasks))
@@ -193,10 +182,12 @@ impl ClusterizerClient {
         );
         debug!("Slot dir: {}", slot_dir.path().display());
 
-        let program = self
+        let project_version_dir = self
             .args
-            .cache_dir
-            .join(project_version.id.to_string())
+            .project_versions_dir()
+            .join(project_version.id.to_string());
+
+        let program = project_version_dir
             .join(format!("main{}", env::consts::EXE_SUFFIX))
             .canonicalize()?;
 
@@ -236,4 +227,85 @@ impl ClusterizerClient {
 
         Ok(Return::SubmitResult)
     }
+}
+
+pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
+    fs::create_dir_all(args.project_versions_dir())?;
+    fs::create_dir_all(args.platform_testers_dir())?;
+
+    let mut platform_ids = Vec::new();
+    let mut platform_names = Vec::new();
+
+    for platform in client
+        .get_all::<Platform>(&PlatformFilter::default())
+        .await?
+    {
+        debug!(
+            "Platform id: {}, tester archive url: {}",
+            platform.id, platform.tester_archive_url
+        );
+
+        let platform_tester_dir = args.platform_testers_dir().join(platform.id.to_string());
+
+        download_archive(
+            &platform.tester_archive_url,
+            &platform_tester_dir,
+            &args.cache_dir,
+        )
+        .await?;
+
+        let slot_dir = tempfile::tempdir()?;
+
+        debug!("Slot dir: {}", slot_dir.path().display());
+
+        let program = match platform_tester_dir
+            .join(format!("main{}", env::consts::EXE_SUFFIX))
+            .canonicalize()
+        {
+            Err(err) if err.kind() == ErrorKind::NotFound => continue,
+            result => result,
+        }?;
+
+        let args: Empty<OsString> = iter::empty();
+
+        let status = Command::new(program)
+            .args(args)
+            .current_dir(&slot_dir)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .await?;
+
+        if status.success() {
+            platform_ids.push(platform.id);
+            platform_names.push(platform.name);
+        }
+    }
+
+    info!("Supported platforms: {}", platform_names.join(", "));
+
+    Arc::new(ClusterizerClient {
+        client,
+        args,
+        platform_ids,
+    })
+    .run()
+    .await
+}
+
+async fn download_archive(url: &str, dir: &Path, cache_dir: &Path) -> ClientResult<()> {
+    if dir.exists() {
+        debug!("Archive {} was cached.", dir.display());
+    } else {
+        debug!("Archive {} is not cached.", dir.display());
+
+        let bytes = reqwest::get(url).await?.error_for_status()?.bytes().await?;
+        let extract_dir = tempfile::tempdir_in(cache_dir)?;
+
+        ZipArchive::new(Cursor::new(bytes))?.extract(&extract_dir)?;
+        fs::rename(&extract_dir, dir)?;
+    }
+
+    Ok(())
 }

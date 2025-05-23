@@ -4,7 +4,6 @@ use clap::{
     Args, Parser, Subcommand,
     builder::{OsStr, Resettable},
 };
-use clusterizer_common::{records::Platform, types::Id};
 
 #[derive(Debug, Parser)]
 #[command(name = "Clusterizer RS")]
@@ -37,12 +36,20 @@ pub struct RegisterArgs {
 pub struct RunArgs {
     #[arg(long, short, default_value = cache_dir())]
     pub cache_dir: PathBuf,
-    #[arg(long, short)]
-    pub platform_id: Id<Platform>,
     #[arg(long, short, default_value_t = threads())]
     pub threads: usize,
     #[arg(long, short, default_value_t = 0)]
     pub queue: usize,
+}
+
+impl RunArgs {
+    pub fn project_versions_dir(&self) -> PathBuf {
+        self.cache_dir.join("project_versions")
+    }
+
+    pub fn platform_testers_dir(&self) -> PathBuf {
+        self.cache_dir.join("platform_testers")
+    }
 }
 
 fn cache_dir() -> Resettable<OsStr> {

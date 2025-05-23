@@ -8,8 +8,9 @@ pub struct Platform {
     pub id: Id<Platform>,
     pub created_at: DateTime<Utc>,
     pub name: String,
+    pub tester_archive_url: String,
 }
 
 #[non_exhaustive]
 #[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct PlatformFilter;
+pub struct PlatformFilter {}

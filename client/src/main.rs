@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use args::{ClusterizerArgs, Commands};
 use clap::Parser;
-use client::ClusterizerClient;
 use clusterizer_api::client::ApiClient;
 use clusterizer_common::requests::RegisterRequest;
 use env_logger::Env;
@@ -36,7 +33,7 @@ async fn run() -> ClientResult<()> {
 
             println!("{}", response.api_key);
         }
-        Commands::Run(args) => Arc::new(ClusterizerClient::new(client, args)).run().await?,
+        Commands::Run(args) => client::run(client, args).await?,
     }
 
     Ok(())
