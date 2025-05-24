@@ -17,12 +17,18 @@
         "ordinal": 2,
         "name": "name",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "tester_archive_url",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": []
     },
     "nullable": [
+      false,
       false,
       false,
       false
