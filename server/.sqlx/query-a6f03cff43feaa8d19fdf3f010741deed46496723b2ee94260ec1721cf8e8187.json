@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM tasks WHERE id = $1",
+  "query": "\n                    SELECT \n                        *\n                    FROM \n                        results r\n                    WHERE \n                        r.assignment_id = ANY($1)\n                    ORDER BY \n                        r.created_at ASC\n                    LIMIT 1\n                    ",
   "describe": {
     "columns": [
       {
@@ -15,38 +15,28 @@
       },
       {
         "ordinal": 2,
-        "name": "project_id",
+        "name": "assignment_id",
         "type_info": "Int8"
       },
       {
         "ordinal": 3,
-        "name": "stdin",
+        "name": "stdout",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "assignments_needed",
-        "type_info": "Int4"
+        "name": "stderr",
+        "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "assignment_user_ids",
-        "type_info": "Int8Array"
-      },
-      {
-        "ordinal": 6,
-        "name": "canonical_result_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 7,
-        "name": "quorum",
+        "name": "exit_code",
         "type_info": "Int4"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -55,10 +45,8 @@
       false,
       false,
       false,
-      false,
-      true,
-      false
+      true
     ]
   },
-  "hash": "4f28c9855a87500c39fc4e88308b16b87bf12743e25be5d1707c07edd8d94dfd"
+  "hash": "a6f03cff43feaa8d19fdf3f010741deed46496723b2ee94260ec1721cf8e8187"
 }

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    UPDATE \n                        tasks\n                    SET \n                        assignments_needed = assignments_needed + 1\n                    WHERE\n                        id = $1\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "86323f9f5243c3f94a679b49c361a5f19cd315d0a1881afb695861f4221cf4ca"
+}

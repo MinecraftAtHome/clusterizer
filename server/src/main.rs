@@ -11,7 +11,8 @@ use axum::{
 use clusterizer_common::records::{
     Assignment, Platform, Project, ProjectVersion, Result, Task, User,
 };
-use routes::{get_all, get_one};
+
+use routes::*;
 use sqlx::PgPool;
 use state::AppState;
 use tokio::net::TcpListener;
@@ -45,6 +46,8 @@ async fn main() {
         .route("/register", post(routes::register))
         .route("/fetch_tasks", post(routes::fetch_tasks))
         .route("/submit_result/{id}", post(routes::submit_result))
+        .route("/validate_fetch/{id}", get(routes::validate_fetch))
+        .route("/validate_submit", post(routes::validate_submit))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();
