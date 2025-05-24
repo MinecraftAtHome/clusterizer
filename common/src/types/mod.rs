@@ -1,7 +1,7 @@
 pub mod assignment_state;
-pub mod duration;
 pub mod id;
+pub mod interval;
 
 pub use assignment_state::AssignmentState;
-pub use duration::Duration;
 pub use id::Id;
+pub use interval::Interval;

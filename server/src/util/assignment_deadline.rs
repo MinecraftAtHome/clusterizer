@@ -20,7 +20,7 @@ pub fn select_expired_assignment_ids() -> QueryScalar<Id<Assignment>> {
 pub async fn update_expired_assignments(state: &AppState) -> sqlx::Result<()> {
     let mut tx = state.pool.begin().await?;
     let ids = select_expired_assignment_ids().fetch_all(&mut *tx).await?;
-    set_assignment_state(ids.as_slice(), AssignmentState::Expired)
+    set_assignment_state(&ids, AssignmentState::Expired)
         .execute(&mut *tx)
         .await?;
     tx.commit().await?;
