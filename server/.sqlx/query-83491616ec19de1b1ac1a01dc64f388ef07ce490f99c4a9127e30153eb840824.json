@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    UPDATE \n                        tasks\n                    SET \n                        canonical_result_id = $2\n                    WHERE\n                        id = $1\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "83491616ec19de1b1ac1a01dc64f388ef07ce490f99c4a9127e30153eb840824"
+}
