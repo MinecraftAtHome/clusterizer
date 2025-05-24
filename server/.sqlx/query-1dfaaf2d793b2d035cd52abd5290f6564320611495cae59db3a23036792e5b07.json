@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO assignments (\n                task_id,\n                user_id,\n                deadline_at\n            ) VALUES (\n                $1,\n                $2,\n                now() + $3\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Interval"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1dfaaf2d793b2d035cd52abd5290f6564320611495cae59db3a23036792e5b07"
+}

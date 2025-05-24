@@ -23,6 +23,7 @@ pub async fn submit_result(
     Json(request): Json<SubmitResultRequest>,
 ) -> AppResult<(), SubmitResultError> {
     let mut tx = state.pool.begin().await?;
+
     let assignment_id = sqlx::query_scalar_unchecked!(
         r#"
         SELECT
@@ -68,6 +69,7 @@ pub async fn submit_result(
     util::set_assignment_state(&[assignment_id], AssignmentState::Submitted)
         .execute(&mut *tx)
         .await?;
+
     tx.commit().await?;
 
     Ok(())

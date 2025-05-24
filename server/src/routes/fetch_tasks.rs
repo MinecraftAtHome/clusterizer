@@ -4,7 +4,6 @@ use clusterizer_common::{
     records::{Project, Task},
     requests::FetchTasksRequest,
 };
-use sqlx::postgres::types::PgInterval;
 
 use crate::{
     auth::Auth,
@@ -66,7 +65,6 @@ pub async fn fetch_tasks(
     .await?;
 
     for task in &tasks {
-        let interval: PgInterval = task.deadline.into();
         sqlx::query_unchecked!(
             r#"
             INSERT INTO assignments (
@@ -76,12 +74,12 @@ pub async fn fetch_tasks(
             ) VALUES (
                 $1,
                 $2,
-                NOW() + $3
+                now() + $3
             )
             "#,
             task.id,
             user_id,
-            interval,
+            task.deadline,
         )
         .execute(&mut *tx)
         .await?;

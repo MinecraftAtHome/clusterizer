@@ -1,6 +1,7 @@
-use crate::types::{Id, Interval};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+use crate::types::{Id, Interval};
 
 use super::{Project, User};
 

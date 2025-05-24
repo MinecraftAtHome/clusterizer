@@ -11,14 +11,17 @@ pub struct Interval {
 
 #[cfg(feature = "sqlx")]
 mod sqlx {
-    use crate::types::interval::Interval;
     use sqlx::{
-        Decode, Encode, Postgres, encode::IsNull, error::BoxDynError, postgres::PgArgumentBuffer,
-        postgres::PgValueRef, postgres::types::PgInterval,
+        Decode, Encode, Postgres, Type,
+        encode::IsNull,
+        error::BoxDynError,
+        postgres::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueRef, types::PgInterval},
     };
 
+    use super::Interval;
+
     impl From<Interval> for PgInterval {
-        fn from(interval: Interval) -> PgInterval {
+        fn from(interval: Interval) -> Self {
             Self {
                 months: interval.months,
                 days: interval.days,
@@ -28,7 +31,7 @@ mod sqlx {
     }
 
     impl From<PgInterval> for Interval {
-        fn from(interval: PgInterval) -> Interval {
+        fn from(interval: PgInterval) -> Self {
             Self {
                 months: interval.months,
                 days: interval.days,
@@ -37,25 +40,27 @@ mod sqlx {
         }
     }
 
-    impl<'r> Decode<'r, Postgres> for Interval {
-        fn decode(value: PgValueRef<'r>) -> Result<Self, BoxDynError> {
-            let pg_interval = PgInterval::decode(value)?;
-            Ok(Self {
-                months: pg_interval.months,
-                days: pg_interval.days,
-                microseconds: pg_interval.microseconds,
-            })
+    impl Type<Postgres> for Interval {
+        fn type_info() -> PgTypeInfo {
+            PgInterval::type_info()
         }
     }
 
     impl Encode<'_, Postgres> for Interval {
         fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> Result<IsNull, BoxDynError> {
-            let pg_interval = PgInterval {
-                months: self.months,
-                days: self.days,
-                microseconds: self.microseconds,
-            };
-            pg_interval.encode_by_ref(buf)
+            PgInterval::from(*self).encode_by_ref(buf)
+        }
+    }
+
+    impl Decode<'_, Postgres> for Interval {
+        fn decode(value: PgValueRef) -> Result<Self, BoxDynError> {
+            PgInterval::decode(value).map(Self::from)
+        }
+    }
+
+    impl PgHasArrayType for Interval {
+        fn array_type_info() -> PgTypeInfo {
+            PgInterval::array_type_info()
         }
     }
 }
