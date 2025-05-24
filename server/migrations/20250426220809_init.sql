@@ -33,6 +33,7 @@ CREATE TABLE project_versions (
 CREATE TABLE tasks (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
+    deadline interval NOT NULL,
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdin text NOT NULL,
     assignments_needed int4 NOT NULL,
@@ -52,6 +53,7 @@ CREATE TYPE assignment_state AS ENUM (
 CREATE TABLE assignments (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
+    deadline_at timestamptz NOT NULL,
     task_id int8 NOT NULL REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
     user_id int8 NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     state assignment_state NOT NULL DEFAULT 'init'
@@ -69,3 +71,36 @@ CREATE TABLE results (
     stderr text NOT NULL,
     exit_code int4
 );
+
+CREATE FUNCTION trigger_function_tasks_remove_assignment_user_id()
+    RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE tasks
+    SET assignment_user_ids = array_remove(tasks.assignment_user_ids, OLD.user_id)
+    WHERE tasks.id = OLD.task_id;
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER assignments_trigger_remove_assignment_user_id
+    BEFORE UPDATE
+    ON assignments
+    FOR EACH ROW
+    WHEN (NEW.state = 'canceled' OR NEW.state = 'expired')
+    EXECUTE FUNCTION trigger_function_tasks_remove_assignment_user_id();
+
+CREATE FUNCTION trigger_function_tasks_add_assignment_user_id()
+    RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE tasks
+    SET assignment_user_ids = tasks.assignment_user_ids || NEW.user_id
+    WHERE tasks.id = NEW.task_id;
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER assignments_trigger_add_assignment_user_id
+    BEFORE INSERT
+    ON assignments
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_function_tasks_add_assignment_user_id();

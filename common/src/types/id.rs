@@ -99,11 +99,10 @@ impl<T> Id<T> {
 
 #[cfg(feature = "sqlx")]
 mod sqlx {
-    use std::error::Error;
-
     use sqlx::{
         Database, Decode, Encode, Type,
         encode::IsNull,
+        error::BoxDynError,
         postgres::{PgHasArrayType, PgTypeInfo},
     };
 
@@ -122,10 +121,7 @@ mod sqlx {
     where
         i64: Encode<'q, DB>,
     {
-        fn encode_by_ref(
-            &self,
-            buf: &mut DB::ArgumentBuffer<'q>,
-        ) -> Result<IsNull, Box<dyn Error + Send + Sync>> {
+        fn encode_by_ref(&self, buf: &mut DB::ArgumentBuffer<'q>) -> Result<IsNull, BoxDynError> {
             self.raw.encode_by_ref(buf)
         }
     }
@@ -134,7 +130,7 @@ mod sqlx {
     where
         i64: Decode<'r, DB>,
     {
-        fn decode(value: DB::ValueRef<'r>) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        fn decode(value: DB::ValueRef<'r>) -> Result<Self, BoxDynError> {
             i64::decode(value).map(Self::from)
         }
     }

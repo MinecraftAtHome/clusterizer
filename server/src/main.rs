@@ -4,6 +4,8 @@ mod routes;
 mod state;
 mod util;
 
+use std::time::Duration;
+
 use axum::{
     Router,
     routing::{get, post},
@@ -14,7 +16,7 @@ use clusterizer_common::records::{
 use routes::{get_all, get_one};
 use sqlx::PgPool;
 use state::AppState;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, time};
 
 #[tokio::main]
 async fn main() {
@@ -27,6 +29,13 @@ async fn main() {
         secret: secret.into_bytes(),
     };
 
+    tokio::join!(
+        serve_task(state.clone(), address),
+        update_expired_assignments_task(state.clone()),
+    );
+}
+
+async fn serve_task(state: AppState, address: String) {
     let app = Router::new()
         .route("/users", get(get_all::<User>))
         .route("/users/{id}", get(get_one::<User>))
@@ -49,5 +58,14 @@ async fn main() {
 
     let listener = TcpListener::bind(address).await.unwrap();
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await.unwrap()
+}
+
+async fn update_expired_assignments_task(state: AppState) {
+    let mut interval = time::interval(Duration::from_secs(60 * 15));
+
+    loop {
+        interval.tick().await;
+        util::update_expired_assignments(&state).await.unwrap();
+    }
 }

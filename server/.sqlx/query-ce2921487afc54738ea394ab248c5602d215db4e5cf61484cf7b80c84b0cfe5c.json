@@ -15,16 +15,21 @@
       },
       {
         "ordinal": 2,
+        "name": "deadline_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
         "name": "task_id",
         "type_info": "Int8"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "user_id",
         "type_info": "Int8"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "state",
         "type_info": {
           "Custom": {
@@ -50,6 +55,7 @@
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,

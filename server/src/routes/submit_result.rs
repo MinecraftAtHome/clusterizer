@@ -22,7 +22,7 @@ pub async fn submit_result(
     Auth(user_id): Auth,
     Json(request): Json<SubmitResultRequest>,
 ) -> AppResult<(), SubmitResultError> {
-    // TODO: fix race condition: assignment could get canceled before result is inserted
+    let mut tx = state.pool.begin().await?;
 
     let assignment_id = sqlx::query_scalar_unchecked!(
         r#"
@@ -34,11 +34,12 @@ pub async fn submit_result(
             task_id = $1
             AND user_id = $2
             AND state != 'canceled'
+        FOR UPDATE
         "#,
         task_id,
         user_id,
     )
-    .fetch_one(&state.pool)
+    .fetch_one(&mut *tx)
     .await
     .map_not_found(SubmitResultError::InvalidTask)?;
 
@@ -61,13 +62,15 @@ pub async fn submit_result(
         request.stderr,
         request.exit_code,
     )
-    .execute(&state.pool)
+    .execute(&mut *tx)
     .await
     .map_unique_violation(SubmitResultError::AlreadyExists)?;
 
     util::set_assignment_state(&[assignment_id], AssignmentState::Submitted)
-        .execute(&state.pool)
+        .execute(&mut *tx)
         .await?;
+
+    tx.commit().await?;
 
     Ok(())
 }

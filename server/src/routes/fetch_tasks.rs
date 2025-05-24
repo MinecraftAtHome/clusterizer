@@ -67,31 +67,19 @@ pub async fn fetch_tasks(
     for task in &tasks {
         sqlx::query_unchecked!(
             r#"
-            UPDATE
-                tasks
-            SET
-                assignment_user_ids = assignment_user_ids || $2
-            WHERE
-                id = $1
-            "#,
-            task.id,
-            user_id,
-        )
-        .execute(&mut *tx)
-        .await?;
-
-        sqlx::query_unchecked!(
-            r#"
             INSERT INTO assignments (
                 task_id,
-                user_id
+                user_id,
+                deadline_at
             ) VALUES (
                 $1,
-                $2
+                $2,
+                now() + $3
             )
             "#,
             task.id,
             user_id,
+            task.deadline,
         )
         .execute(&mut *tx)
         .await?;
