@@ -16,8 +16,8 @@ use clusterizer_common::{
     requests::{FetchTasksRequest, SubmitResultRequest},
     types::Id,
 };
-use log::{debug, info, warn};
 use tokio::{io::AsyncWriteExt, process::Command, task::JoinSet, time};
+use tracing::{debug, info, warn};
 use zip::ZipArchive;
 
 use crate::{args::RunArgs, result::ClientResult};

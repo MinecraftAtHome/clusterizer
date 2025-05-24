@@ -5,9 +5,8 @@ use clap::Parser;
 use client::ClusterizerClient;
 use clusterizer_api::client::ApiClient;
 use clusterizer_common::requests::RegisterRequest;
-use env_logger::Env;
-use log::{debug, error};
 use result::ClientResult;
+use tracing::{debug, error};
 
 mod args;
 mod client;
@@ -15,7 +14,7 @@ mod result;
 
 #[tokio::main]
 async fn main() {
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    tracing_subscriber::fmt::init();
 
     if let Err(err) = run().await {
         error!("Error: {err}.");

@@ -17,9 +17,12 @@ use routes::{get_all, get_one};
 use sqlx::PgPool;
 use state::AppState;
 use tokio::{net::TcpListener, time};
+use tower_http::trace::TraceLayer;
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     let database_url = dotenvy::var("DATABASE_URL").unwrap();
     let secret = dotenvy::var("CLUSTERIZER_SECRET").unwrap();
     let address = dotenvy::var("CLUSTERIZER_ADDRESS").unwrap();
@@ -54,6 +57,7 @@ async fn serve_task(state: AppState, address: String) {
         .route("/register", post(routes::register))
         .route("/fetch_tasks", post(routes::fetch_tasks))
         .route("/submit_result/{id}", post(routes::submit_result))
+        .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();
