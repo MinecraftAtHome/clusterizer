@@ -13,7 +13,6 @@ use clusterizer_common::records::{
 };
 
 use routes::*;
-
 use sqlx::PgPool;
 use state::AppState;
 use tokio::net::TcpListener;
@@ -44,11 +43,11 @@ async fn main() {
         .route("/assignments/{id}", get(get_one::<Assignment>))
         .route("/results", get(get_all::<Result>))
         .route("/results/{id}", get(get_one::<Result>))
-        .route("/register", post(register::register))
-        .route("/fetch_tasks", post(fetch_tasks::fetch_tasks))
-        .route("/submit_result/{id}", post(submit_result::submit_result))
-        .route("/validate_fetch/{id}", get(validate_fetch::validate_fetch))
-        .route("/validate_submit", post(validate_submit::validate_submit))
+        .route("/register", post(routes::register))
+        .route("/fetch_tasks", post(routes::fetch_tasks))
+        .route("/submit_result/{id}", post(routes::submit_result))
+        .route("/validate_fetch/{id}", get(routes::validate_fetch))
+        .route("/validate_submit", post(routes::validate_submit))
         .with_state(state);
 
     let listener = TcpListener::bind(address).await.unwrap();

@@ -7,6 +7,8 @@ pub enum ValidateSubmitError {
     InvalidAssignment,
     #[error("task already validated and this result is not valid")]
     InconsistentValidationState,
+    #[error("multi-task validation in a single request is currently not implemented")]
+    MultipleTasksDisallowed,
     #[error("too many groups meeting quorum were provided")]
     ValidityAmbiguous,
     #[error("state transition forbidden")]

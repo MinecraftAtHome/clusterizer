@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    SELECT \n                        *\n                    FROM \n                        results r\n                    WHERE \n                        r.assignment_id = ANY($1)\n                    ORDER BY \n                        r.created_at ASC\n                    LIMIT 1\n                    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "assignment_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "stdout",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "stderr",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "exit_code",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "a6f03cff43feaa8d19fdf3f010741deed46496723b2ee94260ec1721cf8e8187"
+}
