@@ -33,8 +33,12 @@ pub async fn validate_submit(
                 group_id_by_assignment.insert(ass, g);
             }
             None => {
-                // Validation error
+                // Validation error (Not invalid)
                 // Confirm the assignment exists at all before attempting to set its value
+                // I don't think we should increment assignments_needed in this case because this alerts us to a fundamental problem with the data we tried to validate
+                // We should investigate why that happened, not just run another through.
+                // If the error is transient and the other result was able to run through the validator, it'll increment it anyway at quorum higher than 1.
+
                 let err_assignment = Assignment::select_one(ass).fetch_one(&state.pool).await;
                 match err_assignment {
                     Ok(_) => {
@@ -106,27 +110,20 @@ pub async fn validate_submit(
 
 
     */
-
-    // 1. Start with assignment_id to group_number hashmap
-    // Need to create a vec of group_number and dedup it
-
-    //Create inverse of request - group_id first, then vec of assignment_ids
-    let mut group_assignment_map: HashMap<Id<Assignment>, Vec<Id<Assignment>>> = HashMap::new();
     for group_id in group_ids {
-        group_assignment_map.entry(group_id).or_default().extend(
-            group_id_by_assignment
-                .iter()
-                .filter(|(_, g_id)| **g_id == group_id)
-                .map(|(_, g_id)| *g_id),
-        );
+        let group_assignments: Vec<Id<Assignment>> = group_id_by_assignment
+            .iter()
+            .filter(|(_, g_id)| **g_id == group_id)
+            .map(|(_, g_id)| *g_id)
+            .collect();
         // Error checking
         let mut task_unique: HashSet<Id<Task>> = HashSet::new();
-        for assignment_id in &group_assignment_map[&group_id] {
-            if let Some(a) = assignments.iter().find(|a| &a.id == assignment_id) {
+        for assignment_id in group_assignments.clone() {
+            if let Some(a) = assignments.iter().find(|a| a.id == assignment_id) {
                 task_unique.insert(a.task_id);
             }
-            if group_id_by_assignment[&group_id_by_assignment[assignment_id]]
-                != group_id_by_assignment[assignment_id]
+            if group_id_by_assignment[&group_id_by_assignment[&assignment_id]]
+                != group_id_by_assignment[&assignment_id]
             {
                 Err(AppError::Specific(
                     ValidateSubmitError::ValidationGroupAssociationInconsistency,
@@ -134,6 +131,7 @@ pub async fn validate_submit(
             }
         }
         if task_unique.len() > 1 {
+            // Cannot validate assignments cross-task. Only within the same task.
             Err(AppError::Specific(
                 ValidateSubmitError::ValidationGroupTaskInconsistency,
             ))?
@@ -148,14 +146,16 @@ pub async fn validate_submit(
         .fetch_one(&state.pool)
         .await?;
         // Are there enough for quorum
-        if (group_assignment_map[&group_id].len() as i32) < task.quorum {
+        if (group_assignments.clone().len() as i32) < task.quorum {
             // Inconclusive
-            let ids = &group_assignment_map[&group_id];
-            let by_id: HashMap<Id<Assignment>, AssignmentState> =
+            let assignment_state_by_id: HashMap<Id<Assignment>, AssignmentState> =
                 assignments.iter().map(|a| (a.id, a.state)).collect();
-            if ids.iter().all(|&aid| {
+            if group_assignments.iter().all(|&aid| {
                 matches!(
-                    by_id.get(&aid).copied().expect("assignment id must exist"),
+                    assignment_state_by_id
+                        .get(&aid)
+                        .copied()
+                        .expect("assignment id must exist"),
                     AssignmentState::Inconclusive
                 )
             }) {
@@ -164,12 +164,9 @@ pub async fn validate_submit(
                     ValidateSubmitError::ValidationImpossibleError,
                 ))?
             }
-            set_assignment_state(
-                &group_assignment_map[&group_id],
-                AssignmentState::Inconclusive,
-            )
-            .execute(&state.pool)
-            .await?;
+            set_assignment_state(&group_assignments, AssignmentState::Inconclusive)
+                .execute(&state.pool)
+                .await?;
             sqlx::query_unchecked!(
                 r#"
             UPDATE
@@ -215,7 +212,7 @@ pub async fn validate_submit(
         // Get results only for this group
         let group_results: Vec<Result> = task_results
             .iter()
-            .filter(|res| group_assignment_map[&group_id].contains(&res.assignment_id))
+            .filter(|res| group_assignments.contains(&res.assignment_id))
             .cloned()
             .collect();
         // Get the earliest submitted result within that group
@@ -246,7 +243,7 @@ pub async fn validate_submit(
             if earliest_group_result.created_at <= earliest_result.created_at {
                 // This can be canonical
                 // Set group to valid
-                set_assignment_state(&group_assignment_map[&group_id], AssignmentState::Valid)
+                set_assignment_state(&group_assignments, AssignmentState::Valid)
                     .execute(&state.pool)
                     .await?;
                 // Set task's canonical result id
@@ -267,7 +264,7 @@ pub async fn validate_submit(
             }
         } else {
             // This is the only relevant group, set to valid
-            set_assignment_state(&group_assignment_map[&group_id], AssignmentState::Valid)
+            set_assignment_state(&group_assignments, AssignmentState::Valid)
                 .execute(&state.pool)
                 .await?;
             // Set task's canonical result id
