@@ -18,7 +18,40 @@ pub async fn validate_submit(
     State(state): State<AppState>,
     Json(request): Json<ValidateSubmitRequest>,
 ) -> AppResult<(), ValidateSubmitError> {
-    let assignment_ids: Vec<_> = request.assignments.keys().copied().collect();
+    let mut group_ids: Vec<Id<Assignment>> = Vec::new();
+    let mut assignment_ids: Vec<Id<Assignment>> = Vec::new();
+    let mut group_id_by_assignment: HashMap<Id<Assignment>, Id<Assignment>> = HashMap::new();
+    // The purpose of doing it this way is to only add assignments to assignment_ids if they had a group number. That way we can know that any assignment in assignments (or assignment_ids, or assignment_by_id) did not error.
+    for (ass, g_id) in request.assignments {
+        match g_id {
+            Some(g) => {
+                // Add group id for that assignment to group_ids
+                // Add assignment id to assignment_ids
+                // Add assignment id and group id to new HashMap which filters out errored results
+                group_ids.push(g);
+                assignment_ids.push(ass);
+                group_id_by_assignment.insert(ass, g);
+            }
+            None => {
+                // Validation error
+                // Confirm the assignment exists at all before attempting to set its value
+                let err_assignment = Assignment::select_one(ass).fetch_one(&state.pool).await;
+                match err_assignment {
+                    Ok(_) => {
+                        set_assignment_state(&[ass], AssignmentState::Error)
+                            .execute(&state.pool)
+                            .await?;
+                    }
+                    Err(_) => Err(AppError::Specific(ValidateSubmitError::InvalidAssignment))?,
+                }
+                set_assignment_state(&[ass], AssignmentState::Error)
+                    .execute(&state.pool)
+                    .await?;
+            }
+        }
+    }
+    group_ids.sort();
+    group_ids.dedup();
 
     let assignments = sqlx::query_as_unchecked!(
         Assignment,
@@ -76,27 +109,24 @@ pub async fn validate_submit(
 
     // 1. Start with assignment_id to group_number hashmap
     // Need to create a vec of group_number and dedup it
-    let mut group_ids: Vec<Id<Assignment>> = request.assignments.values().copied().collect();
-    group_ids.sort();
-    group_ids.dedup();
+
     //Create inverse of request - group_id first, then vec of assignment_ids
     let mut group_assignment_map: HashMap<Id<Assignment>, Vec<Id<Assignment>>> = HashMap::new();
     for group_id in group_ids {
         group_assignment_map.entry(group_id).or_default().extend(
-            request
-                .assignments
+            group_id_by_assignment
                 .iter()
-                .filter(|x| *x.1 == group_id)
-                .map(|x| *x.1),
+                .filter(|(_, g_id)| **g_id == group_id)
+                .map(|(_, g_id)| *g_id),
         );
-        //Error checking
+        // Error checking
         let mut task_unique: HashSet<Id<Task>> = HashSet::new();
         for assignment_id in &group_assignment_map[&group_id] {
             if let Some(a) = assignments.iter().find(|a| &a.id == assignment_id) {
                 task_unique.insert(a.task_id);
             }
-            if request.assignments[&request.assignments[assignment_id]]
-                != request.assignments[assignment_id]
+            if group_id_by_assignment[&group_id_by_assignment[assignment_id]]
+                != group_id_by_assignment[assignment_id]
             {
                 Err(AppError::Specific(
                     ValidateSubmitError::ValidationGroupAssociationInconsistency,
