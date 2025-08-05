@@ -13,7 +13,7 @@ pub struct Result {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: Option<i32>,
-    pub group_assignment_id: Option<Id<Assignment>>
+    pub group_assignment_id: Option<Id<Assignment>>,
 }
 
 #[non_exhaustive]
