@@ -15,4 +15,6 @@ pub enum ValidateSubmitError {
     ValidationGroupAssociationInconsistency,
     #[error("state transition forbidden")]
     StateTransitionForbidden,
+    #[error("cannot validate against a result other than the canonical result")]
+    NonCanonicalResultError,
 }

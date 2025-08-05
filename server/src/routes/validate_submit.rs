@@ -150,6 +150,9 @@ pub async fn validate_submit(
             // Inconclusive
             let assignment_state_by_id: HashMap<Id<Assignment>, AssignmentState> =
                 assignments.iter().map(|a| (a.id, a.state)).collect();
+            // Determine if all of the submitted assignments are in the "Inconclusive" state.
+            // If they are, it's likely there's another assignment pending that we needed to validate with, but it has not returned yet.
+            // This indicates we're validating too early on an inconclusive batch.
             if group_assignments.iter().all(|&aid| {
                 matches!(
                     assignment_state_by_id
@@ -181,8 +184,65 @@ pub async fn validate_submit(
             )
             .execute(&state.pool)
             .await?;
-
+            sqlx::query_unchecked!(
+                r#"
+                UPDATE
+                    results
+                SET
+                    group_assignment_id = $1
+                WHERE
+                    assignment_id = ANY($2)
+                "#,
+                group_id,
+                &group_assignments
+            )
+            .execute(&state.pool)
+            .await?;
+            // Exit if inconclusive
             break;
+        } else if let Some(canonical_result_id) = task.canonical_result_id {
+            // We should validate against the canonical result instead.
+            // Get the result for the group_id (assignment_id)
+            let canonical_result: Result = sqlx::query_as_unchecked!(
+                Result,
+                r#"
+                SELECT
+                    *
+                FROM
+                    results
+                WHERE
+                    id = $1
+                "#,
+                &group_id
+            )
+            .fetch_one(&state.pool)
+            .await?;
+
+            // Is the current group_id the canonical_result's assignnment_id?
+            if canonical_result.id != canonical_result_id {
+                // Error state
+                Err(AppError::Specific(
+                    ValidateSubmitError::NonCanonicalResultError,
+                ))?
+            }
+            // Validate
+            set_assignment_state(&group_assignments, AssignmentState::Valid)
+                .execute(&state.pool)
+                .await?;
+            sqlx::query_unchecked!(
+                r#"
+                UPDATE
+                    results
+                SET
+                    group_assignment_id = $1
+                WHERE
+                    assignment_id = ANY($2)
+                "#,
+                group_id,
+                &group_assignments
+            )
+            .execute(&state.pool)
+            .await?;
         }
         // There are enough for quorum
         // Get assignments for our task_id, regardless of group
@@ -261,6 +321,20 @@ pub async fn validate_submit(
                 )
                 .execute(&state.pool)
                 .await?;
+                sqlx::query_unchecked!(
+                    r#"
+                    UPDATE
+                        results
+                    SET
+                        group_assignment_id = $1
+                    WHERE
+                        assignment_id = ANY($2)
+                    "#,
+                    group_id,
+                    &group_assignments
+                )
+                .execute(&state.pool)
+                .await?;
             }
         } else {
             // This is the only relevant group, set to valid
@@ -279,6 +353,20 @@ pub async fn validate_submit(
                 "#,
                 earliest_group_result.id,
                 task.id
+            )
+            .execute(&state.pool)
+            .await?;
+            sqlx::query_unchecked!(
+                r#"
+                UPDATE
+                    results
+                SET
+                    group_assignment_id = $1
+                WHERE
+                    assignment_id = ANY($2)
+                "#,
+                group_id,
+                &group_assignments
             )
             .execute(&state.pool)
             .await?;

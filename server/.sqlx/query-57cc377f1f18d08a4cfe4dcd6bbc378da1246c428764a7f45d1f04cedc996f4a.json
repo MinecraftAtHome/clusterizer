@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE\n                    results\n                SET\n                    group_assignment_id = $1\n                WHERE\n                    assignment_id = ANY($2)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "57cc377f1f18d08a4cfe4dcd6bbc378da1246c428764a7f45d1f04cedc996f4a"
+}
