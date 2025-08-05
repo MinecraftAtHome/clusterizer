@@ -1,12 +1,12 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::ValidateSubmitError,
-    records::{Assignment, Task},
+    records::{Assignment, Result, Task},
     requests::ValidateSubmitRequest,
     types::{AssignmentState, Id},
 };
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     result::{AppError, AppResult},
@@ -39,6 +39,9 @@ pub async fn validate_submit(
         Err(AppError::Specific(ValidateSubmitError::InvalidAssignment))?
     }
 
+    let assignment_by_id: HashMap<Id<Assignment>, &Assignment> =
+        assignments.iter().map(|ass| (ass.id, ass)).collect();
+
     // Disallow state transitions via validation unless the assignment is one of these states
     if assignments.iter().any(|assignment| {
         assignment.state != AssignmentState::Submitted
@@ -48,183 +51,211 @@ pub async fn validate_submit(
             ValidateSubmitError::StateTransitionForbidden,
         ))?
     }
+    /*
+        1. Obtain unique group number from group number, split request into assignment_ids split by their group number
+        2. Error if assignments for different tasks were given the same group number
+        3. Error if assignments for the same task were given different group ids but those group ids are the other assignment
+            { "1": 2, "2": 1 }
+            Without changing anything it should just think quorum hasn't been met.
+            The special case is that it's a circular reference.
+            Check that
+        Per group processing:
+            1. Determine which assignment within a group submitted a result first, that's the potential canonical result
+            2. Determine if enough results are within that group to meet quorum
+                a. if there are
+                    1. Mark the assignments as valid.
+                    2. Set task.canonical_result = the result determined in #1
+                    3. Set all other assignments for that task that are in different groups to invalid
+                b. if there are not
+                    1. Set all assignments to inconclusive
+                    2. Increment assignments_needed by 1
 
-    // Generate a map of tasks to assignments with that task_id for use in the next loop
-    let mut task_assignment_map: HashMap<Id<Task>, Vec<Id<Assignment>>> = HashMap::new();
 
-    for assignment in &assignments {
-        task_assignment_map
-            .entry(assignment.task_id)
-            .or_default()
-            .push(assignment.id);
-    }
-    if task_assignment_map.keys().len() > 1 {
-        Err(AppError::Specific(
-            ValidateSubmitError::MultipleTasksDisallowed,
-        ))?
-    }
-    // Loop through all tasks that have been submitted for validation via their assignments
-    // This avoids a MixedTasks error as we simply error with "too few results" instead for that particular task
-    for (task_id, task_assignments) in &task_assignment_map {
-        let task = Task::select_one(*task_id).fetch_one(&state.pool).await?;
 
-        let mut group_map: HashMap<i32, Vec<Id<Assignment>>> = HashMap::new();
-        let mut errored_assignments: Vec<Id<Assignment>> = Vec::new();
+    */
 
-        // Get group number and count of assignments in each group
-        for assignment in task_assignments {
-            let group_num_option = request.assignments[assignment];
+    // 1. Start with assignment_id to group_number hashmap
+    // Need to create a vec of group_number and dedup it
+    let mut group_ids: Vec<Id<Assignment>> = request.assignments.values().copied().collect();
+    group_ids.sort();
+    group_ids.dedup();
+    //Create inverse of request - group_id first, then vec of assignment_ids
+    let mut group_assignment_map: HashMap<Id<Assignment>, Vec<Id<Assignment>>> = HashMap::new();
+    for group_id in group_ids {
+        group_assignment_map.entry(group_id).or_default().extend(
+            request
+                .assignments
+                .iter()
+                .filter(|x| *x.1 == group_id)
+                .map(|x| *x.1),
+        );
+        //Error checking
+        let mut task_unique: HashSet<Id<Task>> = HashSet::new();
+        for assignment_id in &group_assignment_map[&group_id] {
+            if let Some(a) = assignments.iter().find(|a| &a.id == assignment_id) {
+                task_unique.insert(a.task_id);
+            }
+            if request.assignments[&request.assignments[assignment_id]]
+                != request.assignments[assignment_id]
+            {
+                Err(AppError::Specific(
+                    ValidateSubmitError::ValidationGroupAssociationInconsistency,
+                ))?
+            }
+        }
+        if task_unique.len() > 1 {
+            Err(AppError::Specific(
+                ValidateSubmitError::ValidationGroupTaskInconsistency,
+            ))?
+        }
+        let task: Task = Task::select_one(
+            task_unique
+                .iter()
+                .next()
+                .copied() // or `.cloned()` if Id<Task> isn't Copy
+                .expect("task_unique must contain exactly one task_id"),
+        )
+        .fetch_one(&state.pool)
+        .await?;
+        //Are there enough for quorum
+        if (group_assignment_map[&group_id].len() as i32) < task.quorum {
+            // Inconclusive
+            let ids = &group_assignment_map[&group_id];
+            let by_id: HashMap<Id<Assignment>, AssignmentState> =
+                assignments.iter().map(|a| (a.id, a.state)).collect();
+            if ids.iter().all(|&aid| {
+                matches!(
+                    by_id.get(&aid).copied().expect("assignment id must exist"),
+                    AssignmentState::Inconclusive
+                )
+            }) {
+                // Cannot run the inconclusive part if we've already submitted a new one.
+                Err(AppError::Specific(
+                    ValidateSubmitError::ValidationImpossibleError,
+                ))?
+            }
+            set_assignment_state(
+                &group_assignment_map[&group_id],
+                AssignmentState::Inconclusive,
+            )
+            .execute(&state.pool)
+            .await?;
+            sqlx::query_unchecked!(
+                r#"
+            UPDATE
+                tasks
+            SET
+                assignments_needed = assignments_needed + 1
+            WHERE
+                id = $1
+            
+            "#,
+                task.id
+            )
+            .execute(&state.pool)
+            .await?;
 
-            match group_num_option {
-                // Task has a group number, so use it.
-                Some(group_num) => group_map.entry(group_num).or_default().push(*assignment),
-                // Task errored, so add one to assignments needed
-                None => errored_assignments.push(*assignment),
+            break;
+        }
+        // There are enough for quorum
+        // Get assignments for our task_id, regardless of group
+        let task_assignments: Vec<Assignment> = assignments
+            .iter()
+            .filter(|ass| ass.task_id == task.id)
+            .cloned()
+            .collect();
+        // Get their Ids
+        let task_assignment_ids: Vec<Id<Assignment>> =
+            task_assignments.iter().map(|ass| ass.id).collect();
+        // Use their ids to get the results for each
+        let task_results: Vec<Result> = sqlx::query_as_unchecked!(
+            Result,
+            r#"
+            SELECT
+                *
+            FROM
+                results
+            WHERE
+                assignment_id = ANY($1)
+            "#,
+            &task_assignment_ids
+        )
+        .fetch_all(&state.pool)
+        .await?;
+        // Get results only for this group
+        let group_results: Vec<Result> = task_results
+            .iter()
+            .filter(|res| group_assignment_map[&group_id].contains(&res.assignment_id))
+            .cloned()
+            .collect();
+        // Get the earliest submitted result within that group
+        let earliest_group_result = group_results
+            .iter()
+            .min_by_key(|r| r.created_at)
+            .cloned()
+            .expect("this should not be hit since we're only grabbing the min");
+        let mut relevant_task_results: Vec<&Result> = Vec::new();
+
+        // iterate over task results to find other groups with the same task
+        for res in task_results.iter() {
+            if let Some(ass) = assignment_by_id.get(&res.assignment_id) {
+                // 1. Its actual group_id is not the current_group_id
+                // 2. It's associated with the target task.id
+                if ass.id != group_id && ass.task_id == task.id {
+                    relevant_task_results.push(res);
+                }
             }
         }
 
-        let valid_groups: HashMap<i32, Vec<Id<Assignment>>> = group_map
+        let earliest_relevant_result: Option<&Result> = relevant_task_results
             .iter()
-            .filter(|(_, assignments)| assignments.len() as i32 >= task.quorum)
-            .map(|(group_num, assignments)| (*group_num, assignments.clone()))
-            .collect();
-
-        let invalid_groups: HashMap<i32, Vec<Id<Assignment>>> = group_map
-            .iter()
-            .filter(|(_, assignments)| (assignments.len() as i32) < task.quorum)
-            .map(|(group_num, assignments)| (*group_num, assignments.clone()))
-            .collect();
-
-        if valid_groups.len() == 1 || task.canonical_result_id.is_some() {
-            // Valid
-            let valid_assignments = &valid_groups[&0];
-            let mut invalid_assignments = Vec::new();
-            for invalid_assignment_ids in invalid_groups.values() {
-                for invalid_assignment_id in invalid_assignment_ids {
-                    invalid_assignments.push(*invalid_assignment_id);
-                }
-            }
-
-            if task.canonical_result_id.is_none() {
-                // If we don't have a valid result yet
-
-                let canonical_result = sqlx::query_as_unchecked!(
-                    clusterizer_common::records::Result,
-                    r#"
-                    SELECT 
-                        *
-                    FROM 
-                        results r
-                    WHERE 
-                        r.assignment_id = ANY($1)
-                    ORDER BY 
-                        r.created_at ASC
-                    LIMIT 1
-                    "#,
-                    valid_assignments
-                )
-                .fetch_one(&state.pool)
-                .await?;
-
+            .min_by_key(|r| r.created_at)
+            .copied();
+        if let Some(earliest_result) = earliest_relevant_result {
+            // There is another result for another group for this task
+            if earliest_group_result.created_at <= earliest_result.created_at {
+                // This can be canonical
+                // Set group to valid
+                set_assignment_state(&group_assignment_map[&group_id], AssignmentState::Valid)
+                    .execute(&state.pool)
+                    .await?;
+                // Set task's canonical result id
                 sqlx::query_unchecked!(
                     r#"
-                    UPDATE 
+                    UPDATE
                         tasks
-                    SET 
-                        canonical_result_id = $2
+                    SET
+                        canonical_result_id = $1
                     WHERE
-                        id = $1
+                        id = $2
                     "#,
-                    task.id,
-                    canonical_result.id
+                    earliest_group_result.id,
+                    task.id
                 )
                 .execute(&state.pool)
                 .await?;
             }
-            set_assignment_state::set_assignment_state(valid_assignments, AssignmentState::Valid)
+        } else {
+            // This is the only relevant group, set to valid
+            set_assignment_state(&group_assignment_map[&group_id], AssignmentState::Valid)
                 .execute(&state.pool)
                 .await?;
-
-            // Mark invalid
-            set_assignment_state::set_assignment_state(
-                &invalid_assignments,
-                AssignmentState::Invalid,
+            // Set task's canonical result id
+            sqlx::query_unchecked!(
+                r#"
+                UPDATE
+                    tasks
+                SET
+                    canonical_result_id = $1
+                WHERE
+                    id = $2
+                "#,
+                earliest_group_result.id,
+                task.id
             )
             .execute(&state.pool)
             .await?;
         }
-        if valid_groups.len() > 1 || !invalid_groups.is_empty() {
-            // Either no groups met quorum, or more than one did and we need to break the tie.
-            // Inconclusive
-
-            // Cannot be inconclusive if a result is canonical already. Either it's valid or it's not.
-            if task.canonical_result_id.is_some() {
-                Err(AppError::Specific(
-                    ValidateSubmitError::InconsistentValidationState,
-                ))?
-            }
-            // If there are two or more valid groups, submit another assignment and hope that breaks the tie.
-            if valid_groups.len() > 1 {
-                sqlx::query_unchecked!(
-                    r#"
-                    UPDATE 
-                        tasks
-                    SET 
-                        assignments_needed = assignments_needed + 1
-                    WHERE
-                        id = $1
-                    "#,
-                    task.id,
-                )
-                .execute(&state.pool)
-                .await?;
-                for (_, inconclusive_assignments) in valid_groups {
-                    // Mark assignments as inconclusive
-                    set_assignment_state(&inconclusive_assignments, AssignmentState::Inconclusive)
-                        .execute(&state.pool)
-                        .await?;
-                }
-            } else {
-                let mut invalid_assignments = Vec::new();
-                for (_, invalid_assignment_ids) in invalid_groups {
-                    for invalid_assignment_id in invalid_assignment_ids {
-                        invalid_assignments.push(invalid_assignment_id);
-                    }
-                }
-
-                let mut max_count = 0;
-                for (_, assignments) in group_map {
-                    if assignments.len() as i32 > max_count {
-                        max_count = assignments.len() as i32;
-                    }
-                }
-                sqlx::query_unchecked!(
-                    r#"
-                    UPDATE 
-                        tasks
-                    SET 
-                        assignments_needed = assignments_needed + $2
-                    WHERE
-                        id = $1
-                    "#,
-                    task.id,
-                    task.quorum - max_count
-                )
-                .execute(&state.pool)
-                .await?;
-
-                // Mark assignments as inconclusive
-                set_assignment_state(&invalid_assignments, AssignmentState::Inconclusive)
-                    .execute(&state.pool)
-                    .await?;
-
-                // Mark assignments as errored
-                set_assignment_state(&errored_assignments, AssignmentState::Error)
-                    .execute(&state.pool)
-                    .await?;
-            }
-        }
     }
-
     Ok(())
 }

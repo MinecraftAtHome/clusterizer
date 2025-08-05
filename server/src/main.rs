@@ -14,7 +14,7 @@ use clusterizer_common::records::{
     Assignment, Platform, Project, ProjectVersion, Result, Task, User,
 };
 
-use routes::*;
+use routes::{get_all, get_one};
 use sqlx::PgPool;
 use state::AppState;
 use tokio::{net::TcpListener, time};

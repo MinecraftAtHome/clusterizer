@@ -36,23 +36,23 @@ pub async fn validate_fetch(
     let tasks = sqlx::query_as_unchecked!(
         Task,
         r#"
-            SELECT
-                t.*
-            FROM
-                tasks t
-                JOIN assignments a ON
-                    a.task_id = t.id
-            WHERE
-                a.state not in ('canceled', 'init', 'expired')
-            GROUP BY
-                t.id
-            HAVING
-                t.project_id = $1
-                AND (
-                    count(a.id) >= t.assignments_needed
-                    OR t.canonical_result_id IS NOT NULL
-                )
-            "#,
+        SELECT
+            t.*
+        FROM
+            tasks t
+            JOIN assignments a ON
+                a.task_id = t.id
+        WHERE
+            a.state not in ('canceled', 'init', 'expired')
+        GROUP BY
+            t.id
+        HAVING
+            t.project_id = $1
+            AND (
+                count(a.id) >= t.assignments_needed
+                OR t.canonical_result_id IS NOT NULL
+            )
+        "#,
         project.id
     )
     .fetch_all(&state.pool)

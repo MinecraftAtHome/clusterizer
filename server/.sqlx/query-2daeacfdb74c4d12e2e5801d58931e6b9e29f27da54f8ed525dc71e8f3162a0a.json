@@ -32,6 +32,11 @@
         "ordinal": 5,
         "name": "exit_code",
         "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "group_assignment_id",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -45,6 +50,7 @@
       false,
       false,
       false,
+      true,
       true
     ]
   },
