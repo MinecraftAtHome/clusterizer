@@ -220,10 +220,11 @@ pub async fn validate_submit(
 
             // Is the current group_id the canonical_result's assignnment_id?
             if canonical_result.id != canonical_result_id {
-                // Error state
-                Err(AppError::Specific(
-                    ValidateSubmitError::NonCanonicalResultError,
-                ))?
+                // Invalid, then.
+
+                set_assignment_state(&group_assignments, AssignmentState::Invalid)
+                    .execute(&state.pool)
+                    .await?;
             }
             // Validate
             set_assignment_state(&group_assignments, AssignmentState::Valid)
