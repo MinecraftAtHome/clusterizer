@@ -117,7 +117,7 @@ pub async fn validate_submit(
         )
         .fetch_one(&state.pool)
         .await?;
-        //Are there enough for quorum
+        // Are there enough for quorum
         if (group_assignment_map[&group_id].len() as i32) < task.quorum {
             // Inconclusive
             let ids = &group_assignment_map[&group_id];
