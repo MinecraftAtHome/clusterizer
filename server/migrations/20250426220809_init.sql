@@ -74,7 +74,7 @@ CREATE TABLE results (
     stdout text NOT NULL,
     stderr text NOT NULL,
     exit_code int4,
-    group_assignment_id int8 REFERENCES assignments(id) ON DELETE RESTRICT ON UPDATE RESTRICT
+    group_result_id int8 REFERENCES results(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 CREATE FUNCTION trigger_function_tasks_remove_assignment_user_id()

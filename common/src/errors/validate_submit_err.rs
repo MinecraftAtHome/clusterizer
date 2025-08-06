@@ -10,7 +10,7 @@ pub enum ValidateSubmitError {
     #[error("all results are inconclusive, and no new assignment has finished to solve it")]
     ValidationImpossibleError,
     #[error("validation group contained assignments belonging to multiple tasks")]
-    ValidationGroupTaskInconsistency,
+    TooManyTasksValidationError,
     #[error("assignments referred to by group id cannot refer to an assignment other than itself")]
     ValidationGroupAssociationInconsistency,
     #[error("state transition forbidden")]

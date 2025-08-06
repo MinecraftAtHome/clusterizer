@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT\n                    *\n                FROM\n                    results\n                WHERE\n                    id = $1\n                ",
+  "query": "\n            SELECT\n                *\n            FROM\n                results\n            WHERE\n                group_result_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -35,7 +35,7 @@
       },
       {
         "ordinal": 6,
-        "name": "group_assignment_id",
+        "name": "group_result_id",
         "type_info": "Int8"
       }
     ],
@@ -54,5 +54,5 @@
       true
     ]
   },
-  "hash": "3dd9d1f11dbcdecaf9c74aae7e7af4801a86cf6a31db67e4531e677aeea5f1e9"
+  "hash": "13b2878a958300c53e042824690bb0f4e8bba048af02db76a8e3ed403a2e0c5f"
 }

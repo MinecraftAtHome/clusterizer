@@ -35,7 +35,7 @@
       },
       {
         "ordinal": 6,
-        "name": "group_assignment_id",
+        "name": "group_result_id",
         "type_info": "Int8"
       }
     ],
