@@ -7,4 +7,8 @@ pub enum SubmitResultError {
     InvalidTask,
     #[error("already exists")]
     AlreadyExists,
+    #[error("assignment canceled")]
+    AssignmentCanceled,
+    #[error("assignment expired")]
+    AssignmentExpired,
 }

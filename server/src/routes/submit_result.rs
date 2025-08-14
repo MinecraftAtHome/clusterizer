@@ -11,7 +11,7 @@ use clusterizer_common::{
 
 use crate::{
     auth::Auth,
-    result::{AppResult, ResultExt},
+    result::{AppError, AppResult, ResultExt},
     state::AppState,
     util,
 };
@@ -24,16 +24,16 @@ pub async fn submit_result(
 ) -> AppResult<(), SubmitResultError> {
     let mut tx = state.pool.begin().await?;
 
-    let assignment_id = sqlx::query_scalar_unchecked!(
+    let assignment = sqlx::query_as_unchecked!(
+        Assignment,
         r#"
         SELECT
-            id "id: Id<Assignment>"
+            *
         FROM
             assignments
         WHERE
             task_id = $1
             AND user_id = $2
-            AND state != 'canceled'
         FOR UPDATE
         "#,
         task_id,
@@ -42,6 +42,14 @@ pub async fn submit_result(
     .fetch_one(&mut *tx)
     .await
     .map_not_found(SubmitResultError::InvalidTask)?;
+
+    if assignment.state == AssignmentState::Canceled {
+        Err(AppError::Specific(SubmitResultError::AssignmentCanceled))?;
+    }
+
+    if assignment.state == AssignmentState::Expired {
+        Err(AppError::Specific(SubmitResultError::AssignmentExpired))?;
+    }
 
     sqlx::query_unchecked!(
         r#"
@@ -57,7 +65,7 @@ pub async fn submit_result(
             $4
         )
         "#,
-        assignment_id,
+        assignment.id,
         request.stdout,
         request.stderr,
         request.exit_code,
@@ -66,7 +74,7 @@ pub async fn submit_result(
     .await
     .map_unique_violation(SubmitResultError::AlreadyExists)?;
 
-    util::set_assignment_state(&[assignment_id], AssignmentState::Submitted)
+    util::set_assignment_state(&[assignment.id], AssignmentState::Submitted)
         .execute(&mut *tx)
         .await?;
 
