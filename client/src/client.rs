@@ -11,8 +11,9 @@ use std::{
     time::Duration,
 };
 
-use clusterizer_api::client::ApiClient;
+use clusterizer_api::{client::ApiClient, result::ApiError};
 use clusterizer_common::{
+    errors::SubmitResultError,
     records::{
         Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion, ProjectVersionFilter,
         Task,
@@ -223,7 +224,10 @@ impl ClusterizerClient {
             exit_code: output.status.code(),
         };
 
-        self.client.submit_result(task_id, &request).await?;
+        match self.client.submit_result(task_id, &request).await {
+            Err(ApiError::Specific(SubmitResultError::AssignmentExpired)) => {}
+            result => result?,
+        };
 
         Ok(Return::SubmitResult)
     }
