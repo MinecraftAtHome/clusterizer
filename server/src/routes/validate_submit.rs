@@ -116,7 +116,7 @@ pub async fn validate_submit(
                 // Add assignment id and group id to new HashMap which filters out errored results
                 results_by_group_id
                     .entry(g)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(result_id);
                 group_ids.insert(g);
                 group_id_by_result.insert(result_id, g);
@@ -228,10 +228,7 @@ pub async fn validate_submit(
             // Find largest group for task
             let mut group_id_count: HashMap<Id<Result>, i32> = HashMap::new();
             for gr in &group_results {
-                match gr.group_result_id {
-                    Some(gr_id) => *group_id_count.entry(gr_id).or_insert(0) += 1,
-                    None => {}
-                }
+                if let Some(gr_id) = gr.group_result_id { *group_id_count.entry(gr_id).or_insert(0) += 1 }
             }
             let inconclusive_and_error_size: i32 = group_results
                 .iter()
@@ -240,9 +237,7 @@ pub async fn validate_submit(
                 })
                 .count() as i32;
 
-            let largest_group_size: i32 = group_id_count
-                .iter()
-                .map(|(_, count)| *count)
+            let largest_group_size: i32 = group_id_count.values().copied()
                 .max()
                 .unwrap_or(0);
             // Set assignments_needed

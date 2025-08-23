@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            t.*\n        FROM\n            tasks t\n        JOIN\n            assignments a on t.id = a.task_id\n        WHERE\n            a.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "deadline",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 3,
+        "name": "project_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "stdin",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "assignments_needed",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "assignment_user_ids",
+        "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 7,
+        "name": "canonical_result_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "quorum",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "179a66ba470325232cccfbff5eb9fb9160b3c33f2fe845feeaa6ed3a006332cc"
+}
