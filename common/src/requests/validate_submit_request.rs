@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{records::{Result}, types::Id};
+use crate::{records::Result, types::Id};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ValidateSubmitRequest {

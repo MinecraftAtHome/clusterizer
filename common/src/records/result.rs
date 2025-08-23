@@ -14,7 +14,7 @@ pub struct Result {
     pub stderr: String,
     pub exit_code: Option<i32>,
     pub group_result_id: Option<Id<Result>>,
-    pub state: ResultState
+    pub state: ResultState,
 }
 
 #[non_exhaustive]
