@@ -1,0 +1,119 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            *\n        FROM\n            tasks t\n        JOIN\n            assignments a on t.id = a.task_id\n        WHERE\n            a.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "deadline",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 3,
+        "name": "project_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "stdin",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "assignments_needed",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "assignment_user_ids",
+        "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 7,
+        "name": "canonical_result_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "quorum",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "deadline_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "task_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 13,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 14,
+        "name": "state",
+        "type_info": {
+          "Custom": {
+            "name": "assignment_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "canceled",
+                "expired",
+                "submitted",
+                "error"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8f124cd8df4921e78a1922f739269652b09907984c43d76917f998965f2fd19c"
+}

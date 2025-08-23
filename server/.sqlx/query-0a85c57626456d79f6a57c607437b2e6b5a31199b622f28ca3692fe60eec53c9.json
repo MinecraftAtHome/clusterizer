@@ -40,9 +40,6 @@
                 "canceled",
                 "expired",
                 "submitted",
-                "valid",
-                "invalid",
-                "inconclusive",
                 "error"
               ]
             }
@@ -63,9 +60,6 @@
                 "canceled",
                 "expired",
                 "submitted",
-                "valid",
-                "invalid",
-                "inconclusive",
                 "error"
               ]
             }

@@ -15,26 +15,44 @@
       },
       {
         "ordinal": 2,
+        "name": "state",
+        "type_info": {
+          "Custom": {
+            "name": "result_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "valid",
+                "invalid",
+                "inconclusive",
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
         "name": "assignment_id",
         "type_info": "Int8"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "stdout",
         "type_info": "Text"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "stderr",
         "type_info": "Text"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "exit_code",
         "type_info": "Int4"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "group_result_id",
         "type_info": "Int8"
       }
@@ -45,6 +63,7 @@
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,

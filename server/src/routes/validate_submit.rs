@@ -3,7 +3,7 @@ use clusterizer_common::{
     errors::ValidateSubmitError,
     records::{Assignment, Result, Task},
     requests::ValidateSubmitRequest,
-    types::{AssignmentState, Id},
+    types::{Id, ResultState},
 };
 
 use std::collections::{HashMap, HashSet};
@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 use crate::{
     result::{AppError, AppResult},
     state::AppState,
-    util::{Select, set_assignment_state},
+    util::set_result_state,
 };
 
 pub async fn validate_submit(
@@ -34,40 +34,73 @@ pub async fn validate_submit(
 
     */
     let mut group_ids: HashSet<Id<Result>> = HashSet::new();
-    let mut assignment_ids: Vec<Id<Assignment>> = request.assignments.keys().cloned().collect();
-    let mut group_id_by_assignment: HashMap<Id<Assignment>, Id<Result>> = HashMap::new();
-    let mut assignments_by_group_id: HashMap<Id<Result>, Vec<Id<Assignment>>> = HashMap::new();
+    let result_ids: Vec<Id<Result>> = request.results.keys().cloned().collect();
+    let mut group_id_by_result: HashMap<Id<Result>, Id<Result>> = HashMap::new();
+    let mut results_by_group_id: HashMap<Id<Result>, Vec<Id<Result>>> = HashMap::new();
 
-    let assignments = sqlx::query_as_unchecked!(
+    let results = sqlx::query_as_unchecked!(
+        Result,
+        r#"
+        SELECT
+            *
+        FROM
+            results
+        WHERE
+            id = ANY($1)
+        "#,
+        &result_ids
+    )
+    .fetch_all(&state.pool)
+    .await?;
+    // Ensure all assignments are real
+    if result_ids.len() != results.len() {
+        Err(AppError::Specific(ValidateSubmitError::InvalidAssignment))?
+    }
+
+    // Ensure all assignments are for the same task
+    let task = sqlx::query_as_unchecked!(
+        Task,
+        r#"
+        SELECT
+            t.*
+        FROM
+            tasks t
+        JOIN
+            assignments a on t.id = a.task_id
+        WHERE
+            a.id = $1
+        "#,
+        &results[0].assignment_id
+    )
+    .fetch_one(&state.pool)
+    .await?;
+    let assignment_ids: Vec<Id<Assignment>> =
+        results.iter().map(|result| result.assignment_id).collect();
+
+    let assignments: Vec<Assignment> = sqlx::query_as_unchecked!(
         Assignment,
         r#"
         SELECT
             *
         FROM
-            assignments
+            assignments a
         WHERE
             id = ANY($1)
         "#,
         &assignment_ids
     )
-    .fetch_all(&state.pool)
+    .fetch_all(&state.pool) // or fetch_one, depending on your use
     .await?;
-    // Ensure all assignments are real
-    if assignment_ids.len() != assignments.len() {
-        Err(AppError::Specific(ValidateSubmitError::InvalidAssignment))?
-    }
 
-    // Ensure all assignments are for the same task
-    let task_id = assignments[0].task_id;
-    if assignments.iter().any(|ass| ass.task_id != task_id) {
+    if assignments.iter().any(|ass| ass.task_id != task.id) {
         Err(AppError::Specific(
             ValidateSubmitError::TooManyTasksValidationError,
         ))?
     }
     // Disallow state transitions via validation unless the assignment is in the Submitted state
-    if assignments
+    if results
         .iter()
-        .any(|assignment| assignment.state != AssignmentState::Submitted)
+        .any(|result| result.state != ResultState::Init)
     {
         Err(AppError::Specific(
             ValidateSubmitError::StateTransitionForbidden,
@@ -75,32 +108,28 @@ pub async fn validate_submit(
     }
 
     // Set assignments to Error if they do not have a group_id (aka result_id)
-    for (ass, group_id) in request.assignments {
+    for (result_id, group_id) in request.results {
         match group_id {
             Some(g) => {
                 // Add group id for that assignment to group_ids
                 // Add assignment id to assignment_ids
                 // Add assignment id and group id to new HashMap which filters out errored results
-                assignments_by_group_id
+                results_by_group_id
                     .entry(g)
                     .or_insert_with(Vec::new)
-                    .push(ass);
+                    .push(result_id);
                 group_ids.insert(g);
-                group_id_by_assignment.insert(ass, g);
+                group_id_by_result.insert(result_id, g);
             }
             None => {
-                set_assignment_state(&[ass], AssignmentState::Error)
+                set_result_state(&[result_id], ResultState::Error)
                     .execute(&state.pool)
                     .await?;
             }
         }
     }
-    let assignment_by_id: HashMap<Id<Assignment>, &Assignment> =
-        assignments.iter().map(|ass| (ass.id, ass)).collect();
 
-    let task = Task::select_one(task_id).fetch_one(&state.pool).await?;
-
-    for (group_id, group_assignment_ids) in assignments_by_group_id {
+    for (group_id, group_result_ids) in results_by_group_id {
         let group_db_results: Vec<Result> = sqlx::query_as_unchecked!(
             Result,
             r#"
@@ -126,13 +155,14 @@ pub async fn validate_submit(
             WHERE
                 assignment_id = ANY($1)
             "#,
-            &group_assignment_ids
+            &group_result_ids
         )
         .fetch_all(&state.pool)
         .await?;
-        // Get result ids before extending with existing db values so we aren't setting rows that don't need to be set
-        let result_ids: Vec<Id<Result>> = group_results.iter().map(|result| result.id).collect();
         group_results.extend(group_db_results);
+        let group_result_ids: Vec<Id<Result>> =
+            group_results.iter().map(|result| result.id).collect();
+
         // Earliest submitted result within the group, db or fresh validator data
         let group_canonical_result = group_results
             .iter()
@@ -179,7 +209,7 @@ pub async fn validate_submit(
                 }
             }
             // Set to valid
-            set_assignment_state(&group_assignment_ids, AssignmentState::Valid)
+            set_result_state(&group_result_ids, ResultState::Valid)
                 .execute(&state.pool)
                 .await?;
             // Invalidate other groups for this task
@@ -187,38 +217,46 @@ pub async fn validate_submit(
             && group_id != canonical_result_id
         {
             // Invalid
-            set_assignment_state(&group_assignment_ids, AssignmentState::Invalid)
+            set_result_state(&group_result_ids, ResultState::Invalid)
                 .execute(&state.pool)
                 .await?;
         } else {
             // Inconclusive
-            set_assignment_state(&group_assignment_ids, AssignmentState::Inconclusive)
+            set_result_state(&group_result_ids, ResultState::Inconclusive)
                 .execute(&state.pool)
                 .await?;
             // Find largest group for task
             let mut group_id_count: HashMap<Id<Result>, i32> = HashMap::new();
-            for gr in group_results {
+            for gr in &group_results {
                 match gr.group_result_id {
                     Some(gr_id) => *group_id_count.entry(gr_id).or_insert(0) += 1,
                     None => {}
                 }
             }
+            let inconclusive_and_error_size: i32 = group_results
+                .iter()
+                .filter(|result| {
+                    result.state == ResultState::Inconclusive || result.state == ResultState::Error
+                })
+                .count() as i32;
+
             let largest_group_size: i32 = group_id_count
                 .iter()
-                .filter_map(|g| group_id_count.get(g).copied())
+                .map(|(_, count)| *count)
                 .max()
                 .unwrap_or(0);
             // Set assignments_needed
             sqlx::query_unchecked!(
                 r#"
-                UPDATE 
+                UPDATE
                     tasks
-                SET 
+                SET
                     assignments_needed = $1
-                WHERE 
+                WHERE
                     id = $2
                 "#,
-                task.quorum - largest_group_size + task.id
+                task.quorum - largest_group_size + inconclusive_and_error_size,
+                task.id
             )
             .execute(&state.pool)
             .await?;

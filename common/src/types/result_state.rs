@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "sqlx", derive(sqlx::Type))]
 #[cfg_attr(
     feature = "sqlx",
-    sqlx(type_name = "assignment_state", rename_all = "snake_case")
+    sqlx(type_name = "result_state", rename_all = "snake_case")
 )]
-pub enum AssignmentState {
+pub enum ResultState {
     Init,
-    Canceled,
-    Expired,
-    Submitted,
+    Valid,
+    Invalid,
+    Inconclusive,
     Error,
 }
