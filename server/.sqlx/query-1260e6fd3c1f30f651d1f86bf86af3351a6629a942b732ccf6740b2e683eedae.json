@@ -40,9 +40,7 @@
                 "canceled",
                 "expired",
                 "submitted",
-                "valid",
-                "invalid",
-                "inconclusive"
+                "error"
               ]
             }
           }
