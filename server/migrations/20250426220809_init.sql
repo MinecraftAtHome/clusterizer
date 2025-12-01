@@ -31,8 +31,6 @@ CREATE TABLE project_versions (
     archive_url text NOT NULL
 );
 
-
-
 CREATE TYPE assignment_state AS ENUM (
     'init', 
     'canceled', 
@@ -48,6 +46,7 @@ CREATE TYPE result_state AS ENUM (
     'inconclusive',
     'error'
 );
+
 CREATE TABLE tasks (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -56,9 +55,10 @@ CREATE TABLE tasks (
     stdin text NOT NULL,
     assignments_needed int4 NOT NULL,
     assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[],
-    canonical_result_id int8,
+    canonical_result_id int8 REFERENCES results(id),
     quorum int4 NOT NULL
 );
+
 CREATE TABLE assignments (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -82,8 +82,10 @@ CREATE TABLE results (
     exit_code int4,
     group_result_id int8 REFERENCES results(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
+
 ALTER TABLE tasks
 ADD FOREIGN KEY (canonical_result_id) REFERENCES results(id) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
 CREATE FUNCTION trigger_function_tasks_remove_assignment_user_id()
     RETURNS TRIGGER AS $$
 BEGIN

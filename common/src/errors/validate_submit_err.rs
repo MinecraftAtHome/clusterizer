@@ -8,15 +8,7 @@ pub enum ValidateSubmitError {
     #[error("validation group contained results belonging to multiple tasks")]
     InvalidTaskCount,
     #[error("results referred to by group id cannot refer to an result other than itself")]
-    InvalidGroupReference,
+    NondeterministicGroup,
     #[error("state transition forbidden")]
     StateTransitionForbidden,
-    #[error(
-        "cannot attempt validation without all results relevant to choosing the canonical result"
-    )]
-    MissingResults,
-    #[error(
-        "validator must choose the earliest group_result_id by created_at date to use for the group"
-    )]
-    NondeterministicGroup,
 }
