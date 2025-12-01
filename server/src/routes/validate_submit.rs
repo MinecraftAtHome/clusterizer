@@ -262,10 +262,8 @@ pub async fn validate_submit(
             if given_results.clone().into_iter().any(|g_r| g_r.id == result.id) {
                 result.state = ResultState::Inconclusive;
             }
-            if result.state == ResultState::Inconclusive {
-                if let Some(group_id) = result.group_result_id {
+            if result.state == ResultState::Inconclusive && let Some(group_id) = result.group_result_id {
                     *group_counts.entry(group_id).or_insert(0) += 1;
-                }
             }
         }
 
