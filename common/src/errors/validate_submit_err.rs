@@ -10,5 +10,5 @@ pub enum ValidateSubmitError {
     #[error("results referred to by group id cannot refer to an result other than itself")]
     NondeterministicGroup,
     #[error("state transition forbidden")]
-    StateTransitionForbidden,
+    ForbiddenStateTransition,
 }

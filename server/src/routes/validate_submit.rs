@@ -104,7 +104,7 @@ pub async fn validate_submit(
         .any(|result| result.state != ResultState::Init)
     {
         Err(AppError::Specific(
-            ValidateSubmitError::StateTransitionForbidden,
+            ValidateSubmitError::ForbiddenStateTransition,
         ))?
     }
 
@@ -169,7 +169,7 @@ pub async fn validate_submit(
     .any(|result| result.state == ResultState::Init)
     {
         Err(AppError::Specific(
-            ValidateSubmitError::StateTransitionForbidden,
+            ValidateSubmitError::ForbiddenStateTransition,
         ))?
     }
     let mut all_given_results = previously_given_results.clone();

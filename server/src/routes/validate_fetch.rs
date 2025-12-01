@@ -48,10 +48,9 @@ pub async fn validate_fetch(
             t.id
         HAVING
             t.project_id = $1
-            AND (
-                count(a.id) >= t.assignments_needed
-                OR t.canonical_result_id IS NOT NULL
-            )
+        AND
+            count(a.id) >= t.assignments_needed
+            
         "#,
         project.id
     )
