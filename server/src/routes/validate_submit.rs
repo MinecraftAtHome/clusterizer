@@ -122,7 +122,10 @@ pub async fn validate_submit(
         WHERE
             a.id = ANY($1)
         "#,
-        given_results.iter().map(|result| result.assignment_id).collect::<Vec<_>>()
+        given_results
+            .iter()
+            .map(|result| result.assignment_id)
+            .collect::<Vec<_>>()
     )
     .fetch_all(&state.pool)
     .await?;
@@ -159,14 +162,19 @@ pub async fn validate_submit(
         "#,
         task.id,
         last_given_date,
-        given_results.clone().into_iter().map(|result| result.id).collect::<Vec<_>>()
-    ).fetch_all(&state.pool)
+        given_results
+            .clone()
+            .into_iter()
+            .map(|result| result.id)
+            .collect::<Vec<_>>()
+    )
+    .fetch_all(&state.pool)
     .await?;
 
     // if the state of any of previously_given_results is 'init':
     if previously_given_results
-    .iter()
-    .any(|result| result.state == ResultState::Init)
+        .iter()
+        .any(|result| result.state == ResultState::Init)
     {
         Err(AppError::Specific(
             ValidateSubmitError::ForbiddenStateTransition,
@@ -188,7 +196,9 @@ pub async fn validate_submit(
 
     for (group_id, results) in &results_by_group_id {
         if group_id != results.iter().min().expect("group cannot be empty") {
-            Err(AppError::Specific(ValidateSubmitError::NondeterministicGroup))?
+            Err(AppError::Specific(
+                ValidateSubmitError::NondeterministicGroup,
+            ))?
         }
     }
 
@@ -201,7 +211,10 @@ pub async fn validate_submit(
         match group_id {
             Some(gid) => {
                 // Validation successful, update group_result_id both locally and in db
-                results_by_result_id.get_mut(&result_id).unwrap().group_result_id = Some(gid);
+                results_by_result_id
+                    .get_mut(&result_id)
+                    .unwrap()
+                    .group_result_id = Some(gid);
                 sqlx::query_unchecked!(
                     r#"
                     UPDATE
@@ -227,7 +240,6 @@ pub async fn validate_submit(
         }
     }
 
-
     let valid_group_id = results_by_group_id
         .iter()
         .filter(|(_, results)| results.len() as i32 >= task.quorum)
@@ -241,10 +253,10 @@ pub async fn validate_submit(
         })
         .min_by_key(|&(_, earliest)| earliest)
         .map(|(group_id, _)| group_id);
-    
+
     if valid_group_id.is_none() {
         sqlx::query_unchecked!(
-        r#"
+            r#"
         UPDATE
             results
         SET
@@ -252,24 +264,35 @@ pub async fn validate_submit(
         WHERE
             id = ANY($1)
         "#,
-        all_given_results.clone().into_iter().map(|result| result.id).collect::<Vec<_>>()
+            all_given_results
+                .clone()
+                .into_iter()
+                .map(|result| result.id)
+                .collect::<Vec<_>>()
         )
         .execute(&state.pool)
         .await?;
-        
+
         let mut group_counts: HashMap<Id<Result>, i32> = HashMap::new();
         for mut result in all_given_results {
-            if given_results.clone().into_iter().any(|g_r| g_r.id == result.id) {
+            if given_results
+                .clone()
+                .into_iter()
+                .any(|g_r| g_r.id == result.id)
+            {
                 result.state = ResultState::Inconclusive;
             }
-            if result.state == ResultState::Inconclusive && let Some(group_id) = result.group_result_id {
-                    *group_counts.entry(group_id).or_insert(0) += 1;
+            if result.state == ResultState::Inconclusive
+                && let Some(group_id) = result.group_result_id
+            {
+                *group_counts.entry(group_id).or_insert(0) += 1;
             }
         }
 
-        let largest_inconclusive_group_count = group_counts.into_values().max().expect("It will exist");
+        let largest_inconclusive_group_count =
+            group_counts.into_values().max().expect("It will exist");
         sqlx::query_unchecked!(
-        r#"
+            r#"
         UPDATE
             tasks
         SET
@@ -277,14 +300,14 @@ pub async fn validate_submit(
         WHERE
             id = $2
         "#,
-        task.quorum - largest_inconclusive_group_count,
-        task.id
+            task.quorum - largest_inconclusive_group_count,
+            task.id
         )
         .execute(&state.pool)
         .await?;
     } else {
         sqlx::query_unchecked!(
-        r#"
+            r#"
         UPDATE
             results
         SET
@@ -295,8 +318,11 @@ pub async fn validate_submit(
         WHERE
             id = ANY($2)
         "#,
-        valid_group_id,
-        all_given_results.into_iter().map(|result| result.id).collect::<Vec<_>>()
+            valid_group_id,
+            all_given_results
+                .into_iter()
+                .map(|result| result.id)
+                .collect::<Vec<_>>()
         )
         .execute(&state.pool)
         .await?;
