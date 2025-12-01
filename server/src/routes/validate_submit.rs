@@ -1,13 +1,12 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::ValidateSubmitError,
-    records::{Assignment, Result, Task},
+    records::{Result, Task},
     requests::ValidateSubmitRequest,
     types::{Id, ResultState},
 };
-use sqlx::types::chrono::{DateTime, Utc};
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::{
     result::{AppError, AppResult},
@@ -182,19 +181,19 @@ pub async fn validate_submit(
         if let Some(gid) = group_id {
             results_by_group_id
                 .entry(*gid)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(*result_id);
         }
     }
 
     for (group_id, results) in &results_by_group_id {
-        if group_id != results.iter().map(|result| result).min().expect("group cannot be empty") {
+        if group_id != results.iter().min().expect("group cannot be empty") {
             Err(AppError::Specific(ValidateSubmitError::NondeterministicGroup))?
         }
     }
 
     let mut results_by_result_id: HashMap<Id<Result>, Result> = HashMap::new();
-    for (result) in all_given_results.clone() {
+    for result in all_given_results.clone() {
         results_by_result_id.insert(result.id, result);
     }
 
@@ -202,7 +201,7 @@ pub async fn validate_submit(
         match group_id {
             Some(gid) => {
                 // Validation successful, update group_result_id both locally and in db
-                results_by_result_id.get_mut(&result_id).unwrap().group_result_id = Some(gid.clone());
+                results_by_result_id.get_mut(&result_id).unwrap().group_result_id = Some(gid);
                 sqlx::query_unchecked!(
                     r#"
                     UPDATE
@@ -243,7 +242,7 @@ pub async fn validate_submit(
         .min_by_key(|&(_, earliest)| earliest)
         .map(|(group_id, _)| group_id);
     
-    if valid_group_id == None {
+    if valid_group_id.is_none() {
         sqlx::query_unchecked!(
         r#"
         UPDATE
@@ -260,20 +259,17 @@ pub async fn validate_submit(
         
         let mut group_counts: HashMap<Id<Result>, i32> = HashMap::new();
         for mut result in all_given_results {
-            if(given_results.clone().into_iter().any(|g_r| g_r.id == result.id)) {
+            if given_results.clone().into_iter().any(|g_r| g_r.id == result.id) {
                 result.state = ResultState::Inconclusive;
             }
-            if(result.state == ResultState::Inconclusive){
-                match result.group_result_id {
-                    Some(group_id) => {
-                        *group_counts.entry(group_id).or_insert(0) += 1;
-                    },
-                    None => {}
+            if result.state == ResultState::Inconclusive {
+                if let Some(group_id) = result.group_result_id {
+                    *group_counts.entry(group_id).or_insert(0) += 1;
                 }
             }
         }
 
-        let largest_inconclusive_group_count = group_counts.into_iter().map(|(_, count)| count).max().expect("It will exist");
+        let largest_inconclusive_group_count = group_counts.into_values().max().expect("It will exist");
         sqlx::query_unchecked!(
         r#"
         UPDATE
