@@ -43,7 +43,7 @@ pub async fn validate_fetch(
             JOIN assignments a ON
                 a.task_id = t.id
         WHERE
-            a.state not in ('canceled', 'init', 'expired')
+            a.state = 'submitted'
         GROUP BY
             t.id
         HAVING
