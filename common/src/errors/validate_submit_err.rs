@@ -3,16 +3,20 @@ use thiserror::Error;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize, Error)]
 pub enum ValidateSubmitError {
-    #[error("invalid assignment")]
-    InvalidAssignment,
-    #[error("task already validated and this result is not valid")]
-    InconsistentValidationState,
-    #[error("all results are inconclusive, and no new assignment has finished to solve it")]
-    ValidationImpossibleError,
-    #[error("validation group contained assignments belonging to multiple tasks")]
-    TooManyTasksValidationError,
-    #[error("assignments referred to by group id cannot refer to an assignment other than itself")]
-    ValidationGroupAssociationInconsistency,
+    #[error("invalid result given")]
+    InvalidResult,
+    #[error("validation group contained results belonging to multiple tasks")]
+    InvalidTaskCount,
+    #[error("results referred to by group id cannot refer to an result other than itself")]
+    InvalidGroupReference,
     #[error("state transition forbidden")]
     StateTransitionForbidden,
+    #[error(
+        "cannot attempt validation without all results relevant to choosing the canonical result"
+    )]
+    MissingResults,
+    #[error(
+        "validator must choose the earliest group_result_id by created_at date to use for the group"
+    )]
+    NondeterministicGroup,
 }

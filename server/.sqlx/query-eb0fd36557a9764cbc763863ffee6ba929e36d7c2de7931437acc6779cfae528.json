@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                results\n            WHERE\n                group_result_id = $1\n            ",
+  "query": "\n        SELECT\n            r.*\n        FROM\n            results r\n        JOIN\n            assignments a\n        ON\n            a.id = r.assignment_id\n        WHERE\n            a.task_id = $1\n        AND\n            r.created_at < $2\n        AND\n            r.id != ALL($3)\n        ",
   "describe": {
     "columns": [
       {
@@ -59,7 +59,9 @@
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8",
+        "Timestamptz",
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -73,5 +75,5 @@
       true
     ]
   },
-  "hash": "13b2878a958300c53e042824690bb0f4e8bba048af02db76a8e3ed403a2e0c5f"
+  "hash": "eb0fd36557a9764cbc763863ffee6ba929e36d7c2de7931437acc6779cfae528"
 }

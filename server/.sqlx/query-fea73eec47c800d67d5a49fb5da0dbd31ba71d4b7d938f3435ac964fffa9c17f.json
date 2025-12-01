@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE\n            results\n        SET\n            state =   CASE\n                            WHEN group_result_id = $1 THEN 'valid'::result_state\n                            ELSE 'invalid'::result_state\n                        END\n        WHERE\n            id = ANY($2)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fea73eec47c800d67d5a49fb5da0dbd31ba71d4b7d938f3435ac964fffa9c17f"
+}
