@@ -16,6 +16,6 @@ pub fn set_result_state(result_ids: &[Id<Result>], result_state: ResultState) ->
             id = ANY($2)
         "#,
         result_state,
-        result_ids
+        result_ids,
     )
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            t.*\n        FROM\n            tasks t\n            JOIN assignments a ON\n                a.task_id = t.id\n        WHERE\n            a.state = 'submitted'\n        GROUP BY\n            t.id\n        HAVING\n            t.project_id = $1\n        AND\n            count(a.id) >= t.assignments_needed\n            \n        ",
+  "query": "\n        SELECT\n            t.*\n        FROM\n            tasks t\n            JOIN assignments a ON\n                a.task_id = t.id\n            LEFT JOIN results r ON\n                r.assignment_id = a.id\n                AND r.state = 'init'\n        WHERE\n            a.state = 'submitted'\n        GROUP BY\n            t.id\n        HAVING\n            t.project_id = $1\n            AND count(a.id) >= t.assignments_needed\n            AND count(r.id) > 0\n        ",
   "describe": {
     "columns": [
       {
@@ -66,5 +66,5 @@
       false
     ]
   },
-  "hash": "0e3b84e9511aa454ff7e7027985c67ce20eadfc6affb26e814af406c2a64f9d2"
+  "hash": "37787d0e5dbb0fd034a68efbe9eeb11432326d631d24b5ebaea76946aa913df1"
 }

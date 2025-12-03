@@ -31,22 +31,6 @@ CREATE TABLE project_versions (
     archive_url text NOT NULL
 );
 
-CREATE TYPE assignment_state AS ENUM (
-    'init', 
-    'canceled', 
-    'expired',
-    'submitted',
-    'error'
-);
-
-CREATE TYPE result_state AS ENUM (
-    'init',
-    'valid', 
-    'invalid',  
-    'inconclusive',
-    'error'
-);
-
 CREATE TABLE tasks (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -57,6 +41,13 @@ CREATE TABLE tasks (
     assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[],
     canonical_result_id int8,
     quorum int4 NOT NULL
+);
+
+CREATE TYPE assignment_state AS ENUM (
+    'init',
+    'canceled',
+    'expired',
+    'submitted'
 );
 
 CREATE TABLE assignments (
@@ -71,6 +62,14 @@ CREATE TABLE assignments (
 CREATE UNIQUE INDEX assignments_task_id_user_id_key
     ON assignments (task_id, user_id)
     WHERE state != 'canceled' AND state != 'expired';
+
+CREATE TYPE result_state AS ENUM (
+    'init',
+    'valid',
+    'invalid',
+    'inconclusive',
+    'error'
+);
 
 CREATE TABLE results (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,

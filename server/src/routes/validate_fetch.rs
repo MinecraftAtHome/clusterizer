@@ -27,7 +27,7 @@ pub async fn validate_fetch(
         WHERE
             id = $1
         "#,
-        project_id
+        project_id,
     )
     .fetch_one(&state.pool)
     .await
@@ -42,19 +42,22 @@ pub async fn validate_fetch(
             tasks t
             JOIN assignments a ON
                 a.task_id = t.id
+            LEFT JOIN results r ON
+                r.assignment_id = a.id
+                AND r.state = 'init'
         WHERE
             a.state = 'submitted'
         GROUP BY
             t.id
         HAVING
             t.project_id = $1
-        AND
-            count(a.id) >= t.assignments_needed
-            
+            AND count(a.id) >= t.assignments_needed
+            AND count(r.id) > 0
         "#,
-        project.id
+        project.id,
     )
     .fetch_all(&state.pool)
     .await?;
+
     Ok(Json(tasks))
 }

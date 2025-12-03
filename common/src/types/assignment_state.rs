@@ -11,5 +11,4 @@ pub enum AssignmentState {
     Canceled,
     Expired,
     Submitted,
-    Error,
 }

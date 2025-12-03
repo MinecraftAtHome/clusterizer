@@ -39,8 +39,7 @@
                 "init",
                 "canceled",
                 "expired",
-                "submitted",
-                "error"
+                "submitted"
               ]
             }
           }
