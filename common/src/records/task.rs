@@ -22,11 +22,17 @@ pub struct Task {
 #[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
 pub struct TaskFilter {
     pub project_id: Option<Id<Project>>,
+    pub canonical_result_id: Option<Id<Result>>,
 }
 
 impl TaskFilter {
     pub fn project_id(mut self, project_id: Id<Project>) -> Self {
         self.project_id = Some(project_id);
+        self
+    }
+
+    pub fn canonical_result_id(mut self, canonical_result_id: Id<Result>) -> Self {
+        self.canonical_result_id = Some(canonical_result_id);
         self
     }
 }

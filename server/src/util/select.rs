@@ -122,8 +122,10 @@ impl Select for Task {
                 tasks
             WHERE
                 project_id = $1 IS NOT FALSE
+                AND (canonical_result_id = $2 OR $2 IS NULL)
             "#,
             filter.project_id,
+            filter.canonical_result_id,
         )
     }
 
@@ -172,8 +174,12 @@ impl Select for Result {
                 results
             WHERE
                 assignment_id = $1 IS NOT FALSE
+                AND (group_result_id = $2 OR $2 IS NULL)
+                AND state = $3 IS NOT FALSE
             "#,
             filter.assignment_id,
+            filter.group_result_id,
+            filter.state,
         )
     }
 

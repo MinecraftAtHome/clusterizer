@@ -21,11 +21,23 @@ pub struct Result {
 #[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
 pub struct ResultFilter {
     pub assignment_id: Option<Id<Assignment>>,
+    pub group_result_id: Option<Id<Result>>,
+    pub state: Option<ResultState>,
 }
 
 impl ResultFilter {
     pub fn assignment_id(mut self, assignment_id: Id<Assignment>) -> Self {
         self.assignment_id = Some(assignment_id);
+        self
+    }
+
+    pub fn group_result_id(mut self, group_result_id: Id<Result>) -> Self {
+        self.group_result_id = Some(group_result_id);
+        self
+    }
+
+    pub fn state(mut self, state: ResultState) -> Self {
+        self.state = Some(state);
         self
     }
 }
