@@ -10,7 +10,7 @@ use axum_extra::{
 };
 use base64::prelude::*;
 use clusterizer_common::{records::User, types::Id};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
 use crate::{state::AppState, util::Select};
