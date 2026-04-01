@@ -13,7 +13,6 @@ use crate::{
     auth::Auth,
     result::{AppError, AppResult, ResultExt},
     state::AppState,
-    util,
 };
 
 pub async fn submit_result(
@@ -73,10 +72,6 @@ pub async fn submit_result(
     .execute(&mut *tx)
     .await
     .map_unique_violation(SubmitResultError::AlreadyExists)?;
-
-    util::set_assignment_state(&[assignment.id], AssignmentState::Submitted)
-        .execute(&mut *tx)
-        .await?;
 
     tx.commit().await?;
 
