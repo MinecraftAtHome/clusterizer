@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = { version = "4.5.37", features = ["derive", "string"] }
+clap = { version = "4.6.0", features = ["derive", "string"] }
 clusterizer-api = { version = "0.1.0", path = "../api" }
 clusterizer-common = { version = "0.1.0", path = "../common" }
 dirs = "6.0.0"
-reqwest = { version = "0.12.15", features = ["json"] }
-tempfile = "3.20.0"
-thiserror = "2.0.12"
-tokio = { version = "1.45.0", features = ["full"] }
-tracing = "0.1.41"
-tracing-subscriber = "0.3.20"
-zip = "2.6.1"
+reqwest = { version = "0.13.2", features = ["json"] }
+tempfile = "3.27.0"
+thiserror = "2.0.18"
+tokio = { version = "1.50.0", features = ["full"] }
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+zip = "8.5.0"
