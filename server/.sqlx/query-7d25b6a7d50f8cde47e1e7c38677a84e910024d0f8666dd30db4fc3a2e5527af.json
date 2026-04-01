@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            t.*\n        FROM\n            tasks t\n            JOIN assignments a ON\n                a.task_id = t.id\n        WHERE\n            a.id = ANY($1)\n        ",
+  "query": "\n        SELECT\n            *\n        FROM\n            tasks\n        WHERE\n            id = $1\n        FOR UPDATE\n        ",
   "describe": {
     "columns": [
       {
@@ -51,7 +51,7 @@
     ],
     "parameters": {
       "Left": [
-        "Int8Array"
+        "Int8"
       ]
     },
     "nullable": [
@@ -66,5 +66,5 @@
       false
     ]
   },
-  "hash": "cd5ffd3d5d60bb7c7072db520c4d1c9875f8443a0982e81d1538161656074183"
+  "hash": "7d25b6a7d50f8cde47e1e7c38677a84e910024d0f8666dd30db4fc3a2e5527af"
 }
