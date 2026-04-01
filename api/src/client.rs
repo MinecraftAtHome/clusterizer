@@ -1,7 +1,13 @@
 use clusterizer_common::{
-    errors::{CreateFileError, FetchTasksError, RegisterError, SubmitResultError},
-    records::{File, Get, Task},
-    requests::{CreateFileRequest, FetchTasksRequest, RegisterRequest, SubmitResultRequest},
+    errors::{
+        CreateFileError, FetchTasksError, RegisterError, SubmitResultError, ValidateFetchError,
+        ValidateSubmitError,
+    },
+    records::{File, Get, Project, Task},
+    requests::{
+        CreateFileRequest, FetchTasksRequest, RegisterRequest, SubmitResultRequest,
+        ValidateSubmitRequest,
+    },
     responses::RegisterResponse,
     types::Id,
 };
@@ -56,12 +62,36 @@ impl ApiClient {
         Ok(())
     }
 
+    pub async fn validate_fetch(
+        &self,
+        project_id: Id<Project>,
+    ) -> ApiResult<Vec<Task>, ValidateFetchError> {
+        let url = format!("{}/validate_fetch/{project_id}", self.url);
+        Ok(self.send_get(url).await?.json().await?)
+    }
+
+    pub async fn validate_submit(
+        &self,
+        request: &ValidateSubmitRequest,
+    ) -> ApiResult<(), ValidateSubmitError> {
+        let url = format!("{}/validate_submit", self.url);
+        self.send_post(url, request).await?;
+        Ok(())
+    }
+
     pub async fn create_file(
         &self,
         request: &CreateFileRequest,
     ) -> ApiResult<Id<File>, CreateFileError> {
         let url = format!("{}/files", self.url);
         Ok(self.send_post(url, request).await?.json().await?)
+    }
+
+    async fn send_get<Error: DeserializeOwned>(
+        &self,
+        url: impl IntoUrl,
+    ) -> ApiResult<Response, Error> {
+        self.send(self.client.get(url)).await
     }
 
     async fn send_post<Error: DeserializeOwned>(
