@@ -3,7 +3,7 @@ use clusterizer_common::{
     errors::ValidateSubmitError,
     records::{Result, Task},
     requests::ValidateSubmitRequest,
-    types::ResultState,
+    types::{Id, ResultState},
 };
 
 use std::collections::HashMap;
@@ -21,15 +21,16 @@ pub async fn validate_submit(
     // Fetch results from the request.
     let result_ids: Vec<_> = request.results.keys().collect();
 
-    let results = sqlx::query_as_unchecked!(
-        Result,
+    let mut task_ids = sqlx::query_scalar_unchecked!(
         r#"
         SELECT
-            *
+            a.task_id "task_id: Id<Task>"
         FROM
-            results
+            results r,
+            assignments a
         WHERE
-            id = ANY($1)
+            r.id = ANY($1)
+            AND a.id = r.assignment_id
         "#,
         result_ids
     )
@@ -37,106 +38,91 @@ pub async fn validate_submit(
     .await?;
 
     // Check all result ids were valid.
-    if results.len() != request.results.len() {
-        Err(AppError::Specific(ValidateSubmitError::InvalidResult))?
+    if task_ids.len() != request.results.len() {
+        Err(AppError::Specific(ValidateSubmitError::InvalidResult))?;
     }
 
-    // Check all results have the 'init' state.
-    if results
-        .iter()
-        .any(|result| result.state != ResultState::Init)
-    {
-        Err(AppError::Specific(
-            ValidateSubmitError::ForbiddenStateTransition,
-        ))?
+    // Deduplicate task ids.
+    task_ids.sort();
+    task_ids.dedup();
+
+    // Can only validate one task at a time, for now.
+    if task_ids.len() != 1 {
+        Err(AppError::Specific(ValidateSubmitError::InvalidTaskCount))?;
     }
 
     // Fetch tasks for the results we are going to validate.
-    let assignment_ids: Vec<_> = results.iter().map(|result| result.assignment_id).collect();
-
-    let tasks = sqlx::query_as_unchecked!(
+    let task = sqlx::query_as_unchecked!(
         Task,
         r#"
         SELECT
-            t.*
+            *
         FROM
-            tasks t
-            JOIN assignments a ON
-                a.task_id = t.id
+            tasks
         WHERE
-            a.id = ANY($1)
+            id = $1
+        FOR UPDATE
         "#,
-        assignment_ids,
+        task_ids[0],
     )
-    .fetch_all(&state.pool)
+    .fetch_one(&state.pool)
     .await?;
 
-    // Can only validate one task at a time, for now.
-    if tasks.len() != 1 {
-        Err(AppError::Specific(ValidateSubmitError::InvalidTaskCount))?
-    }
-
-    let task = &tasks[0];
-
-    // Fetch the remaining results for this task. This ignores results whose id exceeds the largest
-    // id from the validation request, because the validator program also did not consider them.
+    // Fetch the results for this task. This ignores results whose id exceeds the last id from the
+    // validation request, because the validator program also did not consider them.
     let last_result_id = request
         .results
         .keys()
         .max()
         .expect("results cannot be empty");
 
-    let previous_results = sqlx::query_as_unchecked!(
+    let results = sqlx::query_as_unchecked!(
         Result,
         r#"
         SELECT
             r.*
         FROM
-            results r
-            JOIN assignments a ON
-                a.id = r.assignment_id
+            results r,
+            assignments a
         WHERE
             a.task_id = $1
-            AND r.id < $2
-            AND r.id != ALL($3)
+            AND a.id = r.assignment_id
+            AND r.id <= $2
         "#,
         task.id,
         last_result_id,
-        result_ids,
     )
     .fetch_all(&state.pool)
     .await?;
-
-    // Check the validator didn't miss any tasks. This is needed for deterministic validation.
-    if previous_results
-        .iter()
-        .any(|result| result.state == ResultState::Init)
-    {
-        Err(AppError::Specific(ValidateSubmitError::MissingResults))?
-    }
 
     // Build groups and errored results.
     let mut groups: HashMap<_, Vec<_>> = HashMap::new();
     let mut error_result_ids = Vec::new();
 
-    for result in &previous_results {
-        if let Some(group_id) = result.group_result_id {
+    for result in &results {
+        if let Some(&group_id) = request.results.get(&result.id) {
+            if result.state != ResultState::Init {
+                // Error if the result was already validated.
+                Err(AppError::Specific(
+                    ValidateSubmitError::ForbiddenStateTransition,
+                ))?;
+            } else if let Some(group_id) = group_id {
+                groups.entry(group_id).or_default().push(result.id);
+            } else {
+                error_result_ids.push(result.id);
+            }
+        } else if result.state == ResultState::Init {
+            // The validator missed the task. This must be an error for deterministic validation.
+            Err(AppError::Specific(ValidateSubmitError::MissingResults))?;
+        } else if let Some(group_id) = result.group_result_id {
             groups.entry(group_id).or_default().push(result.id);
-        }
-    }
-
-    for (&result_id, &group_id) in &request.results {
-        if let Some(group_id) = group_id {
-            groups.entry(group_id).or_default().push(result_id);
-        } else {
-            error_result_ids.push(result_id);
         }
     }
 
     // Check that each group id is the lowest of any result ids in the group.
     for (group_id, result_ids) in &groups {
         if group_id != result_ids.iter().min().expect("group cannot be empty") {
-            Err(AppError::Specific(ValidateSubmitError::InconsistentGroup))?
+            Err(AppError::Specific(ValidateSubmitError::InconsistentGroup))?;
         }
     }
 
@@ -201,22 +187,12 @@ pub async fn validate_submit(
             .results
             .iter()
             .filter(|(_, group_id)| group_id.is_some())
-            .map(|(result_id, _)| result_id)
+            .map(|(&result_id, _)| result_id)
             .collect();
 
-        sqlx::query_unchecked!(
-            r#"
-            UPDATE
-                results
-            SET
-                state = 'inconclusive'
-            WHERE
-                id = ANY($1)
-            "#,
-            inconclusive_result_ids,
-        )
-        .execute(&state.pool)
-        .await?;
+        set_result_state(&inconclusive_result_ids, ResultState::Inconclusive)
+            .execute(&state.pool)
+            .await?;
 
         // Finally, update the number of assignments needed.
         let largest_inconclusive_group = groups
@@ -224,9 +200,8 @@ pub async fn validate_submit(
             .max_by_key(|results| results.len())
             .expect("there is at least one group");
 
-        let assignments_needed = (results.len() + previous_results.len()
-            - largest_inconclusive_group.len()) as i32
-            + task.quorum;
+        let assignments_needed =
+            (results.len() - largest_inconclusive_group.len()) as i32 + task.quorum;
 
         sqlx::query_unchecked!(
             r#"
