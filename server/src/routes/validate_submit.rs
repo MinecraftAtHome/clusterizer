@@ -32,7 +32,7 @@ pub async fn validate_submit(
             r.id = ANY($1)
             AND a.id = r.assignment_id
         "#,
-        result_ids
+        result_ids,
     )
     .fetch_all(&state.pool)
     .await?;

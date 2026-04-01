@@ -39,7 +39,6 @@ CREATE TABLE tasks (
     stdin text NOT NULL,
     assignments_needed int4 NOT NULL,
     assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[],
-    canonical_result_id int8,
     quorum int4 NOT NULL
 );
 
@@ -82,9 +81,6 @@ CREATE TABLE results (
     group_result_id int8 REFERENCES results(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
-ALTER TABLE tasks
-ADD FOREIGN KEY (canonical_result_id) REFERENCES results(id) ON DELETE RESTRICT ON UPDATE RESTRICT;
-
 CREATE FUNCTION trigger_function_tasks_remove_assignment_user_id()
     RETURNS TRIGGER AS $$
 BEGIN
@@ -117,3 +113,17 @@ CREATE TRIGGER assignments_trigger_add_assignment_user_id
     ON assignments
     FOR EACH ROW
     EXECUTE FUNCTION trigger_function_tasks_add_assignment_user_id();
+
+CREATE FUNCTION trigger_function_tasks_set_assignments_needed()
+    RETURNS TRIGGER AS $$
+BEGIN
+    NEW.assignments_needed := NEW.quorum;
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tasks_trigger_set_assignments_needed
+    BEFORE INSERT
+    ON tasks
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_function_tasks_set_assignments_needed();

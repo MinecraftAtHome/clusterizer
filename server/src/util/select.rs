@@ -122,10 +122,8 @@ impl Select for Task {
                 tasks
             WHERE
                 project_id = $1 IS NOT FALSE
-                AND (canonical_result_id = $2 OR $2 IS NULL)
             "#,
             filter.project_id,
-            filter.canonical_result_id,
         )
     }
 

@@ -40,11 +40,6 @@
       },
       {
         "ordinal": 7,
-        "name": "canonical_result_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 8,
         "name": "quorum",
         "type_info": "Int4"
       }
@@ -64,7 +59,6 @@
       false,
       false,
       false,
-      true,
       false
     ]
   },

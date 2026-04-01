@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                tasks\n            WHERE\n                project_id = $1 IS NOT FALSE\n                AND (canonical_result_id = $2 OR $2 IS NULL)\n            ",
+  "query": "\n            SELECT\n                *\n            FROM\n                tasks\n            WHERE\n                project_id = $1 IS NOT FALSE\n            ",
   "describe": {
     "columns": [
       {
@@ -40,18 +40,12 @@
       },
       {
         "ordinal": 7,
-        "name": "canonical_result_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 8,
         "name": "quorum",
         "type_info": "Int4"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8",
         "Int8"
       ]
     },
@@ -63,9 +57,8 @@
       false,
       false,
       false,
-      true,
       false
     ]
   },
-  "hash": "ab022e8774fc4cef4434e9ba30b902f2e0e01a252ef1aa79e45da16db3a15fad"
+  "hash": "0d6d91c4e0acb78e4fda4df1804d430966e8ae83a168de0d3444bb8a4c7b1051"
 }
