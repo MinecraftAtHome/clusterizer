@@ -1,7 +1,10 @@
 use clusterizer_common::{
-    errors::{FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError},
-    records::Task,
-    requests::{FetchTasksRequest, RegisterRequest, SubmitResultRequest},
+    errors::{
+        FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError,
+        ValidateFetchError, ValidateSubmitError,
+    },
+    records::{Project, Task},
+    requests::{FetchTasksRequest, RegisterRequest, SubmitResultRequest, ValidateSubmitRequest},
     responses::RegisterResponse,
     types::Id,
 };
@@ -66,6 +69,23 @@ impl ApiClient {
         request: &SubmitResultRequest,
     ) -> ApiResult<(), SubmitResultError> {
         let url = format!("{}/submit_result/{task_id}", self.url);
+        self.post(url, request).await?;
+        Ok(())
+    }
+
+    pub async fn validate_fetch(
+        &self,
+        project_id: Id<Project>,
+    ) -> ApiResult<Vec<Task>, ValidateFetchError> {
+        let url = format!("{}/validate_fetch/{project_id}", self.url);
+        Ok(self.get(url).await?.json().await?)
+    }
+
+    pub async fn validate_submit(
+        &self,
+        request: &ValidateSubmitRequest,
+    ) -> ApiResult<(), ValidateSubmitError> {
+        let url = format!("{}/validate_submit", self.url);
         self.post(url, request).await?;
         Ok(())
     }
