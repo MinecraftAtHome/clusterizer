@@ -51,6 +51,8 @@ pub async fn validate_submit(
         Err(AppError::Specific(ValidateSubmitError::InvalidTaskCount))?;
     }
 
+    let mut tx = state.pool.begin().await?;
+
     // Fetch tasks for the results we are going to validate.
     let task = sqlx::query_as_unchecked!(
         Task,
@@ -65,7 +67,7 @@ pub async fn validate_submit(
         "#,
         task_ids[0],
     )
-    .fetch_one(&state.pool)
+    .fetch_one(&mut *tx)
     .await?;
 
     // Fetch the results for this task. This ignores results whose id exceeds the last id from the
@@ -92,7 +94,7 @@ pub async fn validate_submit(
         task.id,
         last_result_id,
     )
-    .fetch_all(&state.pool)
+    .fetch_all(&mut *tx)
     .await?;
 
     // Build groups and errored results.
@@ -128,7 +130,7 @@ pub async fn validate_submit(
 
     // Update state of error results.
     set_result_state(&error_result_ids, ResultState::Error)
-        .execute(&state.pool)
+        .execute(&mut *tx)
         .await?;
 
     // Update group ids.
@@ -146,7 +148,7 @@ pub async fn validate_submit(
                 group_id,
                 result_id,
             )
-            .execute(&state.pool)
+            .execute(&mut *tx)
             .await?;
         }
     }
@@ -179,7 +181,7 @@ pub async fn validate_submit(
             valid_group_id,
             group_result_ids,
         )
-        .execute(&state.pool)
+        .execute(&mut *tx)
         .await?;
     } else {
         // Otherwise, update the state of the new results to 'inconclusive'.
@@ -191,7 +193,7 @@ pub async fn validate_submit(
             .collect();
 
         set_result_state(&inconclusive_result_ids, ResultState::Inconclusive)
-            .execute(&state.pool)
+            .execute(&mut *tx)
             .await?;
 
         // Finally, update the number of assignments needed.
@@ -215,9 +217,11 @@ pub async fn validate_submit(
             assignments_needed,
             task.id,
         )
-        .execute(&state.pool)
+        .execute(&mut *tx)
         .await?;
     }
+
+    tx.commit().await?;
 
     Ok(())
 }
