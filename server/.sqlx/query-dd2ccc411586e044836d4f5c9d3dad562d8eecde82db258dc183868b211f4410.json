@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE\n                    results\n                SET\n                    group_result_id = $1\n                WHERE\n                    id = $2\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dd2ccc411586e044836d4f5c9d3dad562d8eecde82db258dc183868b211f4410"
+}

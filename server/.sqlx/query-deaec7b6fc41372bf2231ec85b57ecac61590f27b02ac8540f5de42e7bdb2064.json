@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            a.task_id \"task_id: Id<Task>\"\n        FROM\n            results r,\n            assignments a\n        WHERE\n            r.id = ANY($1)\n            AND a.id = r.assignment_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "task_id: Id<Task>",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "deaec7b6fc41372bf2231ec85b57ecac61590f27b02ac8540f5de42e7bdb2064"
+}

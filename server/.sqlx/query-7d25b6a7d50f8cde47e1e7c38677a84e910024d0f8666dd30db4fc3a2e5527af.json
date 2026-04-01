@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM tasks WHERE id = $1",
+  "query": "\n        SELECT\n            *\n        FROM\n            tasks\n        WHERE\n            id = $1\n        FOR UPDATE\n        ",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "4f28c9855a87500c39fc4e88308b16b87bf12743e25be5d1707c07edd8d94dfd"
+  "hash": "7d25b6a7d50f8cde47e1e7c38677a84e910024d0f8666dd30db4fc3a2e5527af"
 }

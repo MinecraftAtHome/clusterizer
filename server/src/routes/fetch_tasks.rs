@@ -28,7 +28,7 @@ pub async fn fetch_tasks(
         WHERE
             id = ANY($1)
         "#,
-        request.project_ids
+        request.project_ids,
     )
     .fetch_all(&mut *tx)
     .await?;

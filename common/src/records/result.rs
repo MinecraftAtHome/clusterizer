@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::Id;
+use crate::types::{Id, ResultState};
 
 use super::Assignment;
 
@@ -13,17 +13,31 @@ pub struct Result {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: Option<i32>,
+    pub group_result_id: Option<Id<Result>>,
+    pub state: ResultState,
 }
 
 #[non_exhaustive]
 #[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
 pub struct ResultFilter {
     pub assignment_id: Option<Id<Assignment>>,
+    pub group_result_id: Option<Id<Result>>,
+    pub state: Option<ResultState>,
 }
 
 impl ResultFilter {
     pub fn assignment_id(mut self, assignment_id: Id<Assignment>) -> Self {
         self.assignment_id = Some(assignment_id);
+        self
+    }
+
+    pub fn group_result_id(mut self, group_result_id: Id<Result>) -> Self {
+        self.group_result_id = Some(group_result_id);
+        self
+    }
+
+    pub fn state(mut self, state: ResultState) -> Self {
+        self.state = Some(state);
         self
     }
 }

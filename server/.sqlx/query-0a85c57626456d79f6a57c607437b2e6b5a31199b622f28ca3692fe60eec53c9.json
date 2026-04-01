@@ -39,10 +39,7 @@
                 "init",
                 "canceled",
                 "expired",
-                "submitted",
-                "valid",
-                "invalid",
-                "inconclusive"
+                "submitted"
               ]
             }
           }
@@ -61,10 +58,7 @@
                 "init",
                 "canceled",
                 "expired",
-                "submitted",
-                "valid",
-                "invalid",
-                "inconclusive"
+                "submitted"
               ]
             }
           }

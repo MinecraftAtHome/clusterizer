@@ -14,6 +14,7 @@ pub struct Task {
     pub stdin: String,
     pub assignments_needed: i32,
     pub assignment_user_ids: Vec<Id<User>>,
+    pub quorum: i32,
 }
 
 #[non_exhaustive]

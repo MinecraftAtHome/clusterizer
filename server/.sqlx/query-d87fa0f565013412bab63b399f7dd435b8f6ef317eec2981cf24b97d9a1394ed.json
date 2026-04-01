@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM results WHERE id = $1",
+  "query": "\n            SELECT\n                *\n            FROM\n                results\n            WHERE\n                assignment_id = $1 IS NOT FALSE\n                AND (group_result_id = $2 OR $2 IS NULL)\n                AND state = $3 IS NOT FALSE\n            ",
   "describe": {
     "columns": [
       {
@@ -59,7 +59,22 @@
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8",
+        "Int8",
+        {
+          "Custom": {
+            "name": "result_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "valid",
+                "invalid",
+                "inconclusive",
+                "error"
+              ]
+            }
+          }
+        }
       ]
     },
     "nullable": [
@@ -73,5 +88,5 @@
       true
     ]
   },
-  "hash": "2daeacfdb74c4d12e2e5801d58931e6b9e29f27da54f8ed525dc71e8f3162a0a"
+  "hash": "d87fa0f565013412bab63b399f7dd435b8f6ef317eec2981cf24b97d9a1394ed"
 }

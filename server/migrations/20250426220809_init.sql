@@ -38,17 +38,15 @@ CREATE TABLE tasks (
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdin text NOT NULL,
     assignments_needed int4 NOT NULL,
-    assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[]
+    assignment_user_ids int8[] NOT NULL DEFAULT ARRAY[]::int8[],
+    quorum int4 NOT NULL
 );
 
 CREATE TYPE assignment_state AS ENUM (
-    'init', 
-    'canceled', 
+    'init',
+    'canceled',
     'expired',
-    'submitted', 
-    'valid', 
-    'invalid',  
-    'inconclusive'
+    'submitted'
 );
 
 CREATE TABLE assignments (
@@ -64,13 +62,23 @@ CREATE UNIQUE INDEX assignments_task_id_user_id_key
     ON assignments (task_id, user_id)
     WHERE state != 'canceled' AND state != 'expired';
 
+CREATE TYPE result_state AS ENUM (
+    'init',
+    'valid',
+    'invalid',
+    'inconclusive',
+    'error'
+);
+
 CREATE TABLE results (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
+    state result_state NOT NULL DEFAULT 'init',
     assignment_id int8 NOT NULL UNIQUE REFERENCES assignments(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     stdout text NOT NULL,
     stderr text NOT NULL,
-    exit_code int4
+    exit_code int4,
+    group_result_id int8 REFERENCES results(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 CREATE FUNCTION trigger_function_tasks_remove_assignment_user_id()
@@ -105,3 +113,17 @@ CREATE TRIGGER assignments_trigger_add_assignment_user_id
     ON assignments
     FOR EACH ROW
     EXECUTE FUNCTION trigger_function_tasks_add_assignment_user_id();
+
+CREATE FUNCTION trigger_function_tasks_set_assignments_needed()
+    RETURNS TRIGGER AS $$
+BEGIN
+    NEW.assignments_needed := NEW.quorum;
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tasks_trigger_set_assignments_needed
+    BEFORE INSERT
+    ON tasks
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_function_tasks_set_assignments_needed();

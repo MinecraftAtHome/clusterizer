@@ -37,6 +37,11 @@
         "ordinal": 6,
         "name": "assignment_user_ids",
         "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 7,
+        "name": "quorum",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
@@ -47,6 +52,7 @@
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,

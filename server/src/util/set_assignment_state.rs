@@ -19,6 +19,6 @@ pub fn set_assignment_state(
             id = ANY($2)
         "#,
         assignment_state,
-        assignment_ids
+        assignment_ids,
     )
 }
