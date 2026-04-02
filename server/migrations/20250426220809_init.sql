@@ -40,6 +40,13 @@ CREATE TABLE project_runners (
     file_id int8 NOT NULL REFERENCES files(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
+CREATE TABLE platform_runners (
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    platform_id int8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    file_id int8 NOT NULL REFERENCES files(id) ON DELETE RESTRICT ON UPDATE RESTRICT
+);
+
 CREATE TABLE tasks (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),

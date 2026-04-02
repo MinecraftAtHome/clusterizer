@@ -1,6 +1,7 @@
 pub mod assignment;
 pub mod file;
 pub mod platform;
+pub mod platform_runner;
 pub mod project;
 pub mod project_runner;
 pub mod result;
@@ -10,6 +11,7 @@ pub mod user;
 pub use assignment::{Assignment, AssignmentBuilder, AssignmentFilter};
 pub use file::{File, FileBuilder, FileFilter};
 pub use platform::{Platform, PlatformBuilder, PlatformFilter};
+pub use platform_runner::{PlatformRunner, PlatformRunnerBuilder, PlatformRunnerFilter};
 pub use project::{Project, ProjectBuilder, ProjectFilter};
 pub use project_runner::{ProjectRunner, ProjectRunnerBuilder, ProjectRunnerFilter};
 pub use result::{Result, ResultBuilder, ResultFilter};
