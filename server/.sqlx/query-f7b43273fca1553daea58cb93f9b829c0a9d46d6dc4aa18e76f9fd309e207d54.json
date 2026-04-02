@@ -15,11 +15,16 @@
       },
       {
         "ordinal": 2,
+        "name": "created_by_user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
         "name": "disabled_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "name",
         "type_info": "Text"
       }
@@ -30,6 +35,7 @@
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       true,
