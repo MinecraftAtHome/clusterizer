@@ -16,8 +16,7 @@ use clusterizer_client::result::ClientResult;
 use clusterizer_common::{
     errors::SubmitResultError,
     records::{
-        Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion, ProjectVersionFilter,
-        Task,
+        Platform, PlatformFilter, Project, ProjectFilter, ProjectRunner, ProjectRunnerFilter, Task,
     },
     requests::{FetchTasksRequest, SubmitResultRequest},
     types::Id,
@@ -37,7 +36,7 @@ struct ClusterizerClient {
 struct TaskInfo {
     task: Task,
     project: Project,
-    project_version: ProjectVersion,
+    project_runner: ProjectRunner,
 }
 
 enum Return {
@@ -102,14 +101,14 @@ impl ClusterizerClient {
 
             let projects: HashMap<_, _> = self
                 .client
-                .get_all::<ProjectVersion>(&ProjectVersionFilter::default().disabled(false))
+                .get_all::<ProjectRunner>(&ProjectRunnerFilter::default().disabled(false))
                 .await?
                 .into_iter()
-                .filter(|project_version| self.platform_ids.contains(&project_version.platform_id))
-                .filter_map(|project_version| {
+                .filter(|project_runner| self.platform_ids.contains(&project_runner.platform_id))
+                .filter_map(|project_runner| {
                     projects
-                        .remove(&project_version.project_id)
-                        .map(|project| (project.id, (project, project_version)))
+                        .remove(&project_runner.project_id)
+                        .map(|project| (project.id, (project, project_runner)))
                 })
                 .collect();
 
@@ -124,10 +123,10 @@ impl ClusterizerClient {
                 .filter_map(|task| {
                     let info = projects
                         .get(&task.project_id)
-                        .map(|(project, project_version)| TaskInfo {
+                        .map(|(project, project_runner)| TaskInfo {
                             task,
                             project: project.clone(),
-                            project_version: project_version.clone(),
+                            project_runner: project_runner.clone(),
                         });
 
                     if info.is_none() {
@@ -146,18 +145,15 @@ impl ClusterizerClient {
             time::sleep(Duration::from_millis(15000)).await;
         };
 
-        for TaskInfo {
-            project_version, ..
-        } in &tasks
-        {
-            let project_version_dir = self
+        for TaskInfo { project_runner, .. } in &tasks {
+            let project_runner_dir = self
                 .args
-                .project_versions_dir()
-                .join(project_version.id.to_string());
+                .project_runners_dir()
+                .join(project_runner.id.to_string());
 
             download_archive(
-                &project_version.archive_url,
-                &project_version_dir,
+                &project_runner.archive_url,
+                &project_runner_dir,
                 &self.args.cache_dir,
             )
             .await?;
@@ -171,7 +167,7 @@ impl ClusterizerClient {
         TaskInfo {
             task,
             project,
-            project_version,
+            project_runner,
         }: TaskInfo,
     ) -> ClientResult<Return> {
         let slot_dir = tempfile::tempdir()?;
@@ -180,16 +176,16 @@ impl ClusterizerClient {
         info!("Project id: {}, name: {}", project.id, project.name);
         debug!(
             "Project version id: {}, archive url: {}",
-            project_version.id, project_version.archive_url
+            project_runner.id, project_runner.archive_url
         );
         debug!("Slot dir: {}", slot_dir.path().display());
 
-        let project_version_dir = self
+        let project_runner_dir = self
             .args
-            .project_versions_dir()
-            .join(project_version.id.to_string());
+            .project_runners_dir()
+            .join(project_runner.id.to_string());
 
-        let program = project_version_dir
+        let program = project_runner_dir
             .join(format!("main{}", env::consts::EXE_SUFFIX))
             .canonicalize()?;
 
@@ -235,7 +231,7 @@ impl ClusterizerClient {
 }
 
 pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
-    fs::create_dir_all(args.project_versions_dir())?;
+    fs::create_dir_all(args.project_runners_dir())?;
     fs::create_dir_all(args.platform_testers_dir())?;
 
     let mut platform_ids = Vec::new();

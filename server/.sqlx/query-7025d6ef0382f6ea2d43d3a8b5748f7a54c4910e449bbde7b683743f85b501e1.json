@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM project_versions WHERE id = $1",
+  "query": "\n            SELECT\n                *\n            FROM\n                project_runners\n            WHERE\n                disabled_at IS NULL IS DISTINCT FROM $1\n                AND project_id = $2 IS NOT FALSE\n                AND platform_id = $3 IS NOT FALSE\n            ",
   "describe": {
     "columns": [
       {
@@ -36,6 +36,8 @@
     ],
     "parameters": {
       "Left": [
+        "Bool",
+        "Int8",
         "Int8"
       ]
     },
@@ -48,5 +50,5 @@
       false
     ]
   },
-  "hash": "60d06b4ddeb3f621f6da75d1ad4f37cb37aa552d2cf4e9f3ec8365afd2555e2a"
+  "hash": "7025d6ef0382f6ea2d43d3a8b5748f7a54c4910e449bbde7b683743f85b501e1"
 }
