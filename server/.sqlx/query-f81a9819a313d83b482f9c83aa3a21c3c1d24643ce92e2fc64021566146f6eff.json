@@ -30,8 +30,8 @@
       },
       {
         "ordinal": 5,
-        "name": "archive_url",
-        "type_info": "Text"
+        "name": "file_id",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
