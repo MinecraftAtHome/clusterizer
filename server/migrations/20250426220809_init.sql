@@ -22,11 +22,19 @@ CREATE TABLE platforms (
     tester_archive_url text NOT NULL
 );
 
-CREATE TABLE project_versions (
+CREATE TABLE project_runners (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
     disabled_at timestamptz,
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    platform_id int8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    archive_url text NOT NULL
+);
+
+CREATE TABLE platform_runners (
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    disabled_at timestamptz,
     platform_id int8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     archive_url text NOT NULL
 );

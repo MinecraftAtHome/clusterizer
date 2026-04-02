@@ -43,8 +43,8 @@ pub struct RunArgs {
 }
 
 impl RunArgs {
-    pub fn project_versions_dir(&self) -> PathBuf {
-        self.cache_dir.join("project_versions")
+    pub fn project_runners_dir(&self) -> PathBuf {
+        self.cache_dir.join("project_runners")
     }
 
     pub fn platform_testers_dir(&self) -> PathBuf {
