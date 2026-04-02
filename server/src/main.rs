@@ -10,7 +10,7 @@ use axum::{
 };
 use clusterizer_common::{
     records::{
-        Assignment, File, Platform, Project, ProjectVersion, Record, Result, Select, Task, User,
+        Assignment, File, Platform, Project, ProjectRunner, Record, Result, Select, Task, User,
     },
     types::Id,
 };
@@ -46,7 +46,7 @@ async fn serve_task(state: AppState, address: String) {
         .merge(record_router::<User>())
         .merge(record_router::<Project>())
         .merge(record_router::<Platform>())
-        .merge(record_router::<ProjectVersion>())
+        .merge(record_router::<ProjectRunner>())
         .merge(record_router::<Task>())
         .merge(record_router::<Assignment>())
         .merge(record_router::<Result>())

@@ -16,8 +16,8 @@ use clusterizer_client::result::ClientResult;
 use clusterizer_common::{
     errors::SubmitResultError,
     records::{
-        File, FileFilter, Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion,
-        ProjectVersionFilter, Task,
+        File, FileFilter, Platform, PlatformFilter, Project, ProjectFilter, ProjectRunner,
+        ProjectRunnerFilter, Task,
     },
     requests::{FetchTasksRequest, SubmitResultRequest},
     types::Id,
@@ -38,7 +38,7 @@ struct ClusterizerClient {
 struct TaskInfo {
     task: Task,
     project: Project,
-    project_version: ProjectVersion,
+    project_runner: ProjectRunner,
     file: File,
 }
 
@@ -94,13 +94,13 @@ impl ClusterizerClient {
 
     async fn fetch_tasks(self: Arc<Self>) -> ClientResult<Return> {
         let tasks = loop {
-            let project_versions_by_project_id: HashMap<_, _> = self
+            let project_runners_by_project_id: HashMap<_, _> = self
                 .client
-                .get(&ProjectVersionFilter::default().disabled_at(vec![None]))
+                .get(&ProjectRunnerFilter::default().disabled_at(vec![None]))
                 .await?
                 .into_iter()
-                .filter(|project_version| self.platform_ids.contains(&project_version.platform_id))
-                .map(|project_version| (project_version.project_id, project_version))
+                .filter(|project_runner| self.platform_ids.contains(&project_runner.platform_id))
+                .map(|project_runner| (project_runner.project_id, project_runner))
                 .collect();
 
             let projects_by_project_id: HashMap<_, _> = self
@@ -108,7 +108,7 @@ impl ClusterizerClient {
                 .get(&ProjectFilter::default().disabled_at(vec![None]))
                 .await?
                 .into_iter()
-                .filter(|project| project_versions_by_project_id.contains_key(&project.id))
+                .filter(|project| project_runners_by_project_id.contains_key(&project.id))
                 .map(|project| (project.id, project))
                 .collect();
 
@@ -122,14 +122,14 @@ impl ClusterizerClient {
 
             let get_task_info = |task: &Task| {
                 let project = projects_by_project_id.get(&task.project_id)?;
-                let project_version = project_versions_by_project_id.get(&task.project_id)?;
-                let file = files_by_file_id.get(&project_version.file_id)?;
+                let project_runner = project_runners_by_project_id.get(&task.project_id)?;
+                let file = files_by_file_id.get(&project_runner.file_id)?;
 
                 Some(TaskInfo {
                     task: task.clone(),
                     file: file.clone(),
                     project: project.clone(),
-                    project_version: project_version.clone(),
+                    project_runner: project_runner.clone(),
                 })
             };
 
@@ -171,7 +171,7 @@ impl ClusterizerClient {
         self: Arc<Self>,
         TaskInfo {
             task,
-            project_version,
+            project_runner,
             project,
             file,
         }: TaskInfo,
@@ -183,7 +183,7 @@ impl ClusterizerClient {
             "Project id: {}, Project name: {}",
             task.project_id, project.name
         );
-        debug!("Platform id: {}", project_version.platform_id);
+        debug!("Platform id: {}", project_runner.platform_id);
         debug!("Slot dir: {}", slot_dir.path().display());
 
         let program = self

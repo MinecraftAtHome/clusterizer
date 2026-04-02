@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO project_versions (project_id, platform_id, file_id) VALUES ($1, $2, $3) RETURNING id \"id: _\"",
+  "query": "INSERT INTO project_runners (project_id, platform_id, file_id) VALUES ($1, $2, $3) RETURNING id \"id: _\"",
   "describe": {
     "columns": [
       {
@@ -20,5 +20,5 @@
       false
     ]
   },
-  "hash": "59e05c1bca439b7fb68f8e262510ebb042fb163aa3b1de13e1749687f70e4be8"
+  "hash": "781c42f7107328996a9eb4a88d8f9bacbea9998f02d2486c9365efc3a37a1cbb"
 }

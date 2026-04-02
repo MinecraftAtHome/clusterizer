@@ -31,7 +31,7 @@ CREATE TABLE platforms (
     file_id int8 NOT NULL REFERENCES files(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
-CREATE TABLE project_versions (
+CREATE TABLE project_runners (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
     disabled_at timestamptz,
