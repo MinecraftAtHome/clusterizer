@@ -3,6 +3,8 @@ use thiserror::Error;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize, Error)]
 pub enum ValidateSubmitError {
+    #[error("forbidden")]
+    Forbidden,
     #[error("invalid result")]
     InvalidResult,
     #[error("expected results for exactly one task")]

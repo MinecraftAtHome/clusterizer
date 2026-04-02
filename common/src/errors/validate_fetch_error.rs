@@ -3,6 +3,8 @@ use thiserror::Error;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize, Error)]
 pub enum ValidateFetchError {
+    #[error("forbidden")]
+    Forbidden,
     #[error("invalid project")]
     InvalidProject,
 }

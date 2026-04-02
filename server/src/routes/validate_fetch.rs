@@ -9,13 +9,15 @@ use clusterizer_common::{
 };
 
 use crate::{
-    result::{AppResult, ResultExt},
+    auth::Auth,
+    result::{AppError, AppResult, ResultExt},
     state::AppState,
 };
 
 pub async fn validate_fetch(
     State(state): State<AppState>,
     Path(project_id): Path<Id<Project>>,
+    Auth(user_id): Auth,
 ) -> AppResult<Json<Vec<Task>>, ValidateFetchError> {
     let project = sqlx::query_as_unchecked!(
         Project,
@@ -32,6 +34,10 @@ pub async fn validate_fetch(
     .fetch_one(&state.pool)
     .await
     .map_not_found(ValidateFetchError::InvalidProject)?;
+
+    if project.created_by_user_id != user_id {
+        Err(AppError::Specific(ValidateFetchError::Forbidden))?;
+    }
 
     let tasks = sqlx::query_as_unchecked!(
         Task,

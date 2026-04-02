@@ -51,8 +51,10 @@ impl Select for Project {
             FROM
                 projects
             WHERE
-                disabled_at IS NULL IS DISTINCT FROM $1
+                created_by_user_id = $1 IS NOT FALSE
+                AND disabled_at IS NULL IS DISTINCT FROM $2
             "#,
+            filter.created_by_user_id,
             filter.disabled,
         )
     }

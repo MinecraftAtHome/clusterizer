@@ -11,6 +11,7 @@ ON users (lower(name));
 CREATE TABLE projects (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
+    created_by_user_id int8 NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     disabled_at timestamptz,
     name text NOT NULL
 );

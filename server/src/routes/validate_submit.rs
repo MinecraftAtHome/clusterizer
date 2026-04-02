@@ -1,7 +1,7 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::ValidateSubmitError,
-    records::{Result, Task},
+    records::{Project, Result, Task},
     requests::ValidateSubmitRequest,
     types::{Id, ResultState},
 };
@@ -9,6 +9,7 @@ use clusterizer_common::{
 use std::collections::HashMap;
 
 use crate::{
+    auth::Auth,
     result::{AppError, AppResult},
     state::AppState,
     util::set_result_state,
@@ -16,6 +17,7 @@ use crate::{
 
 pub async fn validate_submit(
     State(state): State<AppState>,
+    Auth(user_id): Auth,
     Json(request): Json<ValidateSubmitRequest>,
 ) -> AppResult<(), ValidateSubmitError> {
     // Fetch results from the request.
@@ -69,6 +71,26 @@ pub async fn validate_submit(
     )
     .fetch_one(&mut *tx)
     .await?;
+
+    // Check project permissions.
+    let project = sqlx::query_as_unchecked!(
+        Project,
+        r#"
+        SELECT
+            *
+        FROM
+            projects
+        WHERE
+            id = $1
+        "#,
+        task.project_id
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+
+    if project.created_by_user_id != user_id {
+        Err(AppError::Specific(ValidateSubmitError::Forbidden))?;
+    }
 
     // Fetch the results for this task. This ignores results whose id exceeds the last id from the
     // validation request, because the validator program also did not consider them.

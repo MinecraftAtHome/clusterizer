@@ -38,14 +38,20 @@ impl Status for SubmitResultError {
     }
 }
 
-impl Status for ValidateSubmitError {
+impl Status for ValidateFetchError {
     fn status(&self) -> StatusCode {
-        StatusCode::BAD_REQUEST
+        match self {
+            Self::Forbidden => StatusCode::FORBIDDEN,
+            _ => StatusCode::BAD_REQUEST,
+        }
     }
 }
 
-impl Status for ValidateFetchError {
+impl Status for ValidateSubmitError {
     fn status(&self) -> StatusCode {
-        StatusCode::BAD_REQUEST
+        match self {
+            Self::Forbidden => StatusCode::FORBIDDEN,
+            _ => StatusCode::BAD_REQUEST,
+        }
     }
 }
