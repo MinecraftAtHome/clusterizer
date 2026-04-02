@@ -1,13 +1,12 @@
 use args::{ClusterizerArgs, Commands};
 use clap::Parser;
 use clusterizer_api::client::ApiClient;
+use clusterizer_client::result::ClientResult;
 use clusterizer_common::requests::RegisterRequest;
-use result::ClientResult;
 use tracing::{debug, error};
 
 mod args;
 mod client;
-mod result;
 
 #[tokio::main]
 async fn main() {

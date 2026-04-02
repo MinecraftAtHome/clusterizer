@@ -12,6 +12,7 @@ use std::{
 };
 
 use clusterizer_api::{client::ApiClient, result::ApiError};
+use clusterizer_client::result::ClientResult;
 use clusterizer_common::{
     errors::SubmitResultError,
     records::{
@@ -25,7 +26,7 @@ use tokio::{io::AsyncWriteExt, process::Command, task::JoinSet, time};
 use tracing::{debug, info, warn};
 use zip::ZipArchive;
 
-use crate::{args::RunArgs, result::ClientResult};
+use crate::args::RunArgs;
 
 struct ClusterizerClient {
     client: ApiClient,
