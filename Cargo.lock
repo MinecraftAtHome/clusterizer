@@ -377,19 +377,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "clusterizer-client"
+name = "clusterizer-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
  "clusterizer-api",
+ "clusterizer-client",
  "clusterizer-common",
  "dirs",
  "reqwest",
  "tempfile",
- "thiserror 2.0.18",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "zip",
+]
+
+[[package]]
+name = "clusterizer-client"
+version = "0.1.0"
+dependencies = [
+ "clusterizer-api",
+ "reqwest",
+ "thiserror 2.0.18",
+ "tokio",
  "zip",
 ]
 

@@ -1,0 +1,17 @@
+[package]
+name = "clusterizer-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.6.0", features = ["derive", "string"] }
+clusterizer-api = { version = "0.1.0", path = "../api" }
+clusterizer-client = { version = "0.1.0", path = "../client" }
+clusterizer-common = { version = "0.1.0", path = "../common" }
+dirs = "6.0.0"
+reqwest = { version = "0.13.2" }
+tempfile = "3.27.0"
+tokio = { version = "1.50.0", features = ["full"] }
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+zip = "8.5.0"
