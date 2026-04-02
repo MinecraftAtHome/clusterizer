@@ -1,6 +1,7 @@
 use clusterizer_common::records::{
-    Assignment, AssignmentFilter, Platform, PlatformFilter, Project, ProjectFilter, ProjectRunner,
-    ProjectRunnerFilter, Result, ResultFilter, Task, TaskFilter, User, UserFilter,
+    Assignment, AssignmentFilter, Platform, PlatformFilter, PlatformRunner, PlatformRunnerFilter,
+    Project, ProjectFilter, ProjectRunner, ProjectRunnerFilter, Result, ResultFilter, Task,
+    TaskFilter, User, UserFilter,
 };
 
 pub trait Get {
@@ -31,6 +32,12 @@ impl Get for ProjectRunner {
     type Filter = ProjectRunnerFilter;
 
     const PATH: &str = "project_runners";
+}
+
+impl Get for PlatformRunner {
+    type Filter = PlatformRunnerFilter;
+
+    const PATH: &str = "platform_runners";
 }
 
 impl Get for Task {

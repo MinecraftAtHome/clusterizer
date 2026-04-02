@@ -11,7 +11,7 @@ use axum::{
     routing::{get, post},
 };
 use clusterizer_common::records::{
-    Assignment, Platform, Project, ProjectRunner, Result, Task, User,
+    Assignment, Platform, PlatformRunner, Project, ProjectRunner, Result, Task, User,
 };
 
 use routes::{get_all, get_one};
@@ -49,6 +49,8 @@ async fn serve_task(state: AppState, address: String) {
         .route("/platforms/{id}", get(get_one::<Platform>))
         .route("/project_runners", get(get_all::<ProjectRunner>))
         .route("/project_runners/{id}", get(get_one::<ProjectRunner>))
+        .route("/platform_runners", get(get_all::<PlatformRunner>))
+        .route("/platform_runners/{id}", get(get_one::<PlatformRunner>))
         .route("/tasks", get(get_all::<Task>))
         .route("/tasks/{id}", get(get_one::<Task>))
         .route("/assignments", get(get_all::<Assignment>))

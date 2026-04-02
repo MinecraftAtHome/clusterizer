@@ -1,8 +1,8 @@
 use clusterizer_common::{
     records::{
-        Assignment, AssignmentFilter, Platform, PlatformFilter, Project, ProjectFilter,
-        ProjectRunner, ProjectRunnerFilter, Result, ResultFilter, Task, TaskFilter, User,
-        UserFilter,
+        Assignment, AssignmentFilter, Platform, PlatformFilter, PlatformRunner,
+        PlatformRunnerFilter, Project, ProjectFilter, ProjectRunner, ProjectRunnerFilter, Result,
+        ResultFilter, Task, TaskFilter, User, UserFilter,
     },
     types::Id,
 };
@@ -106,6 +106,31 @@ impl Select for ProjectRunner {
 
     fn select_one(id: Id<Self>) -> Map<Self> {
         sqlx::query_as_unchecked!(Self, "SELECT * FROM project_runners WHERE id = $1", id)
+    }
+}
+
+impl Select for PlatformRunner {
+    type Filter = PlatformRunnerFilter;
+
+    fn select_all(filter: &Self::Filter) -> Map<Self> {
+        sqlx::query_as_unchecked!(
+            Self,
+            r#"
+            SELECT
+                *
+            FROM
+                platform_runners
+            WHERE
+                disabled_at IS NULL IS DISTINCT FROM $1
+                AND platform_id = $2 IS NOT FALSE
+            "#,
+            filter.disabled,
+            filter.platform_id,
+        )
+    }
+
+    fn select_one(id: Id<Self>) -> Map<Self> {
+        sqlx::query_as_unchecked!(Self, "SELECT * FROM platform_runners WHERE id = $1", id)
     }
 }
 
