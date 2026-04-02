@@ -16,11 +16,18 @@ CREATE TABLE projects (
     name text NOT NULL
 );
 
+CREATE TABLE files (
+    id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    url text NOT NULL,
+    hash bytea NOT NULL
+);
+
 CREATE TABLE platforms (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
     name text NOT NULL,
-    tester_archive_url text NOT NULL
+    file_id int8 NOT NULL REFERENCES files(id)
 );
 
 CREATE TABLE project_versions (
@@ -29,7 +36,7 @@ CREATE TABLE project_versions (
     disabled_at timestamptz,
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
     platform_id int8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    archive_url text NOT NULL
+    file_id int8 NOT NULL REFERENCES files(id)
 );
 
 CREATE TABLE tasks (

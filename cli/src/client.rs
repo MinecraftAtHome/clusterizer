@@ -150,17 +150,14 @@ impl ClusterizerClient {
             project_version, ..
         } in &tasks
         {
-            let project_version_dir = self
+            let file = self.client.get_one(project_version.file_id).await?;
+
+            let binary_dir = self
                 .args
-                .project_versions_dir()
+                .binaries_dir()
                 .join(project_version.id.to_string());
 
-            download_archive(
-                &project_version.archive_url,
-                &project_version_dir,
-                &self.args.cache_dir,
-            )
-            .await?;
+            download_archive(&file.url, &binary_dir, &self.args.cache_dir).await?;
         }
 
         Ok(Return::FetchTasks(tasks))
@@ -179,14 +176,14 @@ impl ClusterizerClient {
         info!("Task id: {}, stdin: {}", task.id, task.stdin);
         info!("Project id: {}, name: {}", project.id, project.name);
         debug!(
-            "Project version id: {}, archive url: {}",
-            project_version.id, project_version.archive_url
+            "Project version id: {}, file id: {}",
+            project_version.id, project_version.file_id
         );
         debug!("Slot dir: {}", slot_dir.path().display());
 
         let project_version_dir = self
             .args
-            .project_versions_dir()
+            .binaries_dir()
             .join(project_version.id.to_string());
 
         let program = project_version_dir
@@ -235,8 +232,7 @@ impl ClusterizerClient {
 }
 
 pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
-    fs::create_dir_all(args.project_versions_dir())?;
-    fs::create_dir_all(args.platform_testers_dir())?;
+    fs::create_dir_all(args.binaries_dir())?;
 
     let mut platform_ids = Vec::new();
     let mut platform_names = Vec::new();
@@ -245,19 +241,16 @@ pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
         .get_all::<Platform>(&PlatformFilter::default())
         .await?
     {
+        let file = client.get_one(platform.file_id).await?;
+
         debug!(
             "Platform id: {}, tester archive url: {}",
-            platform.id, platform.tester_archive_url
+            platform.id, file.url
         );
 
-        let platform_tester_dir = args.platform_testers_dir().join(platform.id.to_string());
+        let platform_tester_dir = args.binaries_dir().join(file.id.to_string());
 
-        download_archive(
-            &platform.tester_archive_url,
-            &platform_tester_dir,
-            &args.cache_dir,
-        )
-        .await?;
+        download_archive(&file.url, &platform_tester_dir, &args.cache_dir).await?;
 
         let slot_dir = tempfile::tempdir()?;
 

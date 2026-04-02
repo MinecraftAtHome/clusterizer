@@ -1,16 +1,16 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{records::File, types::Id};
+use crate::types::Id;
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct Platform {
-    pub id: Id<Platform>,
+pub struct File {
+    pub id: Id<File>,
     pub created_at: DateTime<Utc>,
-    pub name: String,
-    pub file_id: Id<File>,
+    pub url: String,
+    pub hash: Vec<u8>,
 }
 
 #[non_exhaustive]
 #[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct PlatformFilter {}
+pub struct FileFilter {}

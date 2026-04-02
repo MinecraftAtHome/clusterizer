@@ -7,11 +7,11 @@ mod util;
 use std::time::Duration;
 
 use axum::{
-    Router,
     routing::{get, post},
+    Router,
 };
 use clusterizer_common::records::{
-    Assignment, Platform, Project, ProjectVersion, Result, Task, User,
+    Assignment, File, Platform, Project, ProjectVersion, Result, Task, User,
 };
 
 use routes::{get_all, get_one};
@@ -41,6 +41,8 @@ async fn main() {
 
 async fn serve_task(state: AppState, address: String) {
     let app = Router::new()
+        .route("/files", get(get_all::<File>))
+        .route("/files/{id}", get(get_one::<File>))
         .route("/users", get(get_all::<User>))
         .route("/users/{id}", get(get_one::<User>))
         .route("/projects", get(get_all::<Project>))

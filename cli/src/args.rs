@@ -1,8 +1,8 @@
 use std::{num::NonZero, path::PathBuf, thread};
 
 use clap::{
-    Args, Parser, Subcommand,
     builder::{OsStr, Resettable},
+    Args, Parser, Subcommand,
 };
 
 #[derive(Debug, Parser)]
@@ -43,12 +43,8 @@ pub struct RunArgs {
 }
 
 impl RunArgs {
-    pub fn project_versions_dir(&self) -> PathBuf {
-        self.cache_dir.join("project_versions")
-    }
-
-    pub fn platform_testers_dir(&self) -> PathBuf {
-        self.cache_dir.join("platform_testers")
+    pub fn binaries_dir(&self) -> PathBuf {
+        self.cache_dir.join("bin")
     }
 }
 
