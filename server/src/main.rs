@@ -7,8 +7,8 @@ mod util;
 use std::time::Duration;
 
 use axum::{
-    routing::{get, post},
     Router,
+    routing::{get, post},
 };
 use clusterizer_common::records::{
     Assignment, File, Platform, Project, ProjectVersion, Result, Task, User,

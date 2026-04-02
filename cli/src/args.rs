@@ -1,8 +1,8 @@
 use std::{num::NonZero, path::PathBuf, thread};
 
 use clap::{
-    builder::{OsStr, Resettable},
     Args, Parser, Subcommand,
+    builder::{OsStr, Resettable},
 };
 
 #[derive(Debug, Parser)]
