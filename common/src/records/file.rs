@@ -18,11 +18,9 @@ pub struct FileFilter {}
 
 impl fmt::LowerHex for File {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let val: Vec<u8> = self.hash.clone();
-        let mut str_builder: String = String::from("");
-        for elem in val {
-            str_builder.push_str(&format!("{:x}", elem));
+        for byte in &self.hash {
+            write!(f, "{:02x}", byte)?;
         }
-        write!(f, "{}", str_builder)
+        Ok(())
     }
 }
