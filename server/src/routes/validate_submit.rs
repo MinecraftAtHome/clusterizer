@@ -5,6 +5,7 @@ use clusterizer_common::{
     requests::ValidateSubmitRequest,
     types::{Id, ResultState},
 };
+use sqlx::{Postgres, postgres::PgArguments, query::Query};
 
 use std::collections::HashMap;
 
@@ -12,7 +13,6 @@ use crate::{
     auth::Auth,
     result::{AppError, AppResult},
     state::AppState,
-    util::set_result_state,
 };
 
 pub async fn validate_submit(
@@ -246,4 +246,22 @@ pub async fn validate_submit(
     tx.commit().await?;
 
     Ok(())
+}
+
+fn set_result_state(
+    result_ids: &[Id<Result>],
+    result_state: ResultState,
+) -> Query<'static, Postgres, PgArguments> {
+    sqlx::query_unchecked!(
+        r#"
+        UPDATE 
+            results
+        SET 
+            state = $1
+        WHERE
+            id = ANY($2)
+        "#,
+        result_state,
+        result_ids,
+    )
 }

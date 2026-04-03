@@ -1,31 +1,27 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::{Id, Interval};
+use crate::{
+    records::{Project, User, record_impl},
+    types::{Id, Interval},
+};
 
-use super::{Project, User};
+record_impl! {
+    PATH = "tasks";
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct Task {
-    pub id: Id<Task>,
-    pub created_at: DateTime<Utc>,
-    pub deadline: Interval,
-    pub project_id: Id<Project>,
-    pub stdin: String,
-    pub assignments_needed: i32,
-    pub assignment_user_ids: Vec<Id<User>>,
-    pub quorum: i32,
-}
+    Task {
+        id: Id<Task>,
+        created_at: DateTime<Utc>,
+        deadline: Interval,
+        project_id: Id<Project>,
+        stdin: String,
+        assignments_needed: i32,
+        assignment_user_ids: Vec<Id<User>>,
+        quorum: i32,
+    }
 
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct TaskFilter {
-    pub project_id: Option<Id<Project>>,
-}
-
-impl TaskFilter {
-    pub fn project_id(mut self, project_id: Id<Project>) -> Self {
-        self.project_id = Some(project_id);
-        self
+    TaskFilter {
+        "project_id = $1 IS NOT FALSE"
+        project_id: Id<Project>,
     }
 }

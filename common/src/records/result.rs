@@ -1,43 +1,31 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::{Id, ResultState};
+use crate::{
+    records::{Assignment, record_impl},
+    types::{Id, ResultState},
+};
 
-use super::Assignment;
+record_impl! {
+    PATH = "results";
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct Result {
-    pub id: Id<Result>,
-    pub created_at: DateTime<Utc>,
-    pub assignment_id: Id<Assignment>,
-    pub stdout: String,
-    pub stderr: String,
-    pub exit_code: Option<i32>,
-    pub group_result_id: Option<Id<Result>>,
-    pub state: ResultState,
-}
-
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct ResultFilter {
-    pub assignment_id: Option<Id<Assignment>>,
-    pub group_result_id: Option<Id<Result>>,
-    pub state: Option<ResultState>,
-}
-
-impl ResultFilter {
-    pub fn assignment_id(mut self, assignment_id: Id<Assignment>) -> Self {
-        self.assignment_id = Some(assignment_id);
-        self
+    Result {
+        id: Id<Result>,
+        created_at: DateTime<Utc>,
+        assignment_id: Id<Assignment>,
+        stdout: String,
+        stderr: String,
+        exit_code: Option<i32>,
+        group_result_id: Option<Id<Result>>,
+        state: ResultState,
     }
 
-    pub fn group_result_id(mut self, group_result_id: Id<Result>) -> Self {
-        self.group_result_id = Some(group_result_id);
-        self
-    }
-
-    pub fn state(mut self, state: ResultState) -> Self {
-        self.state = Some(state);
-        self
+    ResultFilter {
+        "assignment_id = $1 IS NOT FALSE"
+        assignment_id: Id<Assignment>,
+        "group_result_id = $2 OR $2 IS NULL"
+        group_result_id: Id<Result>,
+        "state = $3 IS NOT FALSE"
+        state: ResultState,
     }
 }

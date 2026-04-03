@@ -1,41 +1,29 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::Id;
+use crate::{
+    records::{Platform, Project, record_impl},
+    types::Id,
+};
 
-use super::{Platform, Project};
+record_impl! {
+    PATH = "project_versions";
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct ProjectVersion {
-    pub id: Id<ProjectVersion>,
-    pub created_at: DateTime<Utc>,
-    pub disabled_at: Option<DateTime<Utc>>,
-    pub project_id: Id<Project>,
-    pub platform_id: Id<Platform>,
-    pub archive_url: String,
-}
-
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct ProjectVersionFilter {
-    pub disabled: Option<bool>,
-    pub project_id: Option<Id<Project>>,
-    pub platform_id: Option<Id<Platform>>,
-}
-
-impl ProjectVersionFilter {
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = Some(disabled);
-        self
+    ProjectVersion {
+        id: Id<ProjectVersion>,
+        created_at: DateTime<Utc>,
+        disabled_at: Option<DateTime<Utc>>,
+        project_id: Id<Project>,
+        platform_id: Id<Platform>,
+        archive_url: String,
     }
 
-    pub fn project_id(mut self, project_id: Id<Project>) -> Self {
-        self.project_id = Some(project_id);
-        self
-    }
-
-    pub fn platform_id(mut self, platform_id: Id<Platform>) -> Self {
-        self.platform_id = Some(platform_id);
-        self
+    ProjectVersionFilter {
+        "disabled_at IS NULL IS DISTINCT FROM $1"
+        disabled: bool,
+        "project_id = $2 IS NOT FALSE"
+        project_id: Id<Project>,
+        "platform_id = $3 IS NOT FALSE"
+        platform_id: Id<Platform>,
     }
 }

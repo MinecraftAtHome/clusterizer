@@ -9,11 +9,14 @@ use axum_extra::{
     headers::{Authorization, authorization::Bearer},
 };
 use base64::prelude::*;
-use clusterizer_common::{records::User, types::Id};
+use clusterizer_common::{
+    records::{Record, User},
+    types::Id,
+};
 use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
-use crate::{state::AppState, util::Select};
+use crate::state::AppState;
 
 pub struct Auth(pub Id<User>);
 
