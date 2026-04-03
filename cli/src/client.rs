@@ -5,7 +5,7 @@ use std::{
     fs,
     io::{Cursor, ErrorKind},
     iter::{self, Empty},
-    path::Path,
+    path::{Path, PathBuf},
     process::{Output, Stdio},
     sync::Arc,
     time::Duration,
@@ -16,8 +16,8 @@ use clusterizer_client::result::ClientResult;
 use clusterizer_common::{
     errors::SubmitResultError,
     records::{
-        Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion, ProjectVersionFilter,
-        Task,
+        File, FileFilter, Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion,
+        ProjectVersionFilter, Task,
     },
     requests::{FetchTasksRequest, SubmitResultRequest},
     types::Id,
@@ -35,9 +35,9 @@ struct ClusterizerClient {
 }
 
 struct TaskInfo {
+    file: File,
+    program_dir: PathBuf,
     task: Task,
-    project: Project,
-    project_version: ProjectVersion,
 }
 
 enum Return {
@@ -92,24 +92,41 @@ impl ClusterizerClient {
 
     async fn fetch_tasks(self: Arc<Self>) -> ClientResult<Return> {
         let tasks = loop {
-            let mut projects: HashMap<_, _> = self
+            let projects: HashMap<_, _> = self
                 .client
-                .get_all::<Project>(&ProjectFilter::default())
+                .get_all::<Project>(&ProjectFilter::default().disabled(false))
                 .await?
                 .into_iter()
                 .map(|project| (project.id, project))
                 .collect();
 
-            let projects: HashMap<_, _> = self
+            let project_versions: HashMap<_, _> = self
                 .client
                 .get_all::<ProjectVersion>(&ProjectVersionFilter::default().disabled(false))
                 .await?
                 .into_iter()
                 .filter(|project_version| self.platform_ids.contains(&project_version.platform_id))
-                .filter_map(|project_version| {
-                    projects
-                        .remove(&project_version.project_id)
-                        .map(|project| (project.id, (project, project_version)))
+                .map(|project_version| (project_version.id, project_version))
+                .collect();
+
+            let files: HashMap<_, _> = self
+                .client
+                .get_all::<File>(&FileFilter::default())
+                .await?
+                .into_iter()
+                .filter(|file| {
+                    project_versions
+                        .clone()
+                        .into_iter()
+                        .any(|(_, project_version)| project_version.file_id == file.id)
+                })
+                .filter_map(|file| {
+                    for project_version in project_versions.values() {
+                        if project_version.file_id == file.id {
+                            return Some((project_version.project_id, file));
+                        }
+                    }
+                    None
                 })
                 .collect();
 
@@ -122,13 +139,12 @@ impl ClusterizerClient {
                 .await?
                 .into_iter()
                 .filter_map(|task| {
-                    let info = projects
-                        .get(&task.project_id)
-                        .map(|(project, project_version)| TaskInfo {
-                            task,
-                            project: project.clone(),
-                            project_version: project_version.clone(),
-                        });
+                    let file_path = self.args.cache_dir.join("bin");
+                    let info = files.get(&task.project_id).map(|file| TaskInfo {
+                        task,
+                        file: file.clone(),
+                        program_dir: file_path.clone().join(format!("{:x}", file)),
+                    });
 
                     if info.is_none() {
                         warn!("Unwanted task received from server.");
@@ -147,14 +163,10 @@ impl ClusterizerClient {
         };
 
         for TaskInfo {
-            project_version, ..
+            program_dir, file, ..
         } in &tasks
         {
-            let file = self.client.get_one(project_version.file_id).await?;
-
-            let binary_dir = self.args.binaries_dir().join(format!("{:x}", file));
-
-            download_archive(&file.url, &binary_dir, &self.args.cache_dir).await?;
+            download_archive(&file.url, program_dir, &self.args.cache_dir).await?;
         }
 
         Ok(Return::FetchTasks(tasks))
@@ -163,26 +175,16 @@ impl ClusterizerClient {
     async fn execute_task(
         self: Arc<Self>,
         TaskInfo {
-            task,
-            project,
-            project_version,
+            task, program_dir, ..
         }: TaskInfo,
     ) -> ClientResult<Return> {
         let slot_dir = tempfile::tempdir()?;
 
         info!("Task id: {}, stdin: {}", task.id, task.stdin);
-        info!("Project id: {}, name: {}", project.id, project.name);
-        debug!(
-            "Project version id: {}, file id: {}",
-            project_version.id, project_version.file_id
-        );
+        info!("Project id: {}", task.project_id);
         debug!("Slot dir: {}", slot_dir.path().display());
 
-        let file = self.client.get_one(project_version.file_id).await?;
-
-        let project_version_dir = self.args.binaries_dir().join(format!("{:x}", file));
-
-        let program = project_version_dir
+        let program = program_dir
             .join(format!("main{}", env::consts::EXE_SUFFIX))
             .canonicalize()?;
 
