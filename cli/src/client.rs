@@ -152,10 +152,7 @@ impl ClusterizerClient {
         {
             let file = self.client.get_one(project_version.file_id).await?;
 
-            let binary_dir = self
-                .args
-                .binaries_dir()
-                .join(project_version.id.to_string());
+            let binary_dir = self.args.binaries_dir().join(format!("{:x}", file));
 
             download_archive(&file.url, &binary_dir, &self.args.cache_dir).await?;
         }
@@ -181,10 +178,9 @@ impl ClusterizerClient {
         );
         debug!("Slot dir: {}", slot_dir.path().display());
 
-        let project_version_dir = self
-            .args
-            .binaries_dir()
-            .join(project_version.id.to_string());
+        let file = self.client.get_one(project_version.file_id).await?;
+
+        let project_version_dir = self.args.binaries_dir().join(format!("{:x}", file));
 
         let program = project_version_dir
             .join(format!("main{}", env::consts::EXE_SUFFIX))
@@ -248,7 +244,7 @@ pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
             platform.id, file.url
         );
 
-        let platform_tester_dir = args.binaries_dir().join(file.id.to_string());
+        let platform_tester_dir = args.binaries_dir().join(format!("{:x}", file));
 
         download_archive(&file.url, &platform_tester_dir, &args.cache_dir).await?;
 

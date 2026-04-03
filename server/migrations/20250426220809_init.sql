@@ -27,7 +27,7 @@ CREATE TABLE platforms (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
     name text NOT NULL,
-    file_id int8 NOT NULL REFERENCES files(id)
+    file_id int8 NOT NULL REFERENCES files(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 CREATE TABLE project_versions (
@@ -36,7 +36,7 @@ CREATE TABLE project_versions (
     disabled_at timestamptz,
     project_id int8 NOT NULL REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
     platform_id int8 NOT NULL REFERENCES platforms(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    file_id int8 NOT NULL REFERENCES files(id)
+    file_id int8 NOT NULL REFERENCES files(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 CREATE TABLE tasks (
