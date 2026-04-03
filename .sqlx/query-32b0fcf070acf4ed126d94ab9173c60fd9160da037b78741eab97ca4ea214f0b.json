@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                users\n            WHERE\n                disabled_at IS NULL IS DISTINCT FROM $1\n            ",
+  "query": "SELECT * FROM projects WHERE TRUE AND (created_by_user_id = $1 IS NOT FALSE) AND (disabled_at IS NULL IS DISTINCT FROM $2)",
   "describe": {
     "columns": [
       {
@@ -15,26 +15,33 @@
       },
       {
         "ordinal": 2,
+        "name": "created_by_user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
         "name": "disabled_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "name",
         "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
+        "Int8",
         "Bool"
       ]
     },
     "nullable": [
       false,
       false,
+      false,
       true,
       false
     ]
   },
-  "hash": "0115ccc7673022c6b942fec6ce5fe24dd36f3b7bf5dfa7b6c56b0ec8f1fc4a6b"
+  "hash": "32b0fcf070acf4ed126d94ab9173c60fd9160da037b78741eab97ca4ea214f0b"
 }

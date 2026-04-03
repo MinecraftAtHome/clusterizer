@@ -1,16 +1,17 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::Id;
+use crate::{records::record_impl, types::Id};
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct File {
-    pub id: Id<File>,
-    pub created_at: DateTime<Utc>,
-    pub url: String,
-    pub hash: Vec<u8>,
+record_impl! {
+    PATH = "files";
+
+    File {
+        id: Id<File>,
+        created_at: DateTime<Utc>,
+        url: String,
+        hash: Vec<u8>,
+    }
+
+    FileFilter {}
 }
-
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct FileFilter {}

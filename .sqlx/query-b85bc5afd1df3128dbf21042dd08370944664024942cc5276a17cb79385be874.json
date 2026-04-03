@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                tasks\n            WHERE\n                project_id = $1 IS NOT FALSE\n            ",
+  "query": "SELECT * FROM tasks WHERE TRUE AND (project_id = $1 IS NOT FALSE)",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "0d6d91c4e0acb78e4fda4df1804d430966e8ae83a168de0d3444bb8a4c7b1051"
+  "hash": "b85bc5afd1df3128dbf21042dd08370944664024942cc5276a17cb79385be874"
 }

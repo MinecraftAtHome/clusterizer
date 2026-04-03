@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                project_versions\n            WHERE\n                disabled_at IS NULL IS DISTINCT FROM $1\n                AND project_id = $2 IS NOT FALSE\n                AND platform_id = $3 IS NOT FALSE\n                AND file_id = $4 IS NOT FALSE\n            ",
+  "query": "SELECT * FROM project_versions WHERE TRUE AND (disabled_at IS NULL IS DISTINCT FROM $1) AND (project_id = $2 IS NOT FALSE) AND (platform_id = $3 IS NOT FALSE) AND (file_id = $4 IS NOT FALSE)",
   "describe": {
     "columns": [
       {
@@ -51,5 +51,5 @@
       false
     ]
   },
-  "hash": "767d70fb7dfab388eb34d3cc3e44cf0a2945a63a68f7407b9a6404da2c48dd38"
+  "hash": "7c9e5a3333f4c09bef3f6b965139d27b565235a41e7d747d41e49238674fb5c3"
 }

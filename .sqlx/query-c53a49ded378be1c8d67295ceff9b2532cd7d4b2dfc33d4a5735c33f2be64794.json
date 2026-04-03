@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                platforms\n            WHERE\n                file_id = $1 IS NOT FALSE\n            ",
+  "query": "SELECT * FROM files WHERE TRUE",
   "describe": {
     "columns": [
       {
@@ -15,19 +15,17 @@
       },
       {
         "ordinal": 2,
-        "name": "name",
+        "name": "url",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "file_id",
-        "type_info": "Int8"
+        "name": "hash",
+        "type_info": "Bytea"
       }
     ],
     "parameters": {
-      "Left": [
-        "Int8"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
@@ -36,5 +34,5 @@
       false
     ]
   },
-  "hash": "2ef52d712fe9cda17273356da3ee0ad5a1bc3133f8aa01f8b14d5ae84f889881"
+  "hash": "c53a49ded378be1c8d67295ceff9b2532cd7d4b2dfc33d4a5735c33f2be64794"
 }

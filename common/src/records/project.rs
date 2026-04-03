@@ -1,32 +1,26 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{records::User, types::Id};
+use crate::{
+    records::{User, record_impl},
+    types::Id,
+};
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct Project {
-    pub id: Id<Project>,
-    pub created_at: DateTime<Utc>,
-    pub created_by_user_id: Id<User>,
-    pub disabled_at: Option<DateTime<Utc>>,
-    pub name: String,
-}
+record_impl! {
+    PATH = "projects";
 
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct ProjectFilter {
-    pub created_by_user_id: Option<Id<User>>,
-    pub disabled: Option<bool>,
-}
-
-impl ProjectFilter {
-    pub fn created_by_user_id(mut self, created_by_user_id: Id<User>) -> Self {
-        self.created_by_user_id = Some(created_by_user_id);
-        self
+    Project {
+        id: Id<Project>,
+        created_at: DateTime<Utc>,
+        created_by_user_id: Id<User>,
+        disabled_at: Option<DateTime<Utc>>,
+        name: String,
     }
 
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = Some(disabled);
-        self
+    ProjectFilter {
+        "created_by_user_id = $1 IS NOT FALSE"
+        created_by_user_id: Id<User>,
+        "disabled_at IS NULL IS DISTINCT FROM $2"
+        disabled: bool,
     }
 }

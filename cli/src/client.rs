@@ -157,7 +157,7 @@ impl ClusterizerClient {
             }
 
             info!("No tasks found. Sleeping before attempting again.");
-            time::sleep(Duration::from_millis(15000)).await;
+            time::sleep(Duration::from_secs(15)).await;
         };
 
         for TaskInfo { file, .. } in &tasks {
