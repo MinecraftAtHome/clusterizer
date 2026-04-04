@@ -1,8 +1,8 @@
 use clusterizer_common::{
     records::{
-        Assignment, AssignmentFilter, Platform, PlatformFilter, Project, ProjectFilter,
-        ProjectVersion, ProjectVersionFilter, Result, ResultFilter, Task, TaskFilter, User,
-        UserFilter,
+        Assignment, AssignmentFilter, File, FileFilter, Platform, PlatformFilter, Project,
+        ProjectFilter, ProjectVersion, ProjectVersionFilter, Result, ResultFilter, Task,
+        TaskFilter, User, UserFilter,
     },
     types::Id,
 };
@@ -108,6 +108,26 @@ impl Select for ProjectVersion {
 
     fn select_one(id: Id<Self>) -> Map<Self> {
         sqlx::query_as_unchecked!(Self, "SELECT * FROM project_versions WHERE id = $1", id)
+    }
+}
+
+impl Select for File {
+    type Filter = FileFilter;
+
+    fn select_all(_: &Self::Filter) -> Map<Self> {
+        sqlx::query_as_unchecked!(
+            Self,
+            r#"
+            SELECT
+                *
+            FROM
+                files
+            "#,
+        )
+    }
+
+    fn select_one(id: Id<Self>) -> Map<Self> {
+        sqlx::query_as_unchecked!(Self, "SELECT * FROM files WHERE id = $1", id)
     }
 }
 

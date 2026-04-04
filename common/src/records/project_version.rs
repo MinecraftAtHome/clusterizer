@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::Id;
 
-use super::{Platform, Project};
+use super::{File, Platform, Project};
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct ProjectVersion {
@@ -12,7 +12,7 @@ pub struct ProjectVersion {
     pub disabled_at: Option<DateTime<Utc>>,
     pub project_id: Id<Project>,
     pub platform_id: Id<Platform>,
-    pub archive_url: String,
+    pub file_id: Id<File>,
 }
 
 #[non_exhaustive]

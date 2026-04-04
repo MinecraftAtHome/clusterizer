@@ -16,8 +16,8 @@ use clusterizer_client::result::ClientResult;
 use clusterizer_common::{
     errors::SubmitResultError,
     records::{
-        Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion, ProjectVersionFilter,
-        Task,
+        File, FileFilter, Platform, PlatformFilter, Project, ProjectFilter, ProjectVersion,
+        ProjectVersionFilter, Task,
     },
     requests::{FetchTasksRequest, SubmitResultRequest},
     types::Id,
@@ -38,6 +38,7 @@ struct TaskInfo {
     task: Task,
     project: Project,
     project_version: ProjectVersion,
+    file: File,
 }
 
 enum Return {
@@ -92,24 +93,38 @@ impl ClusterizerClient {
 
     async fn fetch_tasks(self: Arc<Self>) -> ClientResult<Return> {
         let tasks = loop {
-            let mut projects: HashMap<_, _> = self
+            let projects: HashMap<_, _> = self
                 .client
-                .get_all::<Project>(&ProjectFilter::default())
+                .get_all::<Project>(&ProjectFilter::default().disabled(false))
                 .await?
                 .into_iter()
                 .map(|project| (project.id, project))
                 .collect();
 
-            let projects: HashMap<_, _> = self
+            let project_versions: HashMap<_, _> = self
                 .client
                 .get_all::<ProjectVersion>(&ProjectVersionFilter::default().disabled(false))
                 .await?
                 .into_iter()
                 .filter(|project_version| self.platform_ids.contains(&project_version.platform_id))
-                .filter_map(|project_version| {
-                    projects
-                        .remove(&project_version.project_id)
-                        .map(|project| (project.id, (project, project_version)))
+                .map(|project_version| (project_version.id, project_version))
+                .collect();
+
+            let files: HashMap<_, _> = self
+                .client
+                .get_all::<File>(&FileFilter::default())
+                .await?
+                .into_iter()
+                .filter(|file| {
+                    project_versions
+                        .iter()
+                        .any(|(_, project_version)| project_version.file_id == file.id)
+                })
+                .filter_map(|file| {
+                    project_versions
+                        .values()
+                        .find(|project_version| project_version.file_id == file.id)
+                        .map(|project_version| (project_version.project_id, file))
                 })
                 .collect();
 
@@ -122,13 +137,17 @@ impl ClusterizerClient {
                 .await?
                 .into_iter()
                 .filter_map(|task| {
-                    let info = projects
-                        .get(&task.project_id)
-                        .map(|(project, project_version)| TaskInfo {
-                            task,
-                            project: project.clone(),
-                            project_version: project_version.clone(),
-                        });
+                    let project = projects.get(&task.project_id)?;
+                    let file = files.get(&task.project_id)?;
+                    let project_version = project_versions
+                        .iter()
+                        .find(|(_, project_version)| project_version.file_id == file.id)?;
+                    let info = files.get(&task.project_id).map(|file| TaskInfo {
+                        task,
+                        file: file.clone(),
+                        project: project.clone(),
+                        project_version: project_version.1.clone(),
+                    });
 
                     if info.is_none() {
                         warn!("Unwanted task received from server.");
@@ -146,18 +165,14 @@ impl ClusterizerClient {
             time::sleep(Duration::from_millis(15000)).await;
         };
 
-        for TaskInfo {
-            project_version, ..
-        } in &tasks
-        {
-            let project_version_dir = self
-                .args
-                .project_versions_dir()
-                .join(project_version.id.to_string());
-
+        for TaskInfo { file, .. } in &tasks {
             download_archive(
-                &project_version.archive_url,
-                &project_version_dir,
+                &file.url,
+                self.args
+                    .cache_dir
+                    .join("bin")
+                    .join(format!("{:x}", file))
+                    .as_path(),
                 &self.args.cache_dir,
             )
             .await?;
@@ -170,26 +185,24 @@ impl ClusterizerClient {
         self: Arc<Self>,
         TaskInfo {
             task,
-            project,
             project_version,
+            project,
+            file,
         }: TaskInfo,
     ) -> ClientResult<Return> {
         let slot_dir = tempfile::tempdir()?;
 
         info!("Task id: {}, stdin: {}", task.id, task.stdin);
-        info!("Project id: {}, name: {}", project.id, project.name);
-        debug!(
-            "Project version id: {}, archive url: {}",
-            project_version.id, project_version.archive_url
+        info!(
+            "Project id: {}, Project name: {}",
+            task.project_id, project.name
         );
+        debug!("Platform id: {}", project_version.platform_id);
         debug!("Slot dir: {}", slot_dir.path().display());
 
-        let project_version_dir = self
-            .args
-            .project_versions_dir()
-            .join(project_version.id.to_string());
+        let program_dir = self.args.cache_dir.join("bin").join(format!("{:x}", file));
 
-        let program = project_version_dir
+        let program = program_dir
             .join(format!("main{}", env::consts::EXE_SUFFIX))
             .canonicalize()?;
 
@@ -235,8 +248,7 @@ impl ClusterizerClient {
 }
 
 pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
-    fs::create_dir_all(args.project_versions_dir())?;
-    fs::create_dir_all(args.platform_testers_dir())?;
+    fs::create_dir_all(args.binaries_dir())?;
 
     let mut platform_ids = Vec::new();
     let mut platform_names = Vec::new();
@@ -245,19 +257,16 @@ pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
         .get_all::<Platform>(&PlatformFilter::default())
         .await?
     {
+        let file = client.get_one(platform.file_id).await?;
+
         debug!(
             "Platform id: {}, tester archive url: {}",
-            platform.id, platform.tester_archive_url
+            platform.id, file.url
         );
 
-        let platform_tester_dir = args.platform_testers_dir().join(platform.id.to_string());
+        let platform_tester_dir = args.binaries_dir().join(format!("{:x}", file));
 
-        download_archive(
-            &platform.tester_archive_url,
-            &platform_tester_dir,
-            &args.cache_dir,
-        )
-        .await?;
+        download_archive(&file.url, &platform_tester_dir, &args.cache_dir).await?;
 
         let slot_dir = tempfile::tempdir()?;
 
