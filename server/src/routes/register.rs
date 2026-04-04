@@ -1,6 +1,9 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
-    errors::RegisterError, requests::RegisterRequest, responses::RegisterResponse,
+    errors::RegisterError,
+    records::{Insert, user::UserBuilder},
+    requests::RegisterRequest,
+    responses::RegisterResponse,
 };
 
 use crate::{
@@ -29,20 +32,11 @@ pub async fn register(
         Err(AppError::Specific(RegisterError::InvalidCharacter))?;
     }
 
-    let user_id = sqlx::query_scalar_unchecked!(
-        r#"
-        INSERT INTO users (
-            name
-        ) VALUES (
-            $1
-        )
-        RETURNING id "id: _"
-        "#,
-        request.name,
-    )
-    .fetch_one(&state.pool)
-    .await
-    .map_unique_violation(RegisterError::AlreadyExists)?;
+    let user_id = UserBuilder { name: request.name }
+        .insert()
+        .fetch_one(&state.pool)
+        .await
+        .map_unique_violation(RegisterError::AlreadyExists)?;
 
     Ok(Json(RegisterResponse {
         api_key: auth::api_key(&state, user_id),

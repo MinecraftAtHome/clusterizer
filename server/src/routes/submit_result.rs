@@ -4,7 +4,7 @@ use axum::{
 };
 use clusterizer_common::{
     errors::SubmitResultError,
-    records::{Assignment, Task},
+    records::{Assignment, Insert, ResultBuilder, Task},
     requests::SubmitResultRequest,
     types::{AssignmentState, Id},
 };
@@ -50,26 +50,14 @@ pub async fn submit_result(
         Err(AppError::Specific(SubmitResultError::AssignmentExpired))?;
     }
 
-    sqlx::query_unchecked!(
-        r#"
-        INSERT INTO results (
-            assignment_id,
-            stdout,
-            stderr,
-            exit_code
-        ) VALUES (
-            $1,
-            $2,
-            $3,
-            $4
-        )
-        "#,
-        assignment.id,
-        request.stdout,
-        request.stderr,
-        request.exit_code,
-    )
-    .execute(&mut *tx)
+    ResultBuilder {
+        assignment_id: assignment.id,
+        stdout: request.stdout,
+        stderr: request.stderr,
+        exit_code: request.exit_code,
+    }
+    .insert()
+    .fetch_one(&mut *tx)
     .await
     .map_unique_violation(SubmitResultError::AlreadyExists)?;
 

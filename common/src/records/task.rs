@@ -24,4 +24,19 @@ record_impl! {
         "project_id = $1 IS NOT FALSE"
         project_id: Id<Project>,
     }
+
+    TaskBuilder {
+        "deadline" "$1"
+        deadline: Interval,
+        "project_id" "$2"
+        project_id: Id<Project>,
+        "stdin" "$3"
+        stdin: String,
+        "quorum" "$4"
+        quorum: i32,
+    }
+
+    UpdateTask {
+        update_assignments_needed("assignments_needed" i32);
+    }
 }

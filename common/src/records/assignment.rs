@@ -26,4 +26,15 @@ record_impl! {
         "state = $3 IS NOT FALSE"
         state: AssignmentState,
     }
+
+    AssignmentBuilder {
+        "task_id" "$1"
+        task_id: Id<Task>,
+        "user_id" "$2"
+        user_id: Id<User>,
+    }
+
+    UpdateAssignment {
+        update_state("state" AssignmentState);
+    }
 }

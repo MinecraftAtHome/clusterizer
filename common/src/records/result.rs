@@ -28,4 +28,20 @@ record_impl! {
         "state = $3 IS NOT FALSE"
         state: ResultState,
     }
+
+    ResultBuilder {
+        "assignment_id" "$1"
+        assignment_id: Id<Assignment>,
+        "stdout" "$2"
+        stdout: String,
+        "stderr" "$3"
+        stderr: String,
+        "exit_code" "$4"
+        exit_code: Option<i32>,
+    }
+
+    UpdateResult {
+        update_group_result_id("group_result_id" Option<Id<Result>>);
+        update_state("state" ResultState);
+    }
 }

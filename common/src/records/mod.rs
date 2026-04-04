@@ -6,15 +6,13 @@ pub mod result;
 pub mod task;
 pub mod user;
 
-pub use assignment::{Assignment, AssignmentFilter};
-pub use platform::{Platform, PlatformFilter};
-pub use project::{Project, ProjectFilter};
-pub use project_version::{ProjectVersion, ProjectVersionFilter};
-pub use result::{Result, ResultFilter};
-pub use task::{Task, TaskFilter};
-pub use user::{User, UserFilter};
-
-use crate::types::Id;
+pub use assignment::{Assignment, AssignmentBuilder, AssignmentFilter};
+pub use platform::{Platform, PlatformBuilder, PlatformFilter};
+pub use project::{Project, ProjectBuilder, ProjectFilter};
+pub use project_version::{ProjectVersion, ProjectVersionBuilder, ProjectVersionFilter};
+pub use result::{Result, ResultBuilder, ResultFilter};
+pub use task::{Task, TaskBuilder, TaskFilter};
+pub use user::{User, UserBuilder, UserFilter};
 
 #[cfg(feature = "sqlx")]
 mod sqlx {
@@ -22,6 +20,9 @@ mod sqlx {
         Postgres,
         postgres::{PgArguments, PgRow},
     };
+
+    pub type Query = sqlx::query::Query<'static, Postgres, PgArguments>;
+    pub type QueryScalar<T> = sqlx::query::QueryScalar<'static, Postgres, T, PgArguments>;
 
     pub type Map<T> =
         sqlx::query::Map<'static, Postgres, fn(PgRow) -> sqlx::Result<T>, PgArguments>;
@@ -31,12 +32,20 @@ pub trait Record: Sized {
     type Filter;
 
     const PATH: &str;
+}
 
-    #[cfg(feature = "sqlx")]
-    fn select_all(filter: &Self::Filter) -> sqlx::Map<Self>;
+#[cfg(feature = "sqlx")]
+pub trait Select {
+    type Record;
 
-    #[cfg(feature = "sqlx")]
-    fn select_one(id: Id<Self>) -> sqlx::Map<Self>;
+    fn select(&self) -> sqlx::Map<Self::Record>;
+}
+
+#[cfg(feature = "sqlx")]
+pub trait Insert {
+    type Record;
+
+    fn insert(&self) -> sqlx::QueryScalar<crate::types::Id<Self::Record>>;
 }
 
 macro_rules! record_impl {
@@ -49,11 +58,30 @@ macro_rules! record_impl {
 
         $filter_ident:ident {
             $(
-                $filter_condition_literal:literal
+                $filter_field_condition_literal:literal
                 $filter_field_ident:ident: $filter_field_ty:ty,
             )*
         }
+
+        $builder_ident:ident {
+            $builder_first_field_name_literal:literal
+            $builder_first_field_expression_literal:literal
+            $builder_first_field_ident:ident: $builder_first_field_ty:ty,
+            $(
+                $builder_field_name_literal:literal
+                $builder_field_expression_literal:literal
+                $builder_field_ident:ident: $builder_field_ty:ty,
+            )*
+        }
+
+        $update_ident:ident {
+            $($update_fn_ident:ident($update_fn_name_literal:literal $update_fn_ty:ty);)*
+        }
     ) => {
+        pub trait $update_ident {
+            $(fn $update_fn_ident(&self, value: $update_fn_ty) -> $crate::records::sqlx::Query;)*
+        }
+
         #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
         pub struct $record_ident {
             $(pub $record_field_ident: $record_field_ty,)*
@@ -63,6 +91,12 @@ macro_rules! record_impl {
         #[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
         pub struct $filter_ident {
             $(pub $filter_field_ident: Option<$filter_field_ty>,)*
+        }
+
+        #[derive(Debug)]
+        pub struct $builder_ident {
+            pub $builder_first_field_ident: $builder_first_field_ty,
+            $(pub $builder_field_ident: $builder_field_ty,)*
         }
 
         impl $filter_ident {
@@ -78,20 +112,82 @@ macro_rules! record_impl {
             type Filter = $filter_ident;
 
             const PATH: &str = $path_literal;
+        }
 
-            #[cfg(feature = "sqlx")]
-            fn select_all(#[allow(unused_variables)] filter: &Self::Filter) -> $crate::records::sqlx::Map<Self> {
+        #[cfg(feature = "sqlx")]
+        impl $crate::records::Select for $filter_ident {
+            type Record = $record_ident;
+
+            fn select(&self) -> $crate::records::sqlx::Map<Self::Record> {
                 sqlx::query_as_unchecked!(
-                    Self,
-                    "SELECT * FROM " + $path_literal + " WHERE TRUE" $(+ " AND (" + $filter_condition_literal + ")")*,
-                    $(filter.$filter_field_ident,)*
+                    Self::Record,
+                    "SELECT * FROM " + $path_literal + " WHERE TRUE" $(+ " AND (" + $filter_field_condition_literal + ")")*,
+                    $(self.$filter_field_ident,)*
                 )
             }
+        }
 
-            #[cfg(feature = "sqlx")]
-            fn select_one(id: $crate::types::Id<Self>) -> $crate::records::sqlx::Map<Self> {
-                sqlx::query_as_unchecked!(Self, "SELECT * FROM " + $path_literal + " WHERE id = $1", id)
+        #[cfg(feature = "sqlx")]
+        impl $crate::records::Select for $crate::types::Id<$record_ident> {
+            type Record = $record_ident;
+
+            fn select(&self) -> $crate::records::sqlx::Map<Self::Record> {
+                sqlx::query_as_unchecked!(
+                    Self::Record,
+                    "SELECT * FROM " + $path_literal + " WHERE id = $1",
+                    self
+                )
             }
+        }
+
+        #[cfg(feature = "sqlx")]
+        impl $crate::records::Select for [$crate::types::Id<$record_ident>] {
+            type Record = $record_ident;
+
+            fn select(&self) -> $crate::records::sqlx::Map<Self::Record> {
+                sqlx::query_as_unchecked!(
+                    Self::Record,
+                    "SELECT * FROM " + $path_literal + " WHERE id = ANY($1)",
+                    self
+                )
+            }
+        }
+
+        #[cfg(feature = "sqlx")]
+        impl $crate::records::Insert for $builder_ident {
+            type Record = $record_ident;
+
+            fn insert(&self) -> $crate::records::sqlx::QueryScalar<$crate::types::Id<Self::Record>> {
+                sqlx::query_scalar_unchecked!(
+                    "INSERT INTO " + $path_literal + " (" + $builder_first_field_name_literal $(+ ", " + $builder_field_name_literal)* + ") VALUES (" + $builder_first_field_expression_literal $(+ ", " + $builder_field_expression_literal)* + ") RETURNING id \"id: _\"",
+                    self.$builder_first_field_ident,
+                    $(self.$builder_field_ident,)*
+                )
+            }
+        }
+
+        impl $update_ident for $crate::types::Id<$record_ident> {
+            $(
+                fn $update_fn_ident(&self, value: $update_fn_ty) -> $crate::records::sqlx::Query {
+                    sqlx::query_unchecked!(
+                        "UPDATE " + $path_literal + " SET " + $update_fn_name_literal + " = $2 WHERE id = $1",
+                        self,
+                        value,
+                    )
+                }
+            )*
+        }
+
+        impl $update_ident for [$crate::types::Id<$record_ident>] {
+            $(
+                fn $update_fn_ident(&self, value: $update_fn_ty) -> $crate::records::sqlx::Query {
+                    sqlx::query_unchecked!(
+                        "UPDATE " + $path_literal + " SET " + $update_fn_name_literal + " = $2 WHERE id = ANY($1)",
+                        self,
+                        value,
+                    )
+                }
+            )*
         }
     };
 }

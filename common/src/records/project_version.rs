@@ -26,4 +26,15 @@ record_impl! {
         "platform_id = $3 IS NOT FALSE"
         platform_id: Id<Platform>,
     }
+
+    ProjectVersionBuilder {
+        "project_id" "$1"
+        project_id: Id<Project>,
+        "platform_id" "$2"
+        platform_id: Id<Platform>,
+        "archive_url" "$3"
+        archive_url: String,
+    }
+
+    UpdateProjectVersion {}
 }

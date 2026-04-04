@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO project_versions (project_id, platform_id, archive_url) VALUES ($1, $2, $3) RETURNING id \"id: _\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: _",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "de692249164f76c374f7d5667c429408a2c831d2ad30f24f14f6cbf17d2038a7"
+}

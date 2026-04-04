@@ -14,4 +14,13 @@ record_impl! {
     }
 
     PlatformFilter {}
+
+    PlatformBuilder {
+        "name" "$1"
+        name: String,
+        "tester_archive_url" "$2"
+        tester_archive_url: String,
+    }
+
+    UpdatePlatform {}
 }

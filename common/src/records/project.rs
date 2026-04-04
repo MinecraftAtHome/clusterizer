@@ -23,4 +23,13 @@ record_impl! {
         "disabled_at IS NULL IS DISTINCT FROM $2"
         disabled: bool,
     }
+
+    ProjectBuilder {
+        "created_by_user_id" "$1"
+        created_by_user_id: Id<User>,
+        "name" "$2"
+        name: String,
+    }
+
+    UpdateProject {}
 }
