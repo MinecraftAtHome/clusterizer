@@ -35,9 +35,9 @@ struct ClusterizerClient {
 }
 
 struct TaskInfo {
+    task: Task,
     file: File,
     program_dir: PathBuf,
-    task: Task,
 }
 
 enum Return {
