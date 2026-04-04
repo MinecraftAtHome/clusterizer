@@ -5,7 +5,7 @@ use std::{
     fs,
     io::{Cursor, ErrorKind},
     iter::{self, Empty},
-    path::{Path, PathBuf},
+    path::Path,
     process::{Output, Stdio},
     sync::Arc,
     time::Duration,
@@ -36,8 +36,9 @@ struct ClusterizerClient {
 
 struct TaskInfo {
     task: Task,
+    project: Project,
+    project_version: ProjectVersion,
     file: File,
-    program_dir: PathBuf,
 }
 
 enum Return {
@@ -139,11 +140,16 @@ impl ClusterizerClient {
                 .await?
                 .into_iter()
                 .filter_map(|task| {
-                    let file_path = self.args.cache_dir.join("bin");
+                    let project = projects.get(&task.project_id)?;
+                    let file = files.get(&task.project_id)?;
+                    let project_version = project_versions
+                        .iter()
+                        .find(|(_, project_version)| project_version.file_id == file.id)?;
                     let info = files.get(&task.project_id).map(|file| TaskInfo {
                         task,
                         file: file.clone(),
-                        program_dir: file_path.clone().join(format!("{:x}", file)),
+                        project: project.clone(),
+                        project_version: project_version.1.clone(),
                     });
 
                     if info.is_none() {
@@ -162,11 +168,17 @@ impl ClusterizerClient {
             time::sleep(Duration::from_millis(15000)).await;
         };
 
-        for TaskInfo {
-            program_dir, file, ..
-        } in &tasks
-        {
-            download_archive(&file.url, program_dir, &self.args.cache_dir).await?;
+        for TaskInfo { file, .. } in &tasks {
+            download_archive(
+                &file.url,
+                self.args
+                    .cache_dir
+                    .join("bin")
+                    .join(format!("{:x}", file))
+                    .as_path(),
+                &self.args.cache_dir,
+            )
+            .await?;
         }
 
         Ok(Return::FetchTasks(tasks))
@@ -175,14 +187,23 @@ impl ClusterizerClient {
     async fn execute_task(
         self: Arc<Self>,
         TaskInfo {
-            task, program_dir, ..
+            task,
+            project_version,
+            project,
+            file,
         }: TaskInfo,
     ) -> ClientResult<Return> {
         let slot_dir = tempfile::tempdir()?;
 
         info!("Task id: {}, stdin: {}", task.id, task.stdin);
-        info!("Project id: {}", task.project_id);
+        info!(
+            "Project id: {}, Project name: {}",
+            task.project_id, project.name
+        );
+        debug!("Platform id: {}", project_version.platform_id);
         debug!("Slot dir: {}", slot_dir.path().display());
+
+        let program_dir = self.args.cache_dir.join("bin").join(format!("{:x}", file));
 
         let program = program_dir
             .join(format!("main{}", env::consts::EXE_SUFFIX))
