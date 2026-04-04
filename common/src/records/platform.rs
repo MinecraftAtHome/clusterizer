@@ -1,16 +1,26 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::Id;
+use crate::{records::record_impl, types::Id};
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct Platform {
-    pub id: Id<Platform>,
-    pub created_at: DateTime<Utc>,
-    pub name: String,
-    pub tester_archive_url: String,
+record_impl! {
+    PATH = "platforms";
+
+    Platform {
+        id: Id<Platform>,
+        created_at: DateTime<Utc>,
+        name: String,
+        tester_archive_url: String,
+    }
+
+    PlatformFilter {}
+
+    PlatformBuilder {
+        "name" "$1"
+        name: String,
+        "tester_archive_url" "$2"
+        tester_archive_url: String,
+    }
+
+    UpdatePlatform {}
 }
-
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct PlatformFilter {}

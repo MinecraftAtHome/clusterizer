@@ -9,11 +9,14 @@ use axum_extra::{
     headers::{Authorization, authorization::Bearer},
 };
 use base64::prelude::*;
-use clusterizer_common::{records::User, types::Id};
+use clusterizer_common::{
+    records::{Select, User},
+    types::Id,
+};
 use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
-use crate::{state::AppState, util::Select};
+use crate::state::AppState;
 
 pub struct Auth(pub Id<User>);
 
@@ -60,8 +63,9 @@ impl FromRequestParts<AppState> for Auth {
 
         user_id_bytes.copy_from_slice(&api_key_bytes[..8]);
 
-        let user_id = i64::from_le_bytes(user_id_bytes).into();
-        let user = User::select_one(user_id)
+        let user_id: Id<User> = i64::from_le_bytes(user_id_bytes).into();
+        let user = user_id
+            .select()
             .fetch_one(&state.pool)
             .await
             .map_err(|_| AuthRejection::BadApiKey)?;

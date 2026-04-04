@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            *\n        FROM\n            projects\n        WHERE\n            id = ANY($1)\n        ",
+  "query": "SELECT * FROM platforms WHERE TRUE",
   "describe": {
     "columns": [
       {
@@ -15,32 +15,24 @@
       },
       {
         "ordinal": 2,
-        "name": "created_by_user_id",
-        "type_info": "Int8"
+        "name": "name",
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "disabled_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 4,
-        "name": "name",
+        "name": "tester_archive_url",
         "type_info": "Text"
       }
     ],
     "parameters": {
-      "Left": [
-        "Int8Array"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
       false,
       false,
-      true,
       false
     ]
   },
-  "hash": "25acb3a0a968c72a708d842e209a60e17066d80cd0a0c404a4031dae4df01781"
+  "hash": "4d7b46251db0e31024f4b2e2ef95e07051c0b0767c0acb3126cf44690dbe2cac"
 }

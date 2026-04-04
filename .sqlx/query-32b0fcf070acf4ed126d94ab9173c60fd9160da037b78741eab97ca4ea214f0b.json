@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                platforms\n            ",
+  "query": "SELECT * FROM projects WHERE TRUE AND (created_by_user_id = $1 IS NOT FALSE) AND (disabled_at IS NULL IS DISTINCT FROM $2)",
   "describe": {
     "columns": [
       {
@@ -15,24 +15,33 @@
       },
       {
         "ordinal": 2,
-        "name": "name",
-        "type_info": "Text"
+        "name": "created_by_user_id",
+        "type_info": "Int8"
       },
       {
         "ordinal": 3,
-        "name": "tester_archive_url",
+        "name": "disabled_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
         "type_info": "Text"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Int8",
+        "Bool"
+      ]
     },
     "nullable": [
       false,
       false,
       false,
+      true,
       false
     ]
   },
-  "hash": "110699ecb02de724e7b96c93a01edb9ea3cd06c2c1189c29703b35f4894d7521"
+  "hash": "32b0fcf070acf4ed126d94ab9173c60fd9160da037b78741eab97ca4ea214f0b"
 }

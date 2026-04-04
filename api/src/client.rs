@@ -1,6 +1,6 @@
 use clusterizer_common::{
     errors::{FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError},
-    records::Task,
+    records::{Record, Task},
     requests::{FetchTasksRequest, RegisterRequest, SubmitResultRequest},
     responses::RegisterResponse,
     types::Id,
@@ -8,10 +8,7 @@ use clusterizer_common::{
 use reqwest::{IntoUrl, RequestBuilder, Response, header};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::{
-    get::Get,
-    result::{ApiError, ApiResult},
-};
+use crate::result::{ApiError, ApiResult};
 
 pub struct ApiClient {
     client: reqwest::Client,
@@ -28,7 +25,7 @@ impl ApiClient {
         }
     }
 
-    pub async fn get_all<T: Get + DeserializeOwned>(
+    pub async fn get_all<T: Record + DeserializeOwned>(
         &self,
         filter: &T::Filter,
     ) -> ApiResult<Vec<T>, Infallible>
@@ -39,7 +36,7 @@ impl ApiClient {
         Ok(self.get_query(url, filter).await?.json().await?)
     }
 
-    pub async fn get_one<T: Get + DeserializeOwned>(&self, id: Id<T>) -> ApiResult<T, NotFound> {
+    pub async fn get_one<T: Record + DeserializeOwned>(&self, id: Id<T>) -> ApiResult<T, NotFound> {
         let url = format!("{}/{}/{}", self.url, T::PATH, id);
         Ok(self.get(url).await?.json().await?)
     }

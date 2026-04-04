@@ -1,25 +1,27 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::Id;
+use crate::{records::record_impl, types::Id};
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct User {
-    pub id: Id<User>,
-    pub created_at: DateTime<Utc>,
-    pub disabled_at: Option<DateTime<Utc>>,
-    pub name: String,
-}
+record_impl! {
+    PATH = "users";
 
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct UserFilter {
-    pub disabled: Option<bool>,
-}
-
-impl UserFilter {
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = Some(disabled);
-        self
+    User {
+        id: Id<User>,
+        created_at: DateTime<Utc>,
+        disabled_at: Option<DateTime<Utc>>,
+        name: String,
     }
+
+    UserFilter {
+        "disabled_at IS NULL IS DISTINCT FROM $1"
+        disabled: bool,
+    }
+
+    UserBuilder {
+        "name" "$1"
+        name: String,
+    }
+
+    UpdateUser {}
 }

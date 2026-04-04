@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE assignments SET state = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        {
+          "Custom": {
+            "name": "assignment_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "canceled",
+                "expired",
+                "submitted"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e032e44c9f2ae32f3f7106f88e4631cc74373fcb3fd07816b38db2d8e08f6595"
+}

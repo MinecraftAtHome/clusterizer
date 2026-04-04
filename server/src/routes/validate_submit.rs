@@ -1,7 +1,7 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::ValidateSubmitError,
-    records::{Project, Result, Task},
+    records::{Result, Select, Task, result::UpdateResult, task::UpdateTask},
     requests::ValidateSubmitRequest,
     types::{Id, ResultState},
 };
@@ -12,7 +12,6 @@ use crate::{
     auth::Auth,
     result::{AppError, AppResult},
     state::AppState,
-    util::set_result_state,
 };
 
 pub async fn validate_submit(
@@ -73,20 +72,7 @@ pub async fn validate_submit(
     .await?;
 
     // Check project permissions.
-    let project = sqlx::query_as_unchecked!(
-        Project,
-        r#"
-        SELECT
-            *
-        FROM
-            projects
-        WHERE
-            id = $1
-        "#,
-        task.project_id
-    )
-    .fetch_one(&mut *tx)
-    .await?;
+    let project = task.project_id.select().fetch_one(&mut *tx).await?;
 
     if project.created_by_user_id != user_id {
         Err(AppError::Specific(ValidateSubmitError::Forbidden))?;
@@ -151,27 +137,18 @@ pub async fn validate_submit(
     }
 
     // Update state of error results.
-    set_result_state(&error_result_ids, ResultState::Error)
+    error_result_ids
+        .update_state(ResultState::Error)
         .execute(&mut *tx)
         .await?;
 
     // Update group ids.
     for (&result_id, &group_id) in &request.results {
         if let Some(group_id) = group_id {
-            sqlx::query_unchecked!(
-                r#"
-                UPDATE
-                    results
-                SET
-                    group_result_id = $1
-                WHERE
-                    id = $2
-                "#,
-                group_id,
-                result_id,
-            )
-            .execute(&mut *tx)
-            .await?;
+            result_id
+                .update_group_result_id(Some(group_id))
+                .execute(&mut *tx)
+                .await?;
         }
     }
 
@@ -214,7 +191,8 @@ pub async fn validate_submit(
             .map(|(&result_id, _)| result_id)
             .collect();
 
-        set_result_state(&inconclusive_result_ids, ResultState::Inconclusive)
+        inconclusive_result_ids
+            .update_state(ResultState::Inconclusive)
             .execute(&mut *tx)
             .await?;
 
@@ -227,20 +205,10 @@ pub async fn validate_submit(
         let assignments_needed =
             (results.len() - largest_inconclusive_group.len()) as i32 + task.quorum;
 
-        sqlx::query_unchecked!(
-            r#"
-            UPDATE
-                tasks
-            SET
-                assignments_needed = $1
-            WHERE
-                id = $2
-            "#,
-            assignments_needed,
-            task.id,
-        )
-        .execute(&mut *tx)
-        .await?;
+        task.id
+            .update_assignments_needed(assignments_needed)
+            .execute(&mut *tx)
+            .await?;
     }
 
     tx.commit().await?;

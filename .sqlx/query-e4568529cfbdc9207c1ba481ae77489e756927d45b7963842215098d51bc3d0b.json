@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            *\n        FROM\n            projects\n        WHERE\n            id = $1\n        ",
+  "query": "SELECT * FROM users WHERE id = ANY($1)",
   "describe": {
     "columns": [
       {
@@ -15,32 +15,26 @@
       },
       {
         "ordinal": 2,
-        "name": "created_by_user_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 3,
         "name": "disabled_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 4,
+        "ordinal": 3,
         "name": "name",
         "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8Array"
       ]
     },
     "nullable": [
-      false,
       false,
       false,
       true,
       false
     ]
   },
-  "hash": "f7b43273fca1553daea58cb93f9b829c0a9d46d6dc4aa18e76f9fd309e207d54"
+  "hash": "e4568529cfbdc9207c1ba481ae77489e756927d45b7963842215098d51bc3d0b"
 }

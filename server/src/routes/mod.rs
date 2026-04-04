@@ -4,13 +4,13 @@ use axum::{
 };
 use clusterizer_common::{
     errors::{Infallible, NotFound},
+    records::{Record, Select},
     types::Id,
 };
 
 use crate::{
     result::{AppResult, ResultExt},
     state::AppState,
-    util::Select,
 };
 
 pub mod fetch_tasks;
@@ -25,19 +25,25 @@ pub use submit_result::submit_result;
 pub use validate_fetch::validate_fetch;
 pub use validate_submit::validate_submit;
 
-pub async fn get_all<T: Select + Send + Unpin>(
+pub async fn get_all<T: Record + Send + Unpin>(
     State(state): State<AppState>,
     Query(filter): Query<T::Filter>,
-) -> AppResult<Json<Vec<T>>, Infallible> {
-    Ok(Json(T::select_all(&filter).fetch_all(&state.pool).await?))
+) -> AppResult<Json<Vec<T>>, Infallible>
+where
+    T::Filter: Select<Record = T>,
+{
+    Ok(Json(filter.select().fetch_all(&state.pool).await?))
 }
 
-pub async fn get_one<T: Select + Send + Unpin>(
+pub async fn get_one<T: Record + Send + Unpin>(
     State(state): State<AppState>,
     Path(id): Path<Id<T>>,
-) -> AppResult<Json<T>, NotFound> {
+) -> AppResult<Json<T>, NotFound>
+where
+    Id<T>: Select<Record = T>,
+{
     Ok(Json(
-        T::select_one(id)
+        id.select()
             .fetch_one(&state.pool)
             .await
             .map_not_found(NotFound)?,
