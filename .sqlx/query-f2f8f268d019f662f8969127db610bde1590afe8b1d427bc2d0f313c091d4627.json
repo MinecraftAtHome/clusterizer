@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            *\n        FROM\n            projects\n        WHERE\n            id = ANY($1)\n        ",
+  "query": "SELECT * FROM files WHERE id = ANY($1)",
   "describe": {
     "columns": [
       {
@@ -15,18 +15,13 @@
       },
       {
         "ordinal": 2,
-        "name": "created_by_user_id",
-        "type_info": "Int8"
+        "name": "url",
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "disabled_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 4,
-        "name": "name",
-        "type_info": "Text"
+        "name": "hash",
+        "type_info": "Bytea"
       }
     ],
     "parameters": {
@@ -38,9 +33,8 @@
       false,
       false,
       false,
-      true,
       false
     ]
   },
-  "hash": "25acb3a0a968c72a708d842e209a60e17066d80cd0a0c404a4031dae4df01781"
+  "hash": "f2f8f268d019f662f8969127db610bde1590afe8b1d427bc2d0f313c091d4627"
 }

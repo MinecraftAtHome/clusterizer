@@ -8,8 +8,11 @@ use axum::{
     Router,
     routing::{get, post},
 };
-use clusterizer_common::records::{
-    Assignment, File, Platform, Project, ProjectVersion, Record, Result, Task, User,
+use clusterizer_common::{
+    records::{
+        Assignment, File, Platform, Project, ProjectVersion, Record, Result, Select, Task, User,
+    },
+    types::Id,
 };
 
 use serde::{Serialize, de::DeserializeOwned};
@@ -63,7 +66,8 @@ async fn serve_task(state: AppState, address: String) {
 fn record_router<T>() -> Router<AppState>
 where
     T: Record + Send + Unpin + Serialize + 'static,
-    T::Filter: Send + DeserializeOwned,
+    T::Filter: Select<Record = T> + Send + DeserializeOwned,
+    Id<T>: Select<Record = T>,
 {
     Router::new()
         .route(&format!("/{}", T::PATH), get(routes::get_all::<T>))

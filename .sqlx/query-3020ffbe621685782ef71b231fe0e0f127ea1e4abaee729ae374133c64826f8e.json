@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE results SET state = $2 WHERE id = ANY($1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8Array",
+        {
+          "Custom": {
+            "name": "result_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "valid",
+                "invalid",
+                "inconclusive",
+                "error"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3020ffbe621685782ef71b231fe0e0f127ea1e4abaee729ae374133c64826f8e"
+}

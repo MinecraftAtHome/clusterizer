@@ -4,7 +4,7 @@ use axum::{
 };
 use clusterizer_common::{
     errors::ValidateFetchError,
-    records::{Project, Task},
+    records::{Project, Select, Task},
     types::Id,
 };
 
@@ -19,21 +19,11 @@ pub async fn validate_fetch(
     Path(project_id): Path<Id<Project>>,
     Auth(user_id): Auth,
 ) -> AppResult<Json<Vec<Task>>, ValidateFetchError> {
-    let project = sqlx::query_as_unchecked!(
-        Project,
-        r#"
-        SELECT
-            *
-        FROM
-            projects
-        WHERE
-            id = $1
-        "#,
-        project_id,
-    )
-    .fetch_one(&state.pool)
-    .await
-    .map_not_found(ValidateFetchError::InvalidProject)?;
+    let project = project_id
+        .select()
+        .fetch_one(&state.pool)
+        .await
+        .map_not_found(ValidateFetchError::InvalidProject)?;
 
     if project.created_by_user_id != user_id {
         Err(AppError::Specific(ValidateFetchError::Forbidden))?;

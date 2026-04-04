@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE tasks SET assignments_needed = $2 WHERE id = ANY($1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8Array",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0e1c419a5fa20618056ae7f7826741f9f0383a41f69f6b75d909d7bd3141664f"
+}

@@ -28,4 +28,15 @@ record_impl! {
         "file_id = $4 IS NOT FALSE"
         file_id: Id<Platform>,
     }
+
+    ProjectVersionBuilder {
+        "project_id" "$1"
+        project_id: Id<Project>,
+        "platform_id" "$2"
+        platform_id: Id<Platform>,
+        "file_id" "$3"
+        file_id: Id<File>,
+    }
+
+    UpdateProjectVersion {}
 }

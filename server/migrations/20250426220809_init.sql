@@ -90,7 +90,7 @@ CREATE TABLE results (
 );
 
 -- update assignments.state
-CREATE FUNCTION set_assignment_state_submitted()
+CREATE FUNCTION set_assignments_state_submitted()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$ BEGIN
@@ -104,14 +104,14 @@ AS $$ BEGIN
     RETURN NEW;
 END $$;
 
-CREATE TRIGGER set_assignment_state_submitted_before_insert
+CREATE TRIGGER set_assignments_state_submitted_before_insert
 BEFORE INSERT
 ON results
 FOR EACH ROW
-EXECUTE FUNCTION set_assignment_state_submitted();
+EXECUTE FUNCTION set_assignments_state_submitted();
 
 -- update tasks.assignment_user_ids
-CREATE FUNCTION remove_assignment_user_id()
+CREATE FUNCTION remove_tasks_assignment_user_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$ BEGIN
@@ -125,7 +125,7 @@ AS $$ BEGIN
     RETURN NEW;
 END $$;
 
-CREATE FUNCTION add_assignment_user_id()
+CREATE FUNCTION add_tasks_assignment_user_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$ BEGIN
@@ -139,29 +139,29 @@ AS $$ BEGIN
     RETURN NEW;
 END $$;
 
-CREATE TRIGGER remove_assignment_user_id_before_update
+CREATE TRIGGER remove_tasks_assignment_user_id_before_update
 BEFORE UPDATE OF state
 ON assignments
 FOR EACH ROW
 WHEN ((OLD.state = 'init' OR OLD.state = 'submitted') AND (NEW.state = 'canceled' OR NEW.state = 'expired'))
-EXECUTE FUNCTION remove_assignment_user_id();
+EXECUTE FUNCTION remove_tasks_assignment_user_id();
 
-CREATE TRIGGER remove_assignment_user_id_before_delete
+CREATE TRIGGER remove_tasks_assignment_user_id_before_delete
 BEFORE DELETE
 ON assignments
 FOR EACH ROW
 WHEN (OLD.state = 'init' OR OLD.state = 'submitted')
-EXECUTE FUNCTION remove_assignment_user_id();
+EXECUTE FUNCTION remove_tasks_assignment_user_id();
 
-CREATE TRIGGER add_assignment_user_id_before_insert
+CREATE TRIGGER add_tasks_assignment_user_id_before_insert
 BEFORE INSERT
 ON assignments
 FOR EACH ROW
 WHEN (NEW.state = 'init' OR NEW.state = 'submitted')
-EXECUTE FUNCTION add_assignment_user_id();
+EXECUTE FUNCTION add_tasks_assignment_user_id();
 
 -- set tasks.assignments_needed
-CREATE FUNCTION set_assignments_needed()
+CREATE FUNCTION set_tasks_assignments_needed()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$ BEGIN
@@ -170,8 +170,24 @@ AS $$ BEGIN
     RETURN NEW;
 END $$;
 
-CREATE TRIGGER set_assignments_needed_before_insert
+CREATE TRIGGER set_tasks_assignments_needed_before_insert
 BEFORE INSERT
 ON tasks
 FOR EACH ROW
-EXECUTE FUNCTION set_assignments_needed();
+EXECUTE FUNCTION set_tasks_assignments_needed();
+
+-- set assignments.deadline_at
+CREATE FUNCTION set_assignments_deadline_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$ BEGIN
+    SELECT now() + deadline FROM tasks WHERE id = NEW.task_id INTO NEW.deadline_at;
+
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER set_assignments_deadline_at_before_insert
+BEFORE INSERT
+ON assignments
+FOR EACH ROW
+EXECUTE FUNCTION set_assignments_deadline_at();

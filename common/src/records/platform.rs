@@ -20,4 +20,13 @@ record_impl! {
         "file_id = $1 IS NOT FALSE"
         file_id: Id<File>,
     }
+
+    PlatformBuilder {
+        "name" "$1"
+        name: String,
+        "file_id" "$2"
+        file_id: Id<File>,
+    }
+
+    UpdatePlatform {}
 }

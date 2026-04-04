@@ -17,4 +17,11 @@ record_impl! {
         "disabled_at IS NULL IS DISTINCT FROM $1"
         disabled: bool,
     }
+
+    UserBuilder {
+        "name" "$1"
+        name: String,
+    }
+
+    UpdateUser {}
 }

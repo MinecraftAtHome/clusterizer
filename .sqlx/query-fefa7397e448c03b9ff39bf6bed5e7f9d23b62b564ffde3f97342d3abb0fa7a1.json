@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tasks (deadline, project_id, stdin, quorum) VALUES ($1, $2, $3, $4) RETURNING id \"id: _\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: _",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Interval",
+        "Int8",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "fefa7397e448c03b9ff39bf6bed5e7f9d23b62b564ffde3f97342d3abb0fa7a1"
+}

@@ -1,7 +1,7 @@
 use axum::{Json, extract::State};
 use clusterizer_common::{
     errors::FetchTasksError,
-    records::{Project, Task},
+    records::{AssignmentBuilder, Insert, Select, Task},
     requests::FetchTasksRequest,
 };
 
@@ -18,20 +18,7 @@ pub async fn fetch_tasks(
 ) -> AppResult<Json<Vec<Task>>, FetchTasksError> {
     let mut tx = state.pool.begin().await?;
 
-    let projects = sqlx::query_as_unchecked!(
-        Project,
-        r#"
-        SELECT
-            *
-        FROM
-            projects
-        WHERE
-            id = ANY($1)
-        "#,
-        request.project_ids,
-    )
-    .fetch_all(&mut *tx)
-    .await?;
+    let projects = request.project_ids.select().fetch_all(&mut *tx).await?;
 
     if projects.len() != request.project_ids.len() {
         Err(AppError::Specific(FetchTasksError::InvalidProject))?;
@@ -65,23 +52,12 @@ pub async fn fetch_tasks(
     .await?;
 
     for task in &tasks {
-        sqlx::query_unchecked!(
-            r#"
-            INSERT INTO assignments (
-                task_id,
-                user_id,
-                deadline_at
-            ) VALUES (
-                $1,
-                $2,
-                now() + $3
-            )
-            "#,
-            task.id,
+        AssignmentBuilder {
+            task_id: task.id,
             user_id,
-            task.deadline,
-        )
-        .execute(&mut *tx)
+        }
+        .insert()
+        .fetch_one(&mut *tx)
         .await?;
     }
 

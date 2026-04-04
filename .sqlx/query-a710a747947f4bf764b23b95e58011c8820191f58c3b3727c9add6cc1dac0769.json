@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM assignments WHERE id = ANY($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "deadline_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "task_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "state",
+        "type_info": {
+          "Custom": {
+            "name": "assignment_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "canceled",
+                "expired",
+                "submitted"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a710a747947f4bf764b23b95e58011c8820191f58c3b3727c9add6cc1dac0769"
+}

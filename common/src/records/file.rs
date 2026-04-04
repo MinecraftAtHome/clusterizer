@@ -14,4 +14,13 @@ record_impl! {
     }
 
     FileFilter {}
+
+    FileBuilder {
+        "url" "$1"
+        url: String,
+        "hash" "$2"
+        hash: Vec<u8>,
+    }
+
+    UpdateFile {}
 }
