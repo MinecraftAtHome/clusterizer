@@ -117,17 +117,14 @@ impl ClusterizerClient {
                 .into_iter()
                 .filter(|file| {
                     project_versions
-                        .clone()
-                        .into_iter()
+                        .iter()
                         .any(|(_, project_version)| project_version.file_id == file.id)
                 })
                 .filter_map(|file| {
-                    for project_version in project_versions.values() {
-                        if project_version.file_id == file.id {
-                            return Some((project_version.project_id, file));
-                        }
-                    }
-                    None
+                    project_versions
+                        .values()
+                        .find(|project_version| project_version.file_id == file.id)
+                        .map(|project_version| (project_version.project_id, file))
                 })
                 .collect();
 
