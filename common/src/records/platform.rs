@@ -13,4 +13,13 @@ pub struct Platform {
 
 #[non_exhaustive]
 #[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct PlatformFilter {}
+pub struct PlatformFilter {
+    pub file_id: Option<Id<File>>,
+}
+
+impl PlatformFilter {
+    pub fn file_id(mut self, file_id: Id<File>) -> Self {
+        self.file_id = Some(file_id);
+        self
+    }
+}

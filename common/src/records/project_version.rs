@@ -21,6 +21,7 @@ pub struct ProjectVersionFilter {
     pub disabled: Option<bool>,
     pub project_id: Option<Id<Project>>,
     pub platform_id: Option<Id<Platform>>,
+    pub file_id: Option<Id<File>>,
 }
 
 impl ProjectVersionFilter {
@@ -36,6 +37,10 @@ impl ProjectVersionFilter {
 
     pub fn platform_id(mut self, platform_id: Id<Platform>) -> Self {
         self.platform_id = Some(platform_id);
+        self
+    }
+    pub fn file_id(mut self, file_id: Id<File>) -> Self {
+        self.file_id = Some(file_id);
         self
     }
 }
