@@ -384,6 +384,7 @@ dependencies = [
  "clusterizer-api",
  "clusterizer-client",
  "clusterizer-common",
+ "clusterizer-util",
  "dirs",
  "reqwest",
  "tempfile",
@@ -432,6 +433,10 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "clusterizer-util"
+version = "0.1.0"
 
 [[package]]
 name = "cmake"

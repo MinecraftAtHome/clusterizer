@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                platforms\n            ",
+  "query": "\n            SELECT\n                *\n            FROM\n                platforms\n            WHERE\n                file_id = $1 IS NOT FALSE\n            ",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,9 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Int8"
+      ]
     },
     "nullable": [
       false,
@@ -34,5 +36,5 @@
       false
     ]
   },
-  "hash": "110699ecb02de724e7b96c93a01edb9ea3cd06c2c1189c29703b35f4894d7521"
+  "hash": "2ef52d712fe9cda17273356da3ee0ad5a1bc3133f8aa01f8b14d5ae84f889881"
 }

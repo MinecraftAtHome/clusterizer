@@ -67,7 +67,7 @@ impl Select for Project {
 impl Select for Platform {
     type Filter = PlatformFilter;
 
-    fn select_all(_: &Self::Filter) -> Map<Self> {
+    fn select_all(filter: &Self::Filter) -> Map<Self> {
         sqlx::query_as_unchecked!(
             Self,
             r#"
@@ -75,7 +75,10 @@ impl Select for Platform {
                 *
             FROM
                 platforms
+            WHERE
+                file_id = $1 IS NOT FALSE
             "#,
+            filter.file_id,
         )
     }
 
@@ -99,10 +102,12 @@ impl Select for ProjectVersion {
                 disabled_at IS NULL IS DISTINCT FROM $1
                 AND project_id = $2 IS NOT FALSE
                 AND platform_id = $3 IS NOT FALSE
+                AND file_id = $4 IS NOT FALSE
             "#,
             filter.disabled,
             filter.project_id,
             filter.platform_id,
+            filter.file_id,
         )
     }
 
