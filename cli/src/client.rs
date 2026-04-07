@@ -115,11 +115,6 @@ impl ClusterizerClient {
                 .get_all::<File>(&FileFilter::default())
                 .await?
                 .into_iter()
-                .filter(|file| {
-                    project_versions
-                        .iter()
-                        .any(|(_, project_version)| project_version.file_id == file.id)
-                })
                 .filter_map(|file| {
                     project_versions
                         .values()
