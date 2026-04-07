@@ -21,8 +21,20 @@ record_impl! {
     }
 
     TaskFilter {
-        "project_id = $1 IS NOT FALSE"
-        project_id: Id<Project>,
+        "$1::int8[] IS NULL OR array_position($1, id) IS NOT NULL"
+        id: Vec<Id<Task>>,
+        "$2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL"
+        created_at: Vec<DateTime<Utc>>,
+        "$3::interval[] IS NULL OR array_position($3, deadline) IS NOT NULL"
+        deadline: Vec<Interval>,
+        "$4::int8[] IS NULL OR array_position($4, project_id) IS NOT NULL"
+        project_id: Vec<Id<Project>>,
+        "$5::text[] IS NULL OR array_position($5, stdin) IS NOT NULL"
+        stdin: Vec<String>,
+        "$6::int4[] IS NULL OR array_position($6, assignments_needed) IS NOT NULL"
+        assignments_needed: Vec<i32>,
+        "$7::int8[] IS NULL OR array_position($7, quorum) IS NOT NULL"
+        quorum: Vec<i32>,
     }
 
     TaskBuilder {

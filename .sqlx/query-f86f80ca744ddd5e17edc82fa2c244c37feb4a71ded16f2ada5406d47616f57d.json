@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM platforms WHERE TRUE AND (file_id = $1 IS NOT FALSE)",
+  "query": "SELECT * FROM platforms WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::text[] IS NULL OR array_position($3, name) IS NOT NULL) AND ($4::int8[] IS NULL OR array_position($4, file_id) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -26,7 +26,10 @@
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8Array",
+        "TimestamptzArray",
+        "TextArray",
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -36,5 +39,5 @@
       false
     ]
   },
-  "hash": "e8f8fca5ca65083d670152567a5338dbc7ed6bed3ac6cfa696391dc95e69c18f"
+  "hash": "f86f80ca744ddd5e17edc82fa2c244c37feb4a71ded16f2ada5406d47616f57d"
 }

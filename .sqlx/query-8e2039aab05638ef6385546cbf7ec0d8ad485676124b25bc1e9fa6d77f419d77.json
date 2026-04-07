@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM files WHERE TRUE",
+  "query": "SELECT * FROM files WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::text[] IS NULL OR array_position($3, url) IS NOT NULL) AND ($4::bytea[] IS NULL OR array_position($4, hash) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,12 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Int8Array",
+        "TimestamptzArray",
+        "TextArray",
+        "ByteaArray"
+      ]
     },
     "nullable": [
       false,
@@ -34,5 +39,5 @@
       false
     ]
   },
-  "hash": "c53a49ded378be1c8d67295ceff9b2532cd7d4b2dfc33d4a5735c33f2be64794"
+  "hash": "8e2039aab05638ef6385546cbf7ec0d8ad485676124b25bc1e9fa6d77f419d77"
 }

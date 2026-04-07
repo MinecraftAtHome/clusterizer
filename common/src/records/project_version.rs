@@ -19,14 +19,18 @@ record_impl! {
     }
 
     ProjectVersionFilter {
-        "disabled_at IS NULL IS DISTINCT FROM $1"
-        disabled: bool,
-        "project_id = $2 IS NOT FALSE"
-        project_id: Id<Project>,
-        "platform_id = $3 IS NOT FALSE"
-        platform_id: Id<Platform>,
-        "file_id = $4 IS NOT FALSE"
-        file_id: Id<Platform>,
+        "$1::int8[] IS NULL OR array_position($1, id) IS NOT NULL"
+        id: Vec<Id<ProjectVersion>>,
+        "$2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL"
+        created_at: Vec<DateTime<Utc>>,
+        "$3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL"
+        disabled_at: Vec<Option<DateTime<Utc>>>,
+        "$4::int8[] IS NULL OR array_position($4, project_id) IS NOT NULL"
+        project_id: Vec<Id<Project>>,
+        "$5::int8[] IS NULL OR array_position($5, platform_id) IS NOT NULL"
+        platform_id: Vec<Id<Platform>>,
+        "$6::int8[] IS NULL OR array_position($6, file_id) IS NOT NULL"
+        file_id: Vec<Id<File>>,
     }
 
     ProjectVersionBuilder {

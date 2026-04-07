@@ -36,6 +36,14 @@ pub trait Record: Sized {
     const PATH: &str;
 }
 
+#[cfg(feature = "reqwest")]
+pub trait Get {
+    type Ok: serde::de::DeserializeOwned;
+    type Err: serde::de::DeserializeOwned;
+
+    fn get(&self, client: &reqwest::Client, url: &str) -> reqwest::RequestBuilder;
+}
+
 #[cfg(feature = "sqlx")]
 pub trait Select {
     type Record;
@@ -52,7 +60,7 @@ pub trait Insert {
 
 macro_rules! record_impl {
     (
-        PATH = $path_literal:literal;
+        PATH = $table_name_literal:literal;
 
         $record_ident:ident {
             $($record_field_ident:ident: $record_field_ty:ty,)*
@@ -80,6 +88,7 @@ macro_rules! record_impl {
             $($update_fn_ident:ident($update_fn_name_literal:literal $update_fn_ty:ty);)*
         }
     ) => {
+        #[cfg(feature = "sqlx")]
         pub trait $update_ident {
             $(fn $update_fn_ident(&self, value: $update_fn_ty) -> $crate::records::sqlx::Query;)*
         }
@@ -113,7 +122,27 @@ macro_rules! record_impl {
         impl $crate::records::Record for $record_ident {
             type Filter = $filter_ident;
 
-            const PATH: &str = $path_literal;
+            const PATH: &str = $table_name_literal;
+        }
+
+        #[cfg(feature = "reqwest")]
+        impl $crate::records::Get for $filter_ident {
+            type Ok = Vec<$record_ident>;
+            type Err = $crate::errors::Infallible;
+
+            fn get(&self, client: &::reqwest::Client, url: &str) -> ::reqwest::RequestBuilder {
+                client.get(format!("{}/{}", url, $table_name_literal)).query(self)
+            }
+        }
+
+        #[cfg(feature = "reqwest")]
+        impl $crate::records::Get for $crate::types::Id<$record_ident> {
+            type Ok = $record_ident;
+            type Err = $crate::errors::NotFound;
+
+            fn get(&self, client: &::reqwest::Client, url: &str) -> ::reqwest::RequestBuilder {
+                client.get(format!("{}/{}/{}", url, $table_name_literal, self))
+            }
         }
 
         #[cfg(feature = "sqlx")]
@@ -123,7 +152,7 @@ macro_rules! record_impl {
             fn select(&self) -> $crate::records::sqlx::Map<Self::Record> {
                 sqlx::query_as_unchecked!(
                     Self::Record,
-                    "SELECT * FROM " + $path_literal + " WHERE TRUE" $(+ " AND (" + $filter_field_condition_literal + ")")*,
+                    "SELECT * FROM " + $table_name_literal + " WHERE TRUE" $(+ " AND (" + $filter_field_condition_literal + ")")*,
                     $(self.$filter_field_ident,)*
                 )
             }
@@ -136,7 +165,7 @@ macro_rules! record_impl {
             fn select(&self) -> $crate::records::sqlx::Map<Self::Record> {
                 sqlx::query_as_unchecked!(
                     Self::Record,
-                    "SELECT * FROM " + $path_literal + " WHERE id = $1",
+                    "SELECT * FROM " + $table_name_literal + " WHERE id = $1",
                     self
                 )
             }
@@ -149,7 +178,7 @@ macro_rules! record_impl {
             fn select(&self) -> $crate::records::sqlx::Map<Self::Record> {
                 sqlx::query_as_unchecked!(
                     Self::Record,
-                    "SELECT * FROM " + $path_literal + " WHERE id = ANY($1)",
+                    "SELECT * FROM " + $table_name_literal + " WHERE id = ANY($1)",
                     self
                 )
             }
@@ -161,18 +190,19 @@ macro_rules! record_impl {
 
             fn insert(&self) -> $crate::records::sqlx::QueryScalar<$crate::types::Id<Self::Record>> {
                 sqlx::query_scalar_unchecked!(
-                    "INSERT INTO " + $path_literal + " (" + $builder_first_field_name_literal $(+ ", " + $builder_field_name_literal)* + ") VALUES (" + $builder_first_field_expression_literal $(+ ", " + $builder_field_expression_literal)* + ") RETURNING id \"id: _\"",
+                    "INSERT INTO " + $table_name_literal + " (" + $builder_first_field_name_literal $(+ ", " + $builder_field_name_literal)* + ") VALUES (" + $builder_first_field_expression_literal $(+ ", " + $builder_field_expression_literal)* + ") RETURNING id \"id: _\"",
                     self.$builder_first_field_ident,
                     $(self.$builder_field_ident,)*
                 )
             }
         }
 
+        #[cfg(feature = "sqlx")]
         impl $update_ident for $crate::types::Id<$record_ident> {
             $(
                 fn $update_fn_ident(&self, value: $update_fn_ty) -> $crate::records::sqlx::Query {
                     sqlx::query_unchecked!(
-                        "UPDATE " + $path_literal + " SET " + $update_fn_name_literal + " = $2 WHERE id = $1",
+                        "UPDATE " + $table_name_literal + " SET " + $update_fn_name_literal + " = $2 WHERE id = $1",
                         self,
                         value,
                     )
@@ -180,11 +210,12 @@ macro_rules! record_impl {
             )*
         }
 
+        #[cfg(feature = "sqlx")]
         impl $update_ident for [$crate::types::Id<$record_ident>] {
             $(
                 fn $update_fn_ident(&self, value: $update_fn_ty) -> $crate::records::sqlx::Query {
                     sqlx::query_unchecked!(
-                        "UPDATE " + $path_literal + " SET " + $update_fn_name_literal + " = $2 WHERE id = ANY($1)",
+                        "UPDATE " + $table_name_literal + " SET " + $update_fn_name_literal + " = $2 WHERE id = ANY($1)",
                         self,
                         value,
                     )

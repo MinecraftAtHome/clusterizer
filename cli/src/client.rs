@@ -96,7 +96,7 @@ impl ClusterizerClient {
         let tasks = loop {
             let project_versions_by_project_id: HashMap<_, _> = self
                 .client
-                .get_all::<ProjectVersion>(&ProjectVersionFilter::default().disabled(false))
+                .get(&ProjectVersionFilter::default().disabled_at(vec![None]))
                 .await?
                 .into_iter()
                 .filter(|project_version| self.platform_ids.contains(&project_version.platform_id))
@@ -105,7 +105,7 @@ impl ClusterizerClient {
 
             let projects_by_project_id: HashMap<_, _> = self
                 .client
-                .get_all::<Project>(&ProjectFilter::default().disabled(false))
+                .get(&ProjectFilter::default().disabled_at(vec![None]))
                 .await?
                 .into_iter()
                 .filter(|project| project_versions_by_project_id.contains_key(&project.id))
@@ -114,7 +114,7 @@ impl ClusterizerClient {
 
             let files_by_file_id: HashMap<_, _> = self
                 .client
-                .get_all::<File>(&FileFilter::default())
+                .get(&FileFilter::default())
                 .await?
                 .into_iter()
                 .map(|file| (file.id, file))
@@ -241,11 +241,8 @@ pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
     let mut platform_ids = Vec::new();
     let mut platform_names = Vec::new();
 
-    for platform in client
-        .get_all::<Platform>(&PlatformFilter::default())
-        .await?
-    {
-        let file = client.get_one(platform.file_id).await?;
+    for platform in client.get(&PlatformFilter::default()).await? {
+        let file = client.get(&platform.file_id).await?;
 
         debug!(
             "Platform id: {}, tester archive url: {}",

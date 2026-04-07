@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM projects WHERE TRUE AND (created_by_user_id = $1 IS NOT FALSE) AND (disabled_at IS NULL IS DISTINCT FROM $2)",
+  "query": "SELECT * FROM users WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL) AND ($4::text[] IS NULL OR array_position($4, name) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -15,33 +15,29 @@
       },
       {
         "ordinal": 2,
-        "name": "created_by_user_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 3,
         "name": "disabled_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 4,
+        "ordinal": 3,
         "name": "name",
         "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Bool"
+        "Int8Array",
+        "TimestamptzArray",
+        "TimestamptzArray",
+        "TextArray"
       ]
     },
     "nullable": [
-      false,
       false,
       false,
       true,
       false
     ]
   },
-  "hash": "32b0fcf070acf4ed126d94ab9173c60fd9160da037b78741eab97ca4ea214f0b"
+  "hash": "3f3a8f21e93fbce600343a1f65c85db66f9b5ca8368464612f8ffd7948dc6de0"
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM assignments WHERE TRUE AND (task_id = $1 IS NOT FALSE) AND (user_id = $2 IS NOT FALSE) AND (state = $3 IS NOT FALSE)",
+  "query": "SELECT * FROM assignments WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::timestamptz[] IS NULL OR array_position($3, deadline_at) IS NOT NULL) AND ($4::int8[] IS NULL OR array_position($4, task_id) IS NOT NULL) AND ($5::int8[] IS NULL OR array_position($5, user_id) IS NOT NULL) AND ($6::assignment_state[] IS NULL OR array_position($6, state) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -48,18 +48,28 @@
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Int8",
+        "Int8Array",
+        "TimestamptzArray",
+        "TimestamptzArray",
+        "Int8Array",
+        "Int8Array",
         {
           "Custom": {
-            "name": "assignment_state",
+            "name": "assignment_state[]",
             "kind": {
-              "Enum": [
-                "init",
-                "canceled",
-                "expired",
-                "submitted"
-              ]
+              "Array": {
+                "Custom": {
+                  "name": "assignment_state",
+                  "kind": {
+                    "Enum": [
+                      "init",
+                      "canceled",
+                      "expired",
+                      "submitted"
+                    ]
+                  }
+                }
+              }
             }
           }
         }
@@ -74,5 +84,5 @@
       false
     ]
   },
-  "hash": "60a864bebcfac7a40865006046d0845a788f13b570be1e71ce9ff40de6035291"
+  "hash": "beb0b066198833e63448ee67a1a720494e71265b8fa0ea4d20ab62d185469bdc"
 }

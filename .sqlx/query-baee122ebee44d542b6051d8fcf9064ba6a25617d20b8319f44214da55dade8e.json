@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM tasks WHERE TRUE AND (project_id = $1 IS NOT FALSE)",
+  "query": "SELECT * FROM tasks WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::interval[] IS NULL OR array_position($3, deadline) IS NOT NULL) AND ($4::int8[] IS NULL OR array_position($4, project_id) IS NOT NULL) AND ($5::text[] IS NULL OR array_position($5, stdin) IS NOT NULL) AND ($6::int4[] IS NULL OR array_position($6, assignments_needed) IS NOT NULL) AND ($7::int8[] IS NULL OR array_position($7, quorum) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -46,7 +46,13 @@
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8Array",
+        "TimestamptzArray",
+        "IntervalArray",
+        "Int8Array",
+        "TextArray",
+        "Int4Array",
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -60,5 +66,5 @@
       false
     ]
   },
-  "hash": "b85bc5afd1df3128dbf21042dd08370944664024942cc5276a17cb79385be874"
+  "hash": "baee122ebee44d542b6051d8fcf9064ba6a25617d20b8319f44214da55dade8e"
 }

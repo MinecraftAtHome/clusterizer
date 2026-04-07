@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM project_versions WHERE TRUE AND (disabled_at IS NULL IS DISTINCT FROM $1) AND (project_id = $2 IS NOT FALSE) AND (platform_id = $3 IS NOT FALSE) AND (file_id = $4 IS NOT FALSE)",
+  "query": "SELECT * FROM project_versions WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL) AND ($4::int8[] IS NULL OR array_position($4, project_id) IS NOT NULL) AND ($5::int8[] IS NULL OR array_position($5, platform_id) IS NOT NULL) AND ($6::int8[] IS NULL OR array_position($6, file_id) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -36,10 +36,12 @@
     ],
     "parameters": {
       "Left": [
-        "Bool",
-        "Int8",
-        "Int8",
-        "Int8"
+        "Int8Array",
+        "TimestamptzArray",
+        "TimestamptzArray",
+        "Int8Array",
+        "Int8Array",
+        "Int8Array"
       ]
     },
     "nullable": [
@@ -51,5 +53,5 @@
       false
     ]
   },
-  "hash": "7c9e5a3333f4c09bef3f6b965139d27b565235a41e7d747d41e49238674fb5c3"
+  "hash": "6575005fcd566adcd6f630ce06b15cfe718e153af822a2b6dfee60554202face"
 }

@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clusterizer-common = { version = "0.1.0", path = "../common" }
+clusterizer-common = { version = "0.1.0", path = "../common", features = ["reqwest"] }
 reqwest = { version = "0.13.2", features = ["json", "query"] }
 serde = "1.0.228"

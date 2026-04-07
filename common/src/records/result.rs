@@ -21,12 +21,22 @@ record_impl! {
     }
 
     ResultFilter {
-        "assignment_id = $1 IS NOT FALSE"
-        assignment_id: Id<Assignment>,
-        "group_result_id = $2 OR $2 IS NULL"
-        group_result_id: Id<Result>,
-        "state = $3 IS NOT FALSE"
-        state: ResultState,
+        "$1::int8[] IS NULL OR array_position($1, id) IS NOT NULL"
+        id: Vec<Id<Result>>,
+        "$2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL"
+        created_at: Vec<DateTime<Utc>>,
+        "$3::int8[] IS NULL OR array_position($3, assignment_id) IS NOT NULL"
+        assignment_id: Vec<Id<Assignment>>,
+        "$4::text[] IS NULL OR array_position($4, stdout) IS NOT NULL"
+        stdout: Vec<String>,
+        "$5::text[] IS NULL OR array_position($5, stderr) IS NOT NULL"
+        stderr: Vec<String>,
+        "$6::int4[] IS NULL OR array_position($6, exit_code) IS NOT NULL"
+        exit_code: Vec<Option<i32>>,
+        "$7::int8[] IS NULL OR array_position($7, group_result_id) IS NOT NULL"
+        group_result_id: Vec<Option<Id<Result>>>,
+        "$8::result_state[] IS NULL OR array_position($8, state) IS NOT NULL"
+        state: Vec<ResultState>,
     }
 
     ResultBuilder {
