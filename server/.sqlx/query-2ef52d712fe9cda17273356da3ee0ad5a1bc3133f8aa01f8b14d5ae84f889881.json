@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM project_versions WHERE id = $1",
+  "query": "\n            SELECT\n                *\n            FROM\n                platforms\n            WHERE\n                file_id = $1 IS NOT FALSE\n            ",
   "describe": {
     "columns": [
       {
@@ -15,21 +15,11 @@
       },
       {
         "ordinal": 2,
-        "name": "disabled_at",
-        "type_info": "Timestamptz"
+        "name": "name",
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "project_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 4,
-        "name": "platform_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 5,
         "name": "file_id",
         "type_info": "Int8"
       }
@@ -42,11 +32,9 @@
     "nullable": [
       false,
       false,
-      true,
-      false,
       false,
       false
     ]
   },
-  "hash": "60d06b4ddeb3f621f6da75d1ad4f37cb37aa552d2cf4e9f3ec8365afd2555e2a"
+  "hash": "2ef52d712fe9cda17273356da3ee0ad5a1bc3133f8aa01f8b14d5ae84f889881"
 }

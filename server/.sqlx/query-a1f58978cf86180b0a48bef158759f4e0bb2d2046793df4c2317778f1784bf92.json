@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                platforms\n            ",
+  "query": "\n            SELECT\n                *\n            FROM\n                files\n            ",
   "describe": {
     "columns": [
       {
@@ -15,13 +15,13 @@
       },
       {
         "ordinal": 2,
-        "name": "name",
+        "name": "url",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "tester_archive_url",
-        "type_info": "Text"
+        "name": "hash",
+        "type_info": "Bytea"
       }
     ],
     "parameters": {
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "110699ecb02de724e7b96c93a01edb9ea3cd06c2c1189c29703b35f4894d7521"
+  "hash": "a1f58978cf86180b0a48bef158759f4e0bb2d2046793df4c2317778f1784bf92"
 }

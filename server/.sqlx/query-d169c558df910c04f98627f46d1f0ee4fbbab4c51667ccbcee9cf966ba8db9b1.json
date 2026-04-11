@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM project_versions WHERE id = $1",
+  "query": "SELECT * FROM files WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -15,23 +15,13 @@
       },
       {
         "ordinal": 2,
-        "name": "disabled_at",
-        "type_info": "Timestamptz"
+        "name": "url",
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "project_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 4,
-        "name": "platform_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 5,
-        "name": "file_id",
-        "type_info": "Int8"
+        "name": "hash",
+        "type_info": "Bytea"
       }
     ],
     "parameters": {
@@ -42,11 +32,9 @@
     "nullable": [
       false,
       false,
-      true,
-      false,
       false,
       false
     ]
   },
-  "hash": "60d06b4ddeb3f621f6da75d1ad4f37cb37aa552d2cf4e9f3ec8365afd2555e2a"
+  "hash": "d169c558df910c04f98627f46d1f0ee4fbbab4c51667ccbcee9cf966ba8db9b1"
 }

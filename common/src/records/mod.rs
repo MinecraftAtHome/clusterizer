@@ -1,4 +1,5 @@
 pub mod assignment;
+pub mod file;
 pub mod platform;
 pub mod project;
 pub mod project_version;
@@ -7,6 +8,7 @@ pub mod task;
 pub mod user;
 
 pub use assignment::{Assignment, AssignmentFilter};
+pub use file::{File, FileFilter};
 pub use platform::{Platform, PlatformFilter};
 pub use project::{Project, ProjectFilter};
 pub use project_version::{ProjectVersion, ProjectVersionFilter};

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::Id;
 
-use super::{Platform, Project};
+use super::{File, Platform, Project};
 
 #[derive(Clone, Hash, Debug, Serialize, Deserialize)]
 pub struct ProjectVersion {
@@ -12,7 +12,7 @@ pub struct ProjectVersion {
     pub disabled_at: Option<DateTime<Utc>>,
     pub project_id: Id<Project>,
     pub platform_id: Id<Platform>,
-    pub archive_url: String,
+    pub file_id: Id<File>,
 }
 
 #[non_exhaustive]
@@ -21,6 +21,7 @@ pub struct ProjectVersionFilter {
     pub disabled: Option<bool>,
     pub project_id: Option<Id<Project>>,
     pub platform_id: Option<Id<Platform>>,
+    pub file_id: Option<Id<File>>,
 }
 
 impl ProjectVersionFilter {
@@ -36,6 +37,10 @@ impl ProjectVersionFilter {
 
     pub fn platform_id(mut self, platform_id: Id<Platform>) -> Self {
         self.platform_id = Some(platform_id);
+        self
+    }
+    pub fn file_id(mut self, file_id: Id<File>) -> Self {
+        self.file_id = Some(file_id);
         self
     }
 }
