@@ -1,12 +1,13 @@
 use axum::{
     Json,
-    extract::{Path, Query, State},
+    extract::{Path, State},
 };
 use clusterizer_common::{
     errors::{Infallible, NotFound},
     records::{Record, Select},
     types::Id,
 };
+use serde_qs::web::QsQuery;
 
 use crate::{
     result::{AppResult, ResultExt},
@@ -27,7 +28,7 @@ pub use validate_submit::validate_submit;
 
 pub async fn get_all<T: Record + Send + Unpin>(
     State(state): State<AppState>,
-    Query(filter): Query<T::Filter>,
+    QsQuery(filter): QsQuery<T::Filter>,
 ) -> AppResult<Json<Vec<T>>, Infallible>
 where
     T::Filter: Select<Record = T>,

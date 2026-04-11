@@ -131,7 +131,11 @@ macro_rules! record_impl {
             type Err = $crate::errors::Infallible;
 
             fn get(&self, client: &::reqwest::Client, url: &str) -> ::reqwest::RequestBuilder {
-                client.get(format!("{}/{}", url, $table_name_literal)).query(self)
+                let url = format!("{}/{}", url, $table_name_literal);
+                let mut url = ::reqwest::Url::parse(&url).unwrap();
+                let query = ::serde_qs::to_string(self).unwrap();
+                url.set_query(Some(&query));
+                client.get(url)
             }
         }
 
