@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM users WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL) AND ($4::text[] IS NULL OR array_position($4, name) IS NOT NULL)",
+  "query": "SELECT * FROM users WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL) AND ($4::text[] IS NULL OR array_position($4, name) IS NOT NULL) AND ($5::bool[] IS NULL OR array_position($5, is_admin) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -22,6 +22,11 @@
         "ordinal": 3,
         "name": "name",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_admin",
+        "type_info": "Bool"
       }
     ],
     "parameters": {
@@ -29,15 +34,17 @@
         "Int8Array",
         "TimestamptzArray",
         "TimestamptzArray",
-        "TextArray"
+        "TextArray",
+        "BoolArray"
       ]
     },
     "nullable": [
       false,
       false,
       true,
+      false,
       false
     ]
   },
-  "hash": "3f3a8f21e93fbce600343a1f65c85db66f9b5ca8368464612f8ffd7948dc6de0"
+  "hash": "c89bcd3e9f0af08c76a37fbb2232ad993ce33040a0990333bf99f05ca526e105"
 }

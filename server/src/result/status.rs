@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use clusterizer_common::errors::{
-    FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError, ValidateFetchError,
-    ValidateSubmitError,
+    CreateFileError, FetchTasksError, Infallible, NotFound, RegisterError, SubmitResultError,
+    ValidateFetchError, ValidateSubmitError,
 };
 
 pub trait Status {
@@ -48,6 +48,15 @@ impl Status for ValidateFetchError {
 }
 
 impl Status for ValidateSubmitError {
+    fn status(&self) -> StatusCode {
+        match self {
+            Self::Forbidden => StatusCode::FORBIDDEN,
+            _ => StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
+impl Status for CreateFileError {
     fn status(&self) -> StatusCode {
         match self {
             Self::Forbidden => StatusCode::FORBIDDEN,

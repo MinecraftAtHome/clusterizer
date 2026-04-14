@@ -22,6 +22,11 @@
         "ordinal": 3,
         "name": "name",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_admin",
+        "type_info": "Bool"
       }
     ],
     "parameters": {
@@ -33,6 +38,7 @@
       false,
       false,
       true,
+      false,
       false
     ]
   },

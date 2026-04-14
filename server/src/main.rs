@@ -55,6 +55,7 @@ async fn serve_task(state: AppState, address: String) {
         .route("/submit_result/{id}", post(routes::submit_result))
         .route("/validate_fetch/{id}", get(routes::validate_fetch))
         .route("/validate_submit", post(routes::validate_submit))
+        .route("/files", post(routes::create_file))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

@@ -11,6 +11,7 @@ record_impl! {
         created_at: DateTime<Utc>,
         disabled_at: Option<DateTime<Utc>>,
         name: String,
+        is_admin: bool,
     }
 
     UserFilter {
@@ -22,6 +23,8 @@ record_impl! {
         disabled_at: Vec<Option<DateTime<Utc>>>,
         "$4::text[] IS NULL OR array_position($4, name) IS NOT NULL"
         name: Vec<String>,
+        "$5::bool[] IS NULL OR array_position($5, is_admin) IS NOT NULL"
+        is_admin: bool,
     }
 
     UserBuilder {
