@@ -1,3 +1,4 @@
+pub mod create_file_error;
 pub mod fetch_tasks_error;
 pub mod infallible;
 pub mod not_found;
@@ -6,6 +7,7 @@ pub mod submit_result_error;
 pub mod validate_fetch_error;
 pub mod validate_submit_error;
 
+pub use create_file_error::CreateFileError;
 pub use fetch_tasks_error::FetchTasksError;
 pub use infallible::Infallible;
 pub use not_found::NotFound;

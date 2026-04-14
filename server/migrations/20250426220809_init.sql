@@ -2,7 +2,8 @@ CREATE TABLE users (
     id int8 GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     created_at timestamptz NOT NULL DEFAULT now(),
     disabled_at timestamptz,
-    name text NOT NULL
+    name text NOT NULL,
+    is_admin boolean NOT NULL DEFAULT false
 );
 
 CREATE UNIQUE INDEX users_name_key
