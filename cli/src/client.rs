@@ -1,45 +1,24 @@
 use std::{
-    collections::{HashMap, VecDeque},
-    env,
-    ffi::OsString,
-    fs,
-    io::{Cursor, ErrorKind},
-    iter::{self, Empty},
-    path::PathBuf,
+    collections::VecDeque,
     process::{Output, Stdio},
     sync::Arc,
     time::Duration,
 };
 
 use clusterizer_api::{client::ApiClient, result::ApiError};
-use clusterizer_client::result::ClientResult;
+use clusterizer_client::{TaskInfo, result::ClientResult, supported_platforms::SupportedPlatforms};
 use clusterizer_common::{
-    errors::SubmitResultError,
-    records::{
-        File, FileFilter, Platform, PlatformFilter, Project, ProjectFilter, ProjectRunner,
-        ProjectRunnerFilter, Task,
-    },
-    requests::{FetchTasksRequest, SubmitResultRequest},
-    types::Id,
+    errors::SubmitResultError, records::Task, requests::SubmitResultRequest, types::Id,
 };
-use clusterizer_util::Hex;
-use tokio::{io::AsyncWriteExt, process::Command, task::JoinSet, time};
-use tracing::{debug, info, warn};
-use zip::ZipArchive;
+use tokio::{io::AsyncWriteExt, task::JoinSet, time};
+use tracing::{debug, info};
 
 use crate::args::RunArgs;
 
 struct ClusterizerClient {
     client: ApiClient,
     args: RunArgs,
-    platform_ids: Vec<Id<Platform>>,
-}
-
-struct TaskInfo {
-    task: Task,
-    project: Project,
-    project_runner: ProjectRunner,
-    file: File,
+    supported_platforms: SupportedPlatforms,
 }
 
 enum Return {
@@ -93,110 +72,43 @@ impl ClusterizerClient {
     }
 
     async fn fetch_tasks(self: Arc<Self>) -> ClientResult<Return> {
-        let tasks = loop {
-            let project_runners_by_project_id: HashMap<_, _> = self
-                .client
-                .get(&ProjectRunnerFilter::default().disabled_at(vec![None]))
-                .await?
-                .into_iter()
-                .filter(|project_runner| self.platform_ids.contains(&project_runner.platform_id))
-                .map(|project_runner| (project_runner.project_id, project_runner))
-                .collect();
-
-            let projects_by_project_id: HashMap<_, _> = self
-                .client
-                .get(&ProjectFilter::default().disabled_at(vec![None]))
-                .await?
-                .into_iter()
-                .filter(|project| project_runners_by_project_id.contains_key(&project.id))
-                .map(|project| (project.id, project))
-                .collect();
-
-            let files_by_file_id: HashMap<_, _> = self
-                .client
-                .get(&FileFilter::default())
-                .await?
-                .into_iter()
-                .map(|file| (file.id, file))
-                .collect();
-
-            let get_task_info = |task: &Task| {
-                let project = projects_by_project_id.get(&task.project_id)?;
-                let project_runner = project_runners_by_project_id.get(&task.project_id)?;
-                let file = files_by_file_id.get(&project_runner.file_id)?;
-
-                Some(TaskInfo {
-                    task: task.clone(),
-                    file: file.clone(),
-                    project: project.clone(),
-                    project_runner: project_runner.clone(),
-                })
-            };
-
-            let tasks: Vec<_> = self
-                .client
-                .fetch_tasks(&FetchTasksRequest {
-                    project_ids: projects_by_project_id.keys().copied().collect(),
-                    limit: self.args.threads,
-                })
-                .await?
-                .into_iter()
-                .filter_map(|task| {
-                    let info = get_task_info(&task);
-
-                    if info.is_none() {
-                        warn!("Unwanted task received from server.");
-                    }
-
-                    info
-                })
-                .collect();
+        loop {
+            let tasks = clusterizer_client::fetch_tasks(
+                &self.args.cache_dir,
+                &self.client,
+                &self.supported_platforms,
+                self.args.threads,
+            )
+            .await?;
 
             if !tasks.is_empty() {
-                break tasks;
+                info!("Fetched {} tasks.", tasks.len());
+                break Ok(Return::FetchTasks(tasks));
             }
 
             info!("No tasks found. Sleeping before attempting again.");
             time::sleep(Duration::from_secs(15)).await;
-        };
-
-        for TaskInfo { file, .. } in &tasks {
-            download_archive(file, &self.args).await?;
         }
-
-        Ok(Return::FetchTasks(tasks))
     }
 
     async fn execute_task(
         self: Arc<Self>,
         TaskInfo {
             task,
-            project_runner,
-            project,
-            file,
+            file_path,
+            platform_id,
         }: TaskInfo,
     ) -> ClientResult<Return> {
         let slot_dir = tempfile::tempdir()?;
 
-        info!("Task id: {}, stdin: {}", task.id, task.stdin);
-        info!(
-            "Project id: {}, Project name: {}",
-            task.project_id, project.name
-        );
-        debug!("Platform id: {}", project_runner.platform_id);
+        info!("Task id: {}", task.id);
+        debug!("Project id: {}", task.project_id);
+        debug!("Platform id: {}", platform_id);
         debug!("Slot dir: {}", slot_dir.path().display());
 
-        let program = self
-            .args
-            .binaries_dir()
-            .join(format!("{}", Hex(&file.hash)))
-            .join(format!("main{}", env::consts::EXE_SUFFIX))
-            .canonicalize()?;
-
-        let args: Empty<OsString> = iter::empty();
-
-        let mut child = Command::new(program)
-            .args(args)
+        let mut child = self
+            .supported_platforms
+            .get_command(&file_path, platform_id)
             .current_dir(&slot_dir)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -235,81 +147,13 @@ impl ClusterizerClient {
 }
 
 pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
-    fs::create_dir_all(args.binaries_dir())?;
-    fs::create_dir_all(args.temp_dir())?;
-
-    let mut platform_ids = Vec::new();
-    let mut platform_names = Vec::new();
-
-    for platform in client.get(&PlatformFilter::default()).await? {
-        let file = client.get(&platform.file_id).await?;
-
-        debug!(
-            "Platform id: {}, tester archive url: {}",
-            platform.id, file.url
-        );
-
-        let platform_tester_dir = download_archive(&file, &args).await?;
-
-        let slot_dir = tempfile::tempdir()?;
-
-        debug!("Slot dir: {}", slot_dir.path().display());
-
-        let program = match platform_tester_dir
-            .join(format!("main{}", env::consts::EXE_SUFFIX))
-            .canonicalize()
-        {
-            Err(err) if err.kind() == ErrorKind::NotFound => continue,
-            result => result,
-        }?;
-
-        let args: Empty<OsString> = iter::empty();
-
-        let status = Command::new(program)
-            .args(args)
-            .current_dir(&slot_dir)
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .await?;
-
-        if status.success() {
-            platform_ids.push(platform.id);
-            platform_names.push(platform.name);
-        }
-    }
-
-    info!("Supported platforms: {}", platform_names.join(", "));
+    let supported_platforms = SupportedPlatforms::detect(&args.cache_dir, &client).await?;
 
     Arc::new(ClusterizerClient {
         client,
         args,
-        platform_ids,
+        supported_platforms,
     })
     .run()
     .await
-}
-
-async fn download_archive(file: &File, args: &RunArgs) -> ClientResult<PathBuf> {
-    let dir = args.binaries_dir().join(format!("{}", Hex(&file.hash)));
-
-    if dir.exists() {
-        debug!("Archive {} was cached.", dir.display());
-    } else {
-        debug!("Archive {} is not cached.", dir.display());
-
-        let bytes = reqwest::get(&file.url)
-            .await?
-            .error_for_status()?
-            .bytes()
-            .await?;
-
-        let extract_dir = tempfile::tempdir_in(args.temp_dir())?;
-
-        ZipArchive::new(Cursor::new(bytes))?.extract(&extract_dir)?;
-        fs::rename(&extract_dir, &dir)?;
-    }
-
-    Ok(dir)
 }
