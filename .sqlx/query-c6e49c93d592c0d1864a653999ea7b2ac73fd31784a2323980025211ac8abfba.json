@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM tasks WHERE id = ANY($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "deadline",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 3,
+        "name": "project_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "stdin",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "assignments_needed",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "assignment_user_ids",
+        "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 7,
+        "name": "quorum",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c6e49c93d592c0d1864a653999ea7b2ac73fd31784a2323980025211ac8abfba"
+}

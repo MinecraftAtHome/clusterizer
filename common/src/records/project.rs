@@ -1,32 +1,41 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{records::User, types::Id};
+use crate::{
+    records::{User, record_impl},
+    types::Id,
+};
 
-#[derive(Clone, Hash, Debug, Serialize, Deserialize)]
-pub struct Project {
-    pub id: Id<Project>,
-    pub created_at: DateTime<Utc>,
-    pub created_by_user_id: Id<User>,
-    pub disabled_at: Option<DateTime<Utc>>,
-    pub name: String,
-}
+record_impl! {
+    PATH = "projects";
 
-#[non_exhaustive]
-#[derive(Clone, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct ProjectFilter {
-    pub created_by_user_id: Option<Id<User>>,
-    pub disabled: Option<bool>,
-}
-
-impl ProjectFilter {
-    pub fn created_by_user_id(mut self, created_by_user_id: Id<User>) -> Self {
-        self.created_by_user_id = Some(created_by_user_id);
-        self
+    Project {
+        id: Id<Project>,
+        created_at: DateTime<Utc>,
+        created_by_user_id: Id<User>,
+        disabled_at: Option<DateTime<Utc>>,
+        name: String,
     }
 
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = Some(disabled);
-        self
+    ProjectFilter {
+        "$1::int8[] IS NULL OR array_position($1, id) IS NOT NULL"
+        id: Vec<Id<Project>>,
+        "$2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL"
+        created_at: Vec<DateTime<Utc>>,
+        "$3::int8[] IS NULL OR array_position($3, created_by_user_id) IS NOT NULL"
+        created_by_user_id: Vec<Id<User>>,
+        "$4::timestamptz[] IS NULL OR array_position($4, disabled_at) IS NOT NULL"
+        disabled_at: Vec<Option<DateTime<Utc>>>,
+        "$5::text[] IS NULL OR array_position($5, name) IS NOT NULL"
+        name: Vec<String>,
     }
+
+    ProjectBuilder {
+        "created_by_user_id" "$1"
+        created_by_user_id: Id<User>,
+        "name" "$2"
+        name: String,
+    }
+
+    UpdateProject {}
 }

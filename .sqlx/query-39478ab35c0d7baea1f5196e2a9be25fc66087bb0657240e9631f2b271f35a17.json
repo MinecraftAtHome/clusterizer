@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                results\n            WHERE\n                assignment_id = $1 IS NOT FALSE\n                AND (group_result_id = $2 OR $2 IS NULL)\n                AND state = $3 IS NOT FALSE\n            ",
+  "query": "SELECT * FROM results WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::int8[] IS NULL OR array_position($3, assignment_id) IS NOT NULL) AND ($4::text[] IS NULL OR array_position($4, stdout) IS NOT NULL) AND ($5::text[] IS NULL OR array_position($5, stderr) IS NOT NULL) AND ($6::int4[] IS NULL OR array_position($6, exit_code) IS NOT NULL) AND ($7::int8[] IS NULL OR array_position($7, group_result_id) IS NOT NULL) AND ($8::result_state[] IS NULL OR array_position($8, state) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -59,19 +59,31 @@
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Int8",
+        "Int8Array",
+        "TimestamptzArray",
+        "Int8Array",
+        "TextArray",
+        "TextArray",
+        "Int4Array",
+        "Int8Array",
         {
           "Custom": {
-            "name": "result_state",
+            "name": "result_state[]",
             "kind": {
-              "Enum": [
-                "init",
-                "valid",
-                "invalid",
-                "inconclusive",
-                "error"
-              ]
+              "Array": {
+                "Custom": {
+                  "name": "result_state",
+                  "kind": {
+                    "Enum": [
+                      "init",
+                      "valid",
+                      "invalid",
+                      "inconclusive",
+                      "error"
+                    ]
+                  }
+                }
+              }
             }
           }
         }
@@ -88,5 +100,5 @@
       true
     ]
   },
-  "hash": "d87fa0f565013412bab63b399f7dd435b8f6ef317eec2981cf24b97d9a1394ed"
+  "hash": "39478ab35c0d7baea1f5196e2a9be25fc66087bb0657240e9631f2b271f35a17"
 }

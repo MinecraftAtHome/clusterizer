@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                *\n            FROM\n                project_versions\n            WHERE\n                disabled_at IS NULL IS DISTINCT FROM $1\n                AND project_id = $2 IS NOT FALSE\n                AND platform_id = $3 IS NOT FALSE\n                AND file_id = $4 IS NOT FALSE\n            ",
+  "query": "SELECT * FROM assignments WHERE id = ANY($1)",
   "describe": {
     "columns": [
       {
@@ -15,41 +15,50 @@
       },
       {
         "ordinal": 2,
-        "name": "disabled_at",
+        "name": "deadline_at",
         "type_info": "Timestamptz"
       },
       {
         "ordinal": 3,
-        "name": "project_id",
+        "name": "task_id",
         "type_info": "Int8"
       },
       {
         "ordinal": 4,
-        "name": "platform_id",
+        "name": "user_id",
         "type_info": "Int8"
       },
       {
         "ordinal": 5,
-        "name": "file_id",
-        "type_info": "Int8"
+        "name": "state",
+        "type_info": {
+          "Custom": {
+            "name": "assignment_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "canceled",
+                "expired",
+                "submitted"
+              ]
+            }
+          }
+        }
       }
     ],
     "parameters": {
       "Left": [
-        "Bool",
-        "Int8",
-        "Int8",
-        "Int8"
+        "Int8Array"
       ]
     },
     "nullable": [
       false,
       false,
-      true,
+      false,
       false,
       false,
       false
     ]
   },
-  "hash": "767d70fb7dfab388eb34d3cc3e44cf0a2945a63a68f7407b9a6404da2c48dd38"
+  "hash": "a710a747947f4bf764b23b95e58011c8820191f58c3b3727c9add6cc1dac0769"
 }

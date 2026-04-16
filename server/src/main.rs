@@ -2,22 +2,23 @@ mod auth;
 mod result;
 mod routes;
 mod state;
-mod util;
-
-use std::time::Duration;
+mod tasks;
 
 use axum::{
     Router,
     routing::{get, post},
 };
-use clusterizer_common::records::{
-    Assignment, File, Platform, Project, ProjectVersion, Result, Task, User,
+use clusterizer_common::{
+    records::{
+        Assignment, File, Platform, Project, ProjectVersion, Record, Result, Select, Task, User,
+    },
+    types::Id,
 };
 
-use routes::{get_all, get_one};
+use serde::{Serialize, de::DeserializeOwned};
 use sqlx::PgPool;
 use state::AppState;
-use tokio::{net::TcpListener, time};
+use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
 #[tokio::main]
@@ -35,28 +36,20 @@ async fn main() {
 
     tokio::join!(
         serve_task(state.clone(), address),
-        update_expired_assignments_task(state.clone()),
+        tasks::update_expired_assignments(state.clone()),
     );
 }
 
 async fn serve_task(state: AppState, address: String) {
     let app = Router::new()
-        .route("/files", get(get_all::<File>))
-        .route("/files/{id}", get(get_one::<File>))
-        .route("/users", get(get_all::<User>))
-        .route("/users/{id}", get(get_one::<User>))
-        .route("/projects", get(get_all::<Project>))
-        .route("/projects/{id}", get(get_one::<Project>))
-        .route("/platforms", get(get_all::<Platform>))
-        .route("/platforms/{id}", get(get_one::<Platform>))
-        .route("/project_versions", get(get_all::<ProjectVersion>))
-        .route("/project_versions/{id}", get(get_one::<ProjectVersion>))
-        .route("/tasks", get(get_all::<Task>))
-        .route("/tasks/{id}", get(get_one::<Task>))
-        .route("/assignments", get(get_all::<Assignment>))
-        .route("/assignments/{id}", get(get_one::<Assignment>))
-        .route("/results", get(get_all::<Result>))
-        .route("/results/{id}", get(get_one::<Result>))
+        .merge(record_router::<File>())
+        .merge(record_router::<User>())
+        .merge(record_router::<Project>())
+        .merge(record_router::<Platform>())
+        .merge(record_router::<ProjectVersion>())
+        .merge(record_router::<Task>())
+        .merge(record_router::<Assignment>())
+        .merge(record_router::<Result>())
         .route("/register", post(routes::register))
         .route("/fetch_tasks", post(routes::fetch_tasks))
         .route("/submit_result/{id}", post(routes::submit_result))
@@ -70,11 +63,13 @@ async fn serve_task(state: AppState, address: String) {
     axum::serve(listener, app).await.unwrap()
 }
 
-async fn update_expired_assignments_task(state: AppState) {
-    let mut interval = time::interval(Duration::from_secs(60 * 15));
-
-    loop {
-        interval.tick().await;
-        util::update_expired_assignments(&state).await.unwrap();
-    }
+fn record_router<T>() -> Router<AppState>
+where
+    T: Record + Send + Unpin + Serialize + 'static,
+    T::Filter: Select<Record = T> + Send + DeserializeOwned,
+    Id<T>: Select<Record = T>,
+{
+    Router::new()
+        .route(&format!("/{}", T::PATH), get(routes::get_all::<T>))
+        .route(&format!("/{}/{{id}}", T::PATH), get(routes::get_one::<T>))
 }

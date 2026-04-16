@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            *\n        FROM\n            projects\n        WHERE\n            id = ANY($1)\n        ",
+  "query": "SELECT * FROM users WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL) AND ($4::text[] IS NULL OR array_position($4, name) IS NOT NULL)",
   "describe": {
     "columns": [
       {
@@ -15,32 +15,29 @@
       },
       {
         "ordinal": 2,
-        "name": "created_by_user_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 3,
         "name": "disabled_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 4,
+        "ordinal": 3,
         "name": "name",
         "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8Array"
+        "Int8Array",
+        "TimestamptzArray",
+        "TimestamptzArray",
+        "TextArray"
       ]
     },
     "nullable": [
-      false,
       false,
       false,
       true,
       false
     ]
   },
-  "hash": "25acb3a0a968c72a708d842e209a60e17066d80cd0a0c404a4031dae4df01781"
+  "hash": "3f3a8f21e93fbce600343a1f65c85db66f9b5ca8368464612f8ffd7948dc6de0"
 }

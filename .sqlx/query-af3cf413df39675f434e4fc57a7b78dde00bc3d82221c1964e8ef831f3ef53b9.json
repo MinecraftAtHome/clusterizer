@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM results WHERE id = ANY($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "state",
+        "type_info": {
+          "Custom": {
+            "name": "result_state",
+            "kind": {
+              "Enum": [
+                "init",
+                "valid",
+                "invalid",
+                "inconclusive",
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "assignment_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "stdout",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "stderr",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "exit_code",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "group_result_id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "af3cf413df39675f434e4fc57a7b78dde00bc3d82221c1964e8ef831f3ef53b9"
+}

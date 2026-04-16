@@ -35,5 +35,4 @@ jobs:
       - name: Cargo Format Check
         run: cargo fmt --check
       - name: Sqlx Prepare Check
-        run: cargo sqlx prepare --check
-        working-directory: ./server
+        run: cargo sqlx prepare --check --workspace
