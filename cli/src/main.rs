@@ -2,8 +2,9 @@ use args::{ClusterizerArgs, Commands};
 use clap::Parser;
 use clusterizer_api::client::ApiClient;
 use clusterizer_client::result::ClientResult;
-use clusterizer_common::requests::RegisterRequest;
-use tracing::{debug, error};
+use clusterizer_common::requests::{CreateFileRequest, RegisterRequest};
+use sha2::{Digest, Sha256};
+use tracing::{debug, error, info};
 
 mod args;
 mod client;
@@ -32,6 +33,25 @@ async fn run() -> ClientResult<()> {
             println!("{}", response.api_key);
         }
         Commands::Run(args) => client::run(client, args).await?,
+        Commands::CreateFile(args) => {
+            debug!("Creating new file...");
+            let bytes = reqwest::get(&args.url)
+                .await?
+                .error_for_status()?
+                .bytes()
+                .await?;
+            let hash = Sha256::digest(bytes).0;
+
+            let response = client
+                .create_file(&CreateFileRequest {
+                    url: args.url,
+                    hash,
+                })
+                .await?;
+
+            println!("{}", response);
+            info!("Successfully created new file with ID: {}", response);
+        }
     }
 
     Ok(())

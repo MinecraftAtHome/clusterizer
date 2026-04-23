@@ -1,7 +1,7 @@
 use clusterizer_common::{
-    errors::{FetchTasksError, RegisterError, SubmitResultError},
-    records::{Get, Task},
-    requests::{FetchTasksRequest, RegisterRequest, SubmitResultRequest},
+    errors::{CreateFileError, FetchTasksError, RegisterError, SubmitResultError},
+    records::{File, Get, Task},
+    requests::{CreateFileRequest, FetchTasksRequest, RegisterRequest, SubmitResultRequest},
     responses::RegisterResponse,
     types::Id,
 };
@@ -54,6 +54,14 @@ impl ApiClient {
         let url = format!("{}/submit_result/{task_id}", self.url);
         self.send_post(url, request).await?;
         Ok(())
+    }
+
+    pub async fn create_file(
+        &self,
+        request: &CreateFileRequest,
+    ) -> ApiResult<Id<File>, CreateFileError> {
+        let url = format!("{}/files", self.url);
+        Ok(self.send_post(url, request).await?.json().await?)
     }
 
     async fn send_post<Error: DeserializeOwned>(

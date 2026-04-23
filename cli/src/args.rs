@@ -24,6 +24,8 @@ pub enum Commands {
     Register(RegisterArgs),
     /// Start crunching on clusterizer
     Run(RunArgs),
+    /// Create a new file on the server
+    CreateFile(CreateFileArgs),
 }
 
 #[derive(Debug, Args)]
@@ -50,6 +52,12 @@ impl RunArgs {
     pub fn temp_dir(&self) -> PathBuf {
         self.cache_dir.join("tmp")
     }
+}
+
+#[derive(Debug, Args)]
+pub struct CreateFileArgs {
+    #[arg(long, short)]
+    pub url: String,
 }
 
 fn cache_dir() -> Resettable<OsStr> {
