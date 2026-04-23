@@ -28,7 +28,7 @@ pub async fn create_file(
 
     let file_id = FileBuilder {
         url: request.url,
-        hash: request.hash,
+        hash: request.hash.to_vec(),
     }
     .insert()
     .fetch_one(&state.pool)
