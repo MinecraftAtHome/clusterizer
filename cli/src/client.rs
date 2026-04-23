@@ -6,7 +6,7 @@ use std::{
 };
 
 use clusterizer_api::{client::ApiClient, result::ApiError};
-use clusterizer_client::{TaskInfo, result::ClientResult, supported_platforms::SupportedPlatforms};
+use clusterizer_client::{TaskInfo, platforms::SupportedPlatforms, result::ClientResult};
 use clusterizer_common::{
     errors::SubmitResultError, records::Task, requests::SubmitResultRequest, types::Id,
 };

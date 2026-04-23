@@ -1,5 +1,5 @@
+pub mod platforms;
 pub mod result;
-pub mod supported_platforms;
 
 use std::{
     collections::HashMap,
@@ -19,7 +19,7 @@ use tokio::task::{self, JoinHandle};
 use tracing::{debug, info, warn};
 use zip::ZipArchive;
 
-use crate::{result::ClientResult, supported_platforms::SupportedPlatforms};
+use crate::{platforms::SupportedPlatforms, result::ClientResult};
 
 #[derive(Debug)]
 pub struct TaskInfo {
