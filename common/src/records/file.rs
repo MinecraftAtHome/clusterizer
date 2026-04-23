@@ -10,7 +10,7 @@ record_impl! {
         id: Id<File>,
         created_at: DateTime<Utc>,
         url: String,
-        hash: Vec<u8>,
+        hash: [u8; 32],
     }
 
     FileFilter {
@@ -21,14 +21,14 @@ record_impl! {
         "$3::text[] IS NULL OR array_position($3, url) IS NOT NULL"
         url: Vec<String>,
         "$4::bytea[] IS NULL OR array_position($4, hash) IS NOT NULL"
-        hash: Vec<Vec<u8>>,
+        hash: Vec<[u8; 32]>,
     }
 
     FileBuilder {
         "url" "$1"
         url: String,
         "hash" "$2"
-        hash: Vec<u8>,
+        hash: [u8; 32],
     }
 
     UpdateFile {}
