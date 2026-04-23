@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM project_versions WHERE TRUE AND ($1::int8[] IS NULL OR array_position($1, id) IS NOT NULL) AND ($2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL) AND ($3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL) AND ($4::int8[] IS NULL OR array_position($4, project_id) IS NOT NULL) AND ($5::int8[] IS NULL OR array_position($5, platform_id) IS NOT NULL) AND ($6::int8[] IS NULL OR array_position($6, file_id) IS NOT NULL)",
+  "query": "SELECT * FROM project_runners WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -36,12 +36,7 @@
     ],
     "parameters": {
       "Left": [
-        "Int8Array",
-        "TimestamptzArray",
-        "TimestamptzArray",
-        "Int8Array",
-        "Int8Array",
-        "Int8Array"
+        "Int8"
       ]
     },
     "nullable": [
@@ -53,5 +48,5 @@
       false
     ]
   },
-  "hash": "6575005fcd566adcd6f630ce06b15cfe718e153af822a2b6dfee60554202face"
+  "hash": "d04ebea2c51ce254c8e49fad15683d85842fe0e1fbef0c0fc8b63a3964442538"
 }

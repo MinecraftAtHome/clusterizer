@@ -384,7 +384,6 @@ dependencies = [
  "clusterizer-api",
  "clusterizer-client",
  "clusterizer-common",
- "clusterizer-util",
  "dirs",
  "reqwest",
  "sha2 0.11.0",
@@ -392,7 +391,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "zip",
 ]
 
 [[package]]
@@ -400,9 +398,13 @@ name = "clusterizer-client"
 version = "0.1.0"
 dependencies = [
  "clusterizer-api",
+ "clusterizer-common",
+ "clusterizer-util",
  "reqwest",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
  "zip",
 ]
 

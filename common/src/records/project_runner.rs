@@ -7,10 +7,10 @@ use crate::{
 };
 
 record_impl! {
-    PATH = "project_versions";
+    PATH = "project_runners";
 
-    ProjectVersion {
-        id: Id<ProjectVersion>,
+    ProjectRunner {
+        id: Id<ProjectRunner>,
         created_at: DateTime<Utc>,
         disabled_at: Option<DateTime<Utc>>,
         project_id: Id<Project>,
@@ -18,9 +18,9 @@ record_impl! {
         file_id: Id<File>,
     }
 
-    ProjectVersionFilter {
+    ProjectRunnerFilter {
         "$1::int8[] IS NULL OR array_position($1, id) IS NOT NULL"
-        id: Vec<Id<ProjectVersion>>,
+        id: Vec<Id<ProjectRunner>>,
         "$2::timestamptz[] IS NULL OR array_position($2, created_at) IS NOT NULL"
         created_at: Vec<DateTime<Utc>>,
         "$3::timestamptz[] IS NULL OR array_position($3, disabled_at) IS NOT NULL"
@@ -33,7 +33,7 @@ record_impl! {
         file_id: Vec<Id<File>>,
     }
 
-    ProjectVersionBuilder {
+    ProjectRunnerBuilder {
         "project_id" "$1"
         project_id: Id<Project>,
         "platform_id" "$2"
@@ -42,5 +42,5 @@ record_impl! {
         file_id: Id<File>,
     }
 
-    UpdateProjectVersion {}
+    UpdateProjectRunner {}
 }

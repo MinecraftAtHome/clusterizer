@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM project_versions WHERE id = $1",
+  "query": "SELECT * FROM platform_runners WHERE id = ANY($1)",
   "describe": {
     "columns": [
       {
@@ -15,38 +15,26 @@
       },
       {
         "ordinal": 2,
-        "name": "disabled_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 3,
-        "name": "project_id",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 4,
         "name": "platform_id",
         "type_info": "Int8"
       },
       {
-        "ordinal": 5,
+        "ordinal": 3,
         "name": "file_id",
         "type_info": "Int8"
       }
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Int8Array"
       ]
     },
     "nullable": [
       false,
       false,
-      true,
-      false,
       false,
       false
     ]
   },
-  "hash": "60d06b4ddeb3f621f6da75d1ad4f37cb37aa552d2cf4e9f3ec8365afd2555e2a"
+  "hash": "b2922b902d1e423d8928526ef7f150b5b5c7755c25c8e0dd2a759692d98aac1d"
 }

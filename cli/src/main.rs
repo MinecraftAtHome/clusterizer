@@ -1,3 +1,5 @@
+use std::fs;
+
 use args::{ClusterizerArgs, Commands};
 use clap::Parser;
 use clusterizer_api::client::ApiClient;
@@ -32,7 +34,11 @@ async fn run() -> ClientResult<()> {
 
             println!("{}", response.api_key);
         }
-        Commands::Run(args) => client::run(client, args).await?,
+        Commands::Run(mut args) => {
+            fs::create_dir_all(&args.cache_dir)?;
+            args.cache_dir = args.cache_dir.canonicalize()?;
+            client::run(client, args).await?
+        }
         Commands::CreateFile(args) => {
             debug!("Creating new file...");
             let bytes = reqwest::get(&args.url)

@@ -44,16 +44,6 @@ pub struct RunArgs {
     pub queue: usize,
 }
 
-impl RunArgs {
-    pub fn binaries_dir(&self) -> PathBuf {
-        self.cache_dir.join("bin")
-    }
-
-    pub fn temp_dir(&self) -> PathBuf {
-        self.cache_dir.join("tmp")
-    }
-}
-
 #[derive(Debug, Args)]
 pub struct CreateFileArgs {
     #[arg(long, short)]

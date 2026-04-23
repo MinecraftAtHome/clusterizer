@@ -5,7 +5,11 @@ edition = "2024"
 
 [dependencies]
 clusterizer-api = { version = "0.1.0", path = "../api" }
+clusterizer-common = { version = "0.1.0", path = "../common" }
+clusterizer-util = { version = "0.1.0", path = "../util" }
 reqwest = { version = "0.13.2" }
+tempfile = "3.27.0"
 thiserror = "2.0.18"
 tokio = { version = "1.50.0", features = ["full"] }
+tracing = "0.1.44"
 zip = "8.5.0"
