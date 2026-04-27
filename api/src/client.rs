@@ -11,19 +11,19 @@ use clusterizer_common::{
     responses::RegisterResponse,
     types::Id,
 };
-use reqwest::{IntoUrl, RequestBuilder, Response, header};
+use reqwest::{IntoUrl, RequestBuilder, Response, Url, header};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::result::{ApiError, ApiResult};
 
 pub struct ApiClient {
     client: reqwest::Client,
-    url: String,
+    url: Url,
     api_key: Option<String>,
 }
 
 impl ApiClient {
-    pub fn new(url: String, api_key: Option<String>) -> Self {
+    pub fn new(url: Url, api_key: Option<String>) -> Self {
         Self {
             client: reqwest::Client::new(),
             url,
@@ -32,7 +32,7 @@ impl ApiClient {
     }
 
     pub async fn get<T: Get>(&self, by: &T) -> ApiResult<T::Ok, T::Err> {
-        let request = by.get(&self.client, &self.url);
+        let request = by.get(&self.client, &self.url)?;
         Ok(self.send(request).await?.json().await?)
     }
 
@@ -40,7 +40,7 @@ impl ApiClient {
         &self,
         request: &RegisterRequest,
     ) -> ApiResult<RegisterResponse, RegisterError> {
-        let url = format!("{}/register", self.url);
+        let url = self.url.join("register")?;
         Ok(self.send_post(url, request).await?.json().await?)
     }
 
@@ -48,7 +48,7 @@ impl ApiClient {
         &self,
         request: &FetchTasksRequest,
     ) -> ApiResult<Vec<Task>, FetchTasksError> {
-        let url = format!("{}/fetch_tasks", self.url);
+        let url = self.url.join("fetch_tasks")?;
         Ok(self.send_post(url, request).await?.json().await?)
     }
 
@@ -57,7 +57,7 @@ impl ApiClient {
         task_id: Id<Task>,
         request: &SubmitResultRequest,
     ) -> ApiResult<(), SubmitResultError> {
-        let url = format!("{}/submit_result/{task_id}", self.url);
+        let url = self.url.join("submit_result")?.join(&task_id.to_string())?;
         self.send_post(url, request).await?;
         Ok(())
     }
@@ -66,7 +66,10 @@ impl ApiClient {
         &self,
         project_id: Id<Project>,
     ) -> ApiResult<Vec<Task>, ValidateFetchError> {
-        let url = format!("{}/validate_fetch/{project_id}", self.url);
+        let url = self
+            .url
+            .join("validate_fetch")?
+            .join(&project_id.to_string())?;
         Ok(self.send_get(url).await?.json().await?)
     }
 
@@ -74,7 +77,7 @@ impl ApiClient {
         &self,
         request: &ValidateSubmitRequest,
     ) -> ApiResult<(), ValidateSubmitError> {
-        let url = format!("{}/validate_submit", self.url);
+        let url = self.url.join("validate_submit")?;
         self.send_post(url, request).await?;
         Ok(())
     }
@@ -83,7 +86,7 @@ impl ApiClient {
         &self,
         request: &CreateFileRequest,
     ) -> ApiResult<Id<File>, CreateFileError> {
-        let url = format!("{}/files", self.url);
+        let url = self.url.join("files")?;
         Ok(self.send_post(url, request).await?.json().await?)
     }
 

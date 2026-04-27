@@ -374,6 +374,7 @@ dependencies = [
  "clusterizer-common",
  "reqwest",
  "serde",
+ "url",
 ]
 
 [[package]]
@@ -403,6 +404,7 @@ dependencies = [
  "reqwest",
  "thiserror 2.0.18",
  "tokio",
+ "url",
  "zip",
 ]
 
@@ -416,6 +418,7 @@ dependencies = [
  "serde_qs",
  "sqlx",
  "thiserror 2.0.18",
+ "url",
 ]
 
 [[package]]

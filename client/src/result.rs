@@ -10,6 +10,7 @@ use zip::result::ZipError;
 pub enum ClientError {
     Specific(Box<dyn Error + Sync + Send>),
     Reqwest(#[from] reqwest::Error),
+    UrlParser(#[from] url::ParseError),
     Zip(#[from] ZipError),
     Io(#[from] io::Error),
     Join(#[from] JoinError),
@@ -23,6 +24,7 @@ impl<E: Error + Sync + Send + 'static> From<ApiError<E>> for ClientError {
             ApiError::Specific(err) => Self::Specific(Box::new(err)),
             ApiError::String(err) => Self::Specific(err.into()),
             ApiError::Reqwest(err) => Self::Reqwest(err),
+            ApiError::UrlParse(err) => Self::UrlParser(err),
         }
     }
 }

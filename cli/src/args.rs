@@ -4,6 +4,7 @@ use clap::{
     Args, Parser, Subcommand,
     builder::{OsStr, Resettable},
 };
+use reqwest::Url;
 
 #[derive(Debug, Parser)]
 #[command(name = "Clusterizer RS")]
@@ -11,7 +12,7 @@ use clap::{
 #[command(about = "Crunching tasks since 2k20", long_about = None)]
 pub struct ClusterizerArgs {
     #[arg(long, short, default_value = "https://clusterizer.mcathome.dev")]
-    pub server_url: String,
+    pub server_url: Url,
     #[arg(long, short)]
     pub api_key: Option<String>,
     #[command(subcommand)]
@@ -57,7 +58,7 @@ impl RunArgs {
 #[derive(Debug, Args)]
 pub struct CreateFileArgs {
     #[arg(long, short)]
-    pub url: String,
+    pub url: Url,
 }
 
 fn cache_dir() -> Resettable<OsStr> {

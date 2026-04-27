@@ -189,7 +189,7 @@ impl ClusterizerClient {
         let program = self
             .args
             .binaries_dir()
-            .join(format!("{}", Hex(&file.hash)))
+            .join(Hex(&file.hash).to_string())
             .join(format!("main{}", env::consts::EXE_SUFFIX))
             .canonicalize()?;
 
@@ -292,7 +292,7 @@ pub async fn run(client: ApiClient, args: RunArgs) -> ClientResult<()> {
 }
 
 async fn download_archive(file: &File, args: &RunArgs) -> ClientResult<PathBuf> {
-    let dir = args.binaries_dir().join(format!("{}", Hex(&file.hash)));
+    let dir = args.binaries_dir().join(Hex(&file.hash).to_string());
 
     if dir.exists() {
         debug!("Archive {} was cached.", dir.display());

@@ -41,7 +41,11 @@ pub trait Get {
     type Ok: serde::de::DeserializeOwned;
     type Err: serde::de::DeserializeOwned;
 
-    fn get(&self, client: &reqwest::Client, url: &str) -> reqwest::RequestBuilder;
+    fn get(
+        &self,
+        client: &reqwest::Client,
+        url: &reqwest::Url,
+    ) -> std::result::Result<reqwest::RequestBuilder, url::ParseError>;
 }
 
 #[cfg(feature = "sqlx")]
@@ -130,12 +134,11 @@ macro_rules! record_impl {
             type Ok = Vec<$record_ident>;
             type Err = $crate::errors::Infallible;
 
-            fn get(&self, client: &::reqwest::Client, url: &str) -> ::reqwest::RequestBuilder {
-                let url = format!("{}/{}", url, $table_name_literal);
-                let mut url = ::reqwest::Url::parse(&url).unwrap();
+            fn get(&self, client: &::reqwest::Client, url: &::reqwest::Url) -> ::std::result::Result<::reqwest::RequestBuilder, ::url::ParseError> {
+                let mut url = url.join($table_name_literal)?;
                 let query = ::serde_qs::to_string(self).unwrap();
                 url.set_query(Some(&query));
-                client.get(url)
+                Ok(client.get(url))
             }
         }
 
@@ -144,8 +147,9 @@ macro_rules! record_impl {
             type Ok = $record_ident;
             type Err = $crate::errors::NotFound;
 
-            fn get(&self, client: &::reqwest::Client, url: &str) -> ::reqwest::RequestBuilder {
-                client.get(format!("{}/{}/{}", url, $table_name_literal, self))
+            fn get(&self, client: &::reqwest::Client, url: &::reqwest::Url) -> ::std::result::Result<::reqwest::RequestBuilder, ::url::ParseError> {
+                let url = url.join($table_name_literal)?.join(&self.to_string())?;
+                Ok(client.get(url))
             }
         }
 

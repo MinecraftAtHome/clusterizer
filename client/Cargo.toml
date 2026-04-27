@@ -8,4 +8,5 @@ clusterizer-api = { version = "0.1.0", path = "../api" }
 reqwest = { version = "0.13.2" }
 thiserror = "2.0.18"
 tokio = { version = "1.50.0", features = ["full"] }
+url = "2.5.8"
 zip = "8.5.0"

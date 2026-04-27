@@ -35,19 +35,15 @@ async fn run() -> ClientResult<()> {
         Commands::Run(args) => client::run(client, args).await?,
         Commands::CreateFile(args) => {
             debug!("Creating new file...");
-            let bytes = reqwest::get(&args.url)
+            let url = args.url.to_string();
+            let bytes = reqwest::get(args.url)
                 .await?
                 .error_for_status()?
                 .bytes()
                 .await?;
             let hash = Sha256::digest(bytes).0;
 
-            let response = client
-                .create_file(&CreateFileRequest {
-                    url: args.url,
-                    hash,
-                })
-                .await?;
+            let response = client.create_file(&CreateFileRequest { url, hash }).await?;
 
             println!("{}", response);
             info!("Successfully created new file with ID: {}", response);
